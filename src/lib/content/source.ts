@@ -13,4 +13,6 @@ export interface ContentSource {
   getProject(slug: string): Promise<Project | null>;
   listDocs(slug: string): Promise<DocRef[]>;
   readDoc(slug: string, kind: DocKind, id: string): Promise<string | null>;
+  /** Raw backlog.md (tasks live outside listDocs). */
+  readBacklog(slug: string): Promise<string | null>;
 }

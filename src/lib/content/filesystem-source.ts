@@ -103,5 +103,10 @@ export function createFilesystemSource(roots: string[]): ContentSource {
       const match = docs.find((d) => d.kind === kind && d.id === id);
       return match ? tryRead(match.path) : null;
     },
+    async readBacklog(slug) {
+      const project = await okProject(slug);
+      if (!project) return null;
+      return tryRead(join(project.root, "__project__", "tasks", "backlog.md"));
+    },
   };
 }

@@ -1,0 +1,14 @@
+slug: groundwork
+name: Groundwork
+tagline: One ops view + agent triage across all your project repos
+status: active            # active | paused | shipped | archived
+visibility: public
+stack: [next, ts, react, kysely, neon, better-auth, tailwind, shadcn]
+links:
+  repo: ""
+  live: ""
+cover: ""
+public_highlights:
+  - "Read-only projection over canonical Markdown in each project repo"
+  - "Definition-of-Ready gate — every ticket grounded in ≥2 evidences"
+  - "Client-idea triage: agent analyzes an idea against live docs before it becomes a task"

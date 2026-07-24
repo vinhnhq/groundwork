@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+// Mock-auth gate: sign in through the UI before each test.
+test.beforeEach(async ({ page }) => {
+  await page.goto("/ops");
+  await expect(page).toHaveURL(/\/sign-in/);
+  await page.getByLabel("Password").fill("groundwork");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/ops$/);
+});
+
 test("ops overview lists projects, READY queue, and DRAFT list", async ({ page }) => {
   await page.goto("/ops");
 

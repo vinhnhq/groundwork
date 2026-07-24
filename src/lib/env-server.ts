@@ -7,6 +7,10 @@ import { z } from "zod";
  */
 const schema = z.object({
   PROJECT_ROOTS: z.string().optional(),
+  // Mock auth (replaced by better-auth later). Default demo password if unset.
+  ADMIN_PASSWORD: z.string().optional(),
+  // Triage agent (mock analyzer used when absent).
+  ANTHROPIC_API_KEY: z.string().optional(),
   DATABASE_URL: z.string().optional(),
   DATABASE_TEST_URL: z.string().optional(),
   BETTER_AUTH_SECRET: z.string().optional(),

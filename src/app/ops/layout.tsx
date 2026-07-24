@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { signOutAction } from "@/app/sign-in/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function OpsLayout({ children }: { children: React.ReactNode }) {
@@ -12,8 +13,16 @@ export default function OpsLayout({ children }: { children: React.ReactNode }) {
           <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
             ops
           </span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
+            <form action={signOutAction}>
+              <button
+                type="submit"
+                className="rounded-md border border-neutral-200 px-2.5 py-1.5 text-xs text-neutral-600 hover:bg-neutral-100 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-900"
+              >
+                Sign out
+              </button>
+            </form>
           </div>
         </div>
       </header>

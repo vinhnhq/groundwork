@@ -22,7 +22,15 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
         <Link href="/ops" className="text-sm text-neutral-500 hover:underline">
           ← all projects
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{view.name}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">{view.name}</h1>
+          <Link
+            href={`/ops/${project}/triage`}
+            className="inline-flex items-center rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+          >
+            Triage an idea →
+          </Link>
+        </div>
       </div>
 
       <section>

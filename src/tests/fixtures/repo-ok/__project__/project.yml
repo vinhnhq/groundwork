@@ -1,0 +1,9 @@
+slug: sample
+name: Sample Project
+tagline: A fixture project
+status: active
+visibility: public
+stack: [next, ts]
+public_highlights:
+  - alpha
+  - beta

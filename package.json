@@ -42,6 +42,7 @@
     "ts-pattern": "^5.9.0",
     "type-fest": "^5.8.0",
     "ws": "^8.21.1",
+    "yaml": "^2.9.0",
     "zod": "^4"
   },
   "devDependencies": {

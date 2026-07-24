@@ -55,3 +55,31 @@ export async function loadProject(
   const tasks = md ? parseBacklog(md, slug) : [];
   return { slug, name: project.meta.name, root: project.root, docs, tasks };
 }
+
+export type PortfolioProject = {
+  slug: string;
+  name: string;
+  tagline: string;
+  stack: string[];
+  highlights: string[];
+};
+
+/** Public projection — only public projects, only curated fields. */
+export async function loadPortfolio(
+  source: ContentSource = getContentSource(),
+): Promise<PortfolioProject[]> {
+  const entries = await source.listProjects();
+  return entries.flatMap((e) =>
+    e.status === "ok" && e.meta.visibility === "public"
+      ? [
+          {
+            slug: e.meta.slug,
+            name: e.meta.name,
+            tagline: e.meta.tagline,
+            stack: e.meta.stack,
+            highlights: e.meta.public_highlights,
+          },
+        ]
+      : [],
+  );
+}

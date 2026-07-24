@@ -10,48 +10,32 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 
 ## v1 — Foundation (rungs 1–4)
 
-### F0 · Repo scaffold  → **[P]**
-- · **F0.1** `create-next-app` (Next 16, TS, App Router, `src/`, Turbopack, Biome) + pin the tech-standards §0 stack (Kysely `^0.28`, better-auth `^1.5`, Zod v4, purify-ts/type-fest/es-toolkit/ts-pattern, Vitest+Playwright, shadcn radix-maia). Wire `package.json` scripts (dev/build/lint/format/migrate/seed/test*). `next.config.ts` (`reactCompiler`, `serverExternalPackages:["ws"]`, CSP static header). `.gitignore`, `.env.example`.
-  - **Touches:** repo root, `package.json`, `next.config.ts`, `biome.json`, `src/app/` shell. **Must NOT:** `__project__/**` docs.
-  - **Oracle:** `bun run dev` boots; `bun run lint` + `tsc --noEmit` green; `bun run build` succeeds.
-  - **Evidence:** tech-standards §0 (stack table) · §6 (Kysely pin/driver) · architecture §11 (layout).
-  - **Escalate if:** create-next-app defaults conflict with the pinned versions, or shadcn radix-maia init needs a preset decision beyond `bbVJxYW`.
+> **Status 2026-07-25:** F0–F4 + F6 SHIPPED (autonomous build, gated per rung — see done.md).
+> **F5 (auth) is the intended stop point — blocked on a Neon `DATABASE_URL` + `BETTER_AUTH_SECRET`
+> (owner-provided).** The ops console runs read-only against local repos today.
+>
+> Dogfood finding: pointed at its own root, Groundwork parses its 9 tasks but flags most as DRAFT
+> "missing intent" — because these tasks carry intent in the title, not an explicit `**Intent:**`
+> field. The DoR gate policing its own backlog, working as designed. Follow-up: add explicit
+> `**Intent:**` lines to future tasks (or relax the parser to treat the title as intent — a real
+> product decision for v3's triage draft-ticket format).
 
-### F1 · Core lib seam  → **[P]**
-- · **F1.1** Lift the `src/lib/` core modules from tech-standards §4: `context.ts` (ALS + React.cache + `readContext` + `withTransaction`), `db.ts`/`db-pool.ts`/`db-types.ts`/`db-url.ts`, `clock.ts`, `env-server.ts`/`env-client.ts`, `exhaustive.ts`, `repository.ts`+`in-memory-repository.ts`, `pipe.ts`, `result.ts`, `utils.ts`, `now.ts`. Unit tests for the pure ones.
-  - **Touches:** `src/lib/*.ts`, `src/tests/**`. **Must NOT:** any route/page.
-  - **Oracle:** unit tests pass for `result`/`pipe`/`in-memory-repository`/`context` (the 5 context cases); `tsc` green.
-  - **Evidence:** tech-standards §4 (module list) · §5 (context rules, ADR-0012).
-  - **Escalate if:** ALS-doesn't-propagate probe behaves differently on this Next 16 patch.
+- [x] **F0.1** Scaffold Next 16 + pinned stack + toolchain. *(2026-07-24)*
+- [x] **F1.1** Core lib seam — result/pipe/clock/repository/context + tests. *(db.ts/db-pool.ts runtime singletons deferred to F5; 2026-07-24)*
+- [x] **F2.1** ContentSource: `project.yml` parser + filesystem adapter. *(2026-07-25)*
+- [x] **F2.2** Markdown → RSC renderer (react-markdown + mermaid + relative-image rewrite). *(shipped in F4; 2026-07-25)*
+- [x] **F3.1** Task model + DoR deriver + backlog parser. *(2026-07-25)*
+- [x] **F4.1** `/ops` overview — project list + READY queue + DRAFT list. *(2026-07-25)*
+- [x] **F4.2** Project detail + doc render pages + asset route. *(2026-07-25)*
+- [x] **F6.1** Dogfood (Groundwork ingests itself) + ADR-0001 + status. *(2026-07-25)*
 
-### F2 · Content source + frontmatter (rung 1–2)  → **[D]**
-- ✎ **F2.1** `project.yml` frontmatter schema (architecture §5) + `src/lib/content/` `ContentSource` iface with a **filesystem** adapter (reads sibling repos via `PROJECT_ROOTS`), `gray-matter` parse. Pure parser unit-tested.
-  - *DRAFT — needs:* the final frontmatter field list confirmed (Oracle: a fixture repo parses to the typed `Project`; Evidence: architecture §5 + §4-ContentSource). **→ promote to [D] once the schema is locked.**
-- ✎ **F2.2** Markdown → RSC renderer (`react-markdown` + remark/rehype, client-side mermaid). *DRAFT — Oracle/evidence TBD.*
-
-### F3 · Task model + DoR deriver (rung 3 core)  → **[D]**
-- · **F3.1** Parse `backlog.md` leaves → `Task[]` (architecture §6 shape) + a **pure `isReady(task): boolean`** deriver (intent+autonomy+touches+oracle+`evidence.length>=2`+escalateIf). Exhaustive unit tests incl. the DRAFT-missing-fields path.
-  - **Touches:** `src/lib/tasks/**`, `src/tests/**`. **Must NOT:** UI, DB.
-  - **Oracle:** unit tests: a fully-specced task → READY; each missing field → NOT ready + names the gap; ≥90% branch coverage on the deriver.
-  - **Evidence:** architecture §6 (Task+DoR model) · tech-standards §3 (tagged-union outcomes).
-  - **Escalate if:** the backlog Markdown shape is too irregular to parse deterministically → propose a stricter task-line grammar first.
-
-### F4 · Ops UI (rung 3 UI)  → **[P]**
-- · **F4.1** `/ops` home: project list (name/status/tagline/stack) + a cross-project **READY queue** + a separate DRAFT list naming missing DoR fields. Mobile-first, both themes, skeleton `loading.tsx`.
-  - **Oracle:** Playwright: with 2 fixture repos, the home lists both, the READY queue shows only ready tasks, an unconfigured repo shows "unconfigured" not a crash. Lighthouse A11y ≥95.
-  - **Evidence:** spec v1 stories 1+3 · tech-standards §13 (loading/UI).
-- · **F4.2** `/ops/[project]` doc pages (ADR/spec/retro rendered; relative images resolve).
-  - **Oracle:** Playwright: open an ADR, a mermaid block renders, a relative image displays.
-  - **Evidence:** spec v1 story 2.
-
-### F5 · Auth gate (rung 4)  → **[P]**
-- · **F5.1** better-auth (email+password, single admin) over Kysely/Neon; migration for the auth tables (integer `users.id` override per tech-standards §7); `src/proxy.ts` gates `/ops/**`; `/` public; the `NODE_ENV`-gated dev-session E2E seam.
+### F5 · Auth gate (rung 4)  → **[P]**  ⏸ blocked on owner-provided Neon creds
+- ⏸ **F5.1** better-auth (email+password, single admin) over Kysely/Neon; migration for the auth tables (integer `users.id` override per tech-standards §7); `src/proxy.ts` gates `/ops/**`; `/` public; the `NODE_ENV`-gated dev-session E2E seam. Also un-defers `db.ts`/`db-pool.ts`.
+  - **Intent:** gate the private ops console behind a session; keep `/` public.
+  - **Touches:** `src/lib/{db,db-pool,auth,auth-client}.ts`, `src/db/**`, `src/proxy.ts`, `src/app/sign-in/**`. **Must NOT:** the content/tasks read layer.
   - **Oracle:** integration test (session lookup) + Playwright: signed-out `/ops` → redirect to sign-in; signed-in → ops home.
   - **Evidence:** tech-standards §7 (better-auth schema + integer-id footgun) · spec v1 story 4.
   - **Escalate if:** `@better-auth/kysely-adapter` needs a Kysely version other than the pinned `^0.28`.
-
-### F6 · Dogfood + docs  → **[T]**
-- · **F6.1** Add Groundwork's own `project.yml`; confirm it appears in its own ops list. Write ADR-0001 (ContentSource: fs-first). Update architecture status; move done tasks to `done.md`.
 
 ---
 

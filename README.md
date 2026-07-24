@@ -14,4 +14,14 @@ Canonical project docs live in each project repo as Markdown; Groundwork is a **
 - What's next → [`__project__/tasks/backlog.md`](__project__/tasks/backlog.md)
 
 ## Status
-🚧 Kickoff — v1 Foundation not yet built. See the backlog.
+🟢 **v1 Foundation F0–F4 shipped** — a running read-only ops console (project list · cross-project
+READY queue · DRAFT list · doc render) over local repos via `PROJECT_ROOTS`. **F5 (auth) is blocked
+on an owner-provided Neon `DATABASE_URL` + `BETTER_AUTH_SECRET`.** See [backlog](__project__/tasks/backlog.md).
+
+## Run
+```bash
+bun install
+cp .env.example .env.local          # set PROJECT_ROOTS to your repo paths (comma-separated)
+PROJECT_ROOTS="/abs/path/to/repo-a,/abs/path/to/groundwork" bun run dev
+# open http://localhost:3000/ops
+```

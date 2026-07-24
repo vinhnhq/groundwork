@@ -29,7 +29,7 @@ export default async function DocPage({
 
   return (
     <article className="flex flex-col gap-4">
-      <Link href={`/ops/${project}`} className="text-sm text-neutral-500 hover:underline">
+      <Link href={`/ops/${project}`} className="text-sm text-muted-foreground hover:underline">
         ← {project}
       </Link>
       <Markdown content={content} slug={project} docDir={DOC_DIR[kind]} />

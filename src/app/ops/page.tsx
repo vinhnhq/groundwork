@@ -14,22 +14,17 @@ export default async function OpsHome() {
         <ul className="grid gap-3 sm:grid-cols-2">
           {projects.map((entry) =>
             entry.status === "ok" ? (
-              <li
-                key={entry.root}
-                className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
-              >
+              <li key={entry.root} className="rounded-lg border bg-card p-4">
                 <Link href={`/ops/${entry.meta.slug}`} className="hover:underline">
                   <h2 className="font-medium">{entry.meta.name}</h2>
                 </Link>
-                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                  {entry.meta.tagline}
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground ">{entry.meta.tagline}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   <StatusBadge status={entry.meta.status === "active" ? "in-progress" : "done"} />
                   {entry.meta.stack.slice(0, 5).map((s) => (
                     <span
                       key={s}
-                      className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                      className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground "
                     >
                       {s}
                     </span>
@@ -39,18 +34,16 @@ export default async function OpsHome() {
             ) : (
               <li
                 key={entry.root}
-                className="rounded-lg border border-dashed border-neutral-300 p-4 text-sm text-neutral-500 dark:border-neutral-700"
+                className="rounded-lg border border-dashed border-input p-4 text-sm text-muted-foreground "
               >
-                <span className="font-medium text-neutral-600 dark:text-neutral-400">
-                  unconfigured
-                </span>{" "}
-                — {entry.root}
+                <span className="font-medium text-muted-foreground ">unconfigured</span> —{" "}
+                {entry.root}
                 <div className="mt-1 text-xs">{entry.reason}</div>
               </li>
             ),
           )}
           {projects.length === 0 && (
-            <li className="text-sm text-neutral-500">
+            <li className="text-sm text-muted-foreground">
               No project roots configured. Set <code>PROJECT_ROOTS</code> in <code>.env.local</code>
               .
             </li>
@@ -60,22 +53,22 @@ export default async function OpsHome() {
 
       <section data-testid="ready-queue">
         <h2 className="mb-1 text-xl font-semibold tracking-tight">Ready to build</h2>
-        <p className="mb-4 text-sm text-neutral-500">
+        <p className="mb-4 text-sm text-muted-foreground">
           Tasks passing the Definition of Ready across every project.
         </p>
         {ready.length === 0 ? (
-          <p className="text-sm text-neutral-500">Nothing ready.</p>
+          <p className="text-sm text-muted-foreground">Nothing ready.</p>
         ) : (
-          <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+          <ul className="divide-y divide-border rounded-lg border border-border ">
             {ready.map((t) => (
               <li key={`${t.project}/${t.id}`} className="flex items-center gap-3 p-3">
                 <Link
                   href={`/ops/${t.project}`}
-                  className="text-xs text-neutral-500 hover:underline"
+                  className="text-xs text-muted-foreground hover:underline"
                 >
                   {t.project}
                 </Link>
-                <span className="font-mono text-xs text-neutral-400">{t.id}</span>
+                <span className="font-mono text-xs text-muted-foreground">{t.id}</span>
                 <span className="flex-1 text-sm">{t.title}</span>
                 <TierBadge tier={t.autonomy} />
               </li>
@@ -86,17 +79,17 @@ export default async function OpsHome() {
 
       <section data-testid="draft-list">
         <h2 className="mb-1 text-xl font-semibold tracking-tight">Draft — not ready</h2>
-        <p className="mb-4 text-sm text-neutral-500">
+        <p className="mb-4 text-sm text-muted-foreground">
           Missing DoR fields. Discuss and ground before building.
         </p>
         {draft.length === 0 ? (
-          <p className="text-sm text-neutral-500">No drafts.</p>
+          <p className="text-sm text-muted-foreground">No drafts.</p>
         ) : (
-          <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+          <ul className="divide-y divide-border rounded-lg border border-border ">
             {draft.map(({ task, missing }) => (
               <li key={`${task.project}/${task.id}`} className="flex items-center gap-3 p-3">
-                <span className="text-xs text-neutral-500">{task.project}</span>
-                <span className="font-mono text-xs text-neutral-400">{task.id}</span>
+                <span className="text-xs text-muted-foreground">{task.project}</span>
+                <span className="font-mono text-xs text-muted-foreground">{task.id}</span>
                 <span className="flex-1 text-sm">{task.title}</span>
                 <span className="text-xs text-amber-700 dark:text-amber-400">
                   missing: {missing.join(", ")}

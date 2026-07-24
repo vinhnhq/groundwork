@@ -17,7 +17,7 @@ export function SignInForm({ from }: { from: string }) {
           type="password"
           autoComplete="current-password"
           required
-          className="h-11 rounded-md border border-neutral-300 px-3 dark:border-neutral-700 dark:bg-neutral-900"
+          className="h-11 rounded-md border border-input px-3 "
         />
       </label>
       {state.error && (
@@ -29,7 +29,7 @@ export function SignInForm({ from }: { from: string }) {
         type="submit"
         disabled={pending}
         aria-busy={pending}
-        className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-neutral-900 text-sm font-medium text-white disabled:opacity-60 dark:bg-white dark:text-neutral-900"
+        className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground disabled:opacity-60 "
       >
         {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
         <span>Sign in</span>

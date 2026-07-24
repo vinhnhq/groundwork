@@ -27,8 +27,7 @@ function toTask(project: string, d: DraftTicket): Task {
   return { ...d, project, status: "todo" };
 }
 
-const inputCls =
-  "w-full rounded-md border border-neutral-300 bg-transparent px-2.5 py-1.5 text-sm dark:border-neutral-700";
+const inputCls = "w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-sm ";
 
 export function TriageWorkbench({ project }: { project: string }) {
   const [text, setText] = useState("");
@@ -81,7 +80,7 @@ export function TriageWorkbench({ project }: { project: string }) {
             onClick={analyze}
             disabled={pending || !text.trim()}
             aria-busy={pending}
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-neutral-900 px-4 text-sm font-medium text-white disabled:opacity-60 dark:bg-white dark:text-neutral-900"
+            className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60 "
           >
             {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
             Analyze against docs
@@ -90,7 +89,7 @@ export function TriageWorkbench({ project }: { project: string }) {
       </div>
 
       {result && draft && (
-        <div className="flex flex-col gap-5 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+        <div className="flex flex-col gap-5 rounded-lg border bg-card p-4">
           <div className="flex flex-col gap-2">
             <span
               className={`inline-flex w-fit items-center rounded-md px-2 py-0.5 text-xs font-medium ${KIND_STYLE[result.kind]}`}
@@ -99,14 +98,14 @@ export function TriageWorkbench({ project }: { project: string }) {
             </span>
             <p className="text-sm">{result.message}</p>
             {result.citations.length > 0 && (
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-muted-foreground">
                 Grounded in: {result.citations.map((c) => c.label).join(" · ")}
               </p>
             )}
           </div>
 
           <div className="grid gap-3">
-            <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Title
               <input
                 className={inputCls}
@@ -114,7 +113,7 @@ export function TriageWorkbench({ project }: { project: string }) {
                 onChange={(e) => set("title", e.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Autonomy
               <select
                 className={inputCls}
@@ -129,7 +128,7 @@ export function TriageWorkbench({ project }: { project: string }) {
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Intent
               <input
                 className={inputCls}
@@ -137,7 +136,7 @@ export function TriageWorkbench({ project }: { project: string }) {
                 onChange={(e) => set("intent", e.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Touches (comma-separated)
               <input
                 className={inputCls}
@@ -145,7 +144,7 @@ export function TriageWorkbench({ project }: { project: string }) {
                 onChange={(e) => set("touches", parseCsv(e.target.value))}
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Must NOT (comma-separated)
               <input
                 className={inputCls}
@@ -153,7 +152,7 @@ export function TriageWorkbench({ project }: { project: string }) {
                 onChange={(e) => set("mustNot", parseCsv(e.target.value))}
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Oracle (how "done" is verified)
               <input
                 className={inputCls}
@@ -161,7 +160,7 @@ export function TriageWorkbench({ project }: { project: string }) {
                 onChange={(e) => set("oracle", e.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Evidence (comma-separated, ≥2)
               <input
                 className={inputCls}
@@ -174,7 +173,7 @@ export function TriageWorkbench({ project }: { project: string }) {
                 }
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs text-neutral-500">
+            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
               Escalate if
               <input
                 className={inputCls}
@@ -205,7 +204,7 @@ export function TriageWorkbench({ project }: { project: string }) {
             <button
               type="button"
               onClick={dismiss}
-              className="inline-flex h-9 items-center rounded-md border border-neutral-300 px-3 text-sm dark:border-neutral-700"
+              className="inline-flex h-9 items-center rounded-md border border-input px-3 text-sm "
             >
               Dismiss
             </button>

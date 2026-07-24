@@ -26,11 +26,7 @@ export function Mermaid({ chart }: { chart: string }) {
   }, [chart, rawId]);
 
   if (failed) {
-    return (
-      <pre className="overflow-x-auto rounded-md bg-neutral-100 p-3 text-xs dark:bg-neutral-900">
-        {chart}
-      </pre>
-    );
+    return <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs ">{chart}</pre>;
   }
   return <div ref={ref} data-testid="mermaid" className="my-4 overflow-x-auto" />;
 }

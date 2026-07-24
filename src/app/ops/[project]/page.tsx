@@ -19,14 +19,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <Link href="/ops" className="text-sm text-neutral-500 hover:underline">
+        <Link href="/ops" className="text-sm text-muted-foreground hover:underline">
           ← all projects
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">{view.name}</h1>
           <Link
             href={`/ops/${project}/triage`}
-            className="inline-flex items-center rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
+            className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 "
           >
             Triage an idea →
           </Link>
@@ -41,7 +41,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
             if (docs.length === 0) return null;
             return (
               <div key={kind}>
-                <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-neutral-500">
+                <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {KIND_LABEL[kind]}
                 </h3>
                 <ul className="flex flex-col">
@@ -64,12 +64,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Tasks</h2>
-        <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+        <ul className="divide-y divide-border rounded-lg border border-border ">
           {view.tasks.map((t) => {
             const r = readiness(t);
             return (
               <li key={t.id} className="flex flex-wrap items-center gap-2 p-3">
-                <span className="font-mono text-xs text-neutral-400">{t.id}</span>
+                <span className="font-mono text-xs text-muted-foreground">{t.id}</span>
                 <span className="flex-1 text-sm">{t.title}</span>
                 <StatusBadge status={t.status} />
                 <TierBadge tier={t.autonomy} />
@@ -85,7 +85,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
             );
           })}
           {view.tasks.length === 0 && (
-            <li className="p-3 text-sm text-neutral-500">No parseable tasks in backlog.md.</li>
+            <li className="p-3 text-sm text-muted-foreground">No parseable tasks in backlog.md.</li>
           )}
         </ul>
       </section>

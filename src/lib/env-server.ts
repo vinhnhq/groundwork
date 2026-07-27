@@ -13,6 +13,14 @@ const schema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   // Remote MCP door (G4). Absent outside production ⇒ the dev token applies.
   MCP_TOKEN: z.string().optional(),
+  // Content source (S3): "github" switches off the filesystem adapter. Without
+  // GITHUB_TOKEN the GitHub path runs on the mock client.
+  CONTENT_SOURCE: z.enum(["filesystem", "github"]).optional(),
+  GITHUB_REPOS: z.string().optional(),
+  GITHUB_TOKEN: z.string().optional(),
+  GITHUB_WEBHOOK_SECRET: z.string().optional(),
+  // Write-back transport (S1/S2/S4): memory | filesystem | git-branch | github-pr.
+  WRITE_BACK: z.string().optional(),
   DATABASE_URL: z.string().optional(),
   DATABASE_TEST_URL: z.string().optional(),
   BETTER_AUTH_SECRET: z.string().optional(),

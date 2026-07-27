@@ -43,6 +43,12 @@ test("the PM gets the board and grounding, but not the agent or integrations", a
   // Hiding the link is not the control — the route itself must refuse.
   await page.goto("/ops/sample/triage");
   await expect(page).toHaveURL(/\/ops\?denied=agent.run/);
+
+  // And the bounce is explained, not silent — otherwise it reads as a bug.
+  const notice = page.getByTestId("denied-notice");
+  await expect(notice).toBeVisible();
+  await expect(notice).toContainText("PM");
+  await expect(notice).toContainText("triage agent");
 });
 
 test("QA can move a task but cannot reach integrations", async ({ page }) => {
@@ -64,4 +70,30 @@ test("a client can read but not write", async ({ page }) => {
   // No write affordances at all for a read-only role.
   await expect(page.getByTestId("open-capture")).toHaveCount(0);
   await expect(page.getByTestId("status-control-S1.1")).toHaveCount(0);
+  await expect(page.getByTestId("grounding")).toHaveCount(0);
+});
+
+/**
+ * Hiding the Copy-context button is courtesy; the route is the control. A
+ * route-by-route walk as each role found the client could still fetch this.
+ */
+test("a client cannot fetch the grounding digest by URL", async ({ page }) => {
+  await signInAs(page, "client");
+
+  // Without maxRedirects the proxy's redirect is followed and you read /ops's
+  // 200 instead of the refusal.
+  const direct = await page.request.get("/ops/sample/context.md", { maxRedirects: 0 });
+  expect([302, 303, 307, 308, 403]).toContain(direct.status());
+
+  // Whatever the mechanism, the digest must not come back.
+  const followed = await page.request.get("/ops/sample/context.md");
+  expect(await followed.text()).not.toContain("project brain");
+});
+
+test("roles that may ground can still fetch it", async ({ page }) => {
+  await signInAs(page, "qa");
+
+  const res = await page.request.get("/ops/sample/context.md");
+  expect(res.status()).toBe(200);
+  expect(await res.text()).toContain("project brain");
 });

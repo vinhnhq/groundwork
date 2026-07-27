@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { StatusBadge, TierBadge } from "@/components/badges";
+import { DorGaps, StatusBadge, TierBadge } from "@/components/badges";
 import { CopyContext } from "@/components/copy-context";
+import { ProposedChanges } from "@/components/proposed-changes";
 import { TaskCapture } from "@/components/task-capture";
 import { TaskStatusControl } from "@/components/task-status-control";
 import { getSession } from "@/lib/auth";
 import { can } from "@/lib/auth/roles";
 import type { DocKind } from "@/lib/content";
+import { recordedWrites } from "@/lib/content/writers";
 import { loadProjectBrain } from "@/lib/ops/brain";
 import { loadProject } from "@/lib/ops/load";
 import { getWriter } from "@/lib/ops/write";
@@ -145,9 +147,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
                     (r.ready ? (
                       <span className="text-xs text-emerald-700 dark:text-emerald-400">ready</span>
                     ) : (
-                      <span className="text-xs text-amber-700 dark:text-amber-400">
-                        draft: {r.missing.join(", ")}
-                      </span>
+                      <DorGaps missing={r.missing} />
                     ))}
                 </div>
                 {mayWrite && (
@@ -161,6 +161,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
           )}
         </ul>
       </section>
+
+      {mayWrite && <ProposedChanges writes={recordedWrites().filter((w) => w.slug === project)} />}
     </div>
   );
 }

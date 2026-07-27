@@ -1,3 +1,5 @@
+import { getSession } from "@/lib/auth";
+import { can } from "@/lib/auth/roles";
 import { loadProjectBrain } from "@/lib/ops/brain";
 
 /**
@@ -17,6 +19,17 @@ export async function GET(
   { params }: { params: Promise<{ project: string }> },
 ): Promise<Response> {
   const { project } = await params;
+
+  // The proxy gates this path too; repeated here because a route handler is a
+  // callable endpoint and must not assume the caller came through the proxy.
+  const session = await getSession();
+  if (!session || !can(session.user.role, "grounding.read")) {
+    return new Response("Not available to your role.\n", {
+      status: 403,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
+
   const brain = await loadProjectBrain(project);
 
   if (!brain) {

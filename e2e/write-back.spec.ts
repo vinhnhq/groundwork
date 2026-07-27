@@ -41,6 +41,34 @@ test("submitting a task reports it as proposed, not saved", async ({ page }) => 
   await expect(outcome).toContainText(/mocked/i);
 });
 
+/**
+ * Without this the dry run is unfalsifiable: a message flashes and a reload
+ * leaves no trace, which looks identical to a write that silently did nothing.
+ */
+test("a proposed change survives a reload, with the file it would have written", async ({
+  page,
+}) => {
+  await page.getByTestId("open-capture").click();
+  await page.getByLabel("Task ID").fill("Z3.1");
+  await page.getByLabel("Title").fill("Should still be here after reload");
+  await page.getByTestId("submit-capture").click();
+  await expect(page.getByTestId("write-outcome")).toBeVisible();
+
+  await page.reload();
+
+  const proposed = page.getByTestId("proposed-changes");
+  await expect(proposed).toBeVisible();
+  await expect(proposed).toContainText(/nothing was written to the repo/i);
+
+  // The log is process-scoped, so sibling tests add entries too — scope to ours.
+  const entry = proposed.locator("li").filter({ hasText: "add Z3.1" });
+  await expect(entry).toHaveCount(1);
+
+  // The evidence: the actual resulting file, containing the new task.
+  await entry.getByText(/Resulting backlog\.md/).click();
+  await expect(entry.locator("pre")).toContainText("Z3.1");
+});
+
 test("a duplicate id is refused with a readable reason", async ({ page }) => {
   await page.getByTestId("open-capture").click();
   await page.getByLabel("Task ID").fill("S1.1");

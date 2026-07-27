@@ -1,14 +1,26 @@
 import Link from "next/link";
-import { StatusBadge, TierBadge } from "@/components/badges";
+import { DorGaps, StatusBadge, TierBadge } from "@/components/badges";
+import { DeniedNotice } from "@/components/denied-notice";
+import { getSession } from "@/lib/auth";
 import { loadOverview } from "@/lib/ops/load";
 
 export const dynamic = "force-dynamic";
 
-export default async function OpsHome() {
-  const { projects, ready, draft } = await loadOverview();
+export default async function OpsHome({
+  searchParams,
+}: {
+  searchParams: Promise<{ denied?: string }>;
+}) {
+  const [{ projects, ready, draft }, { denied }, session] = await Promise.all([
+    loadOverview(),
+    searchParams,
+    getSession(),
+  ]);
 
   return (
     <div className="flex flex-col gap-10">
+      {session && <DeniedNotice denied={denied} role={session.user.role} />}
+
       <section>
         <h1 className="mb-4 text-xl font-semibold tracking-tight">Projects</h1>
         <ul className="grid gap-3 sm:grid-cols-2">
@@ -91,9 +103,7 @@ export default async function OpsHome() {
                 <span className="text-xs text-muted-foreground">{task.project}</span>
                 <span className="font-mono text-xs text-muted-foreground">{task.id}</span>
                 <span className="flex-1 text-sm">{task.title}</span>
-                <span className="text-xs text-amber-700 dark:text-amber-400">
-                  missing: {missing.join(", ")}
-                </span>
+                <DorGaps missing={missing} />
               </li>
             ))}
           </ul>

@@ -11,8 +11,8 @@ export default async function Home() {
       <header className="flex flex-col gap-4">
         <h1 className="text-3xl font-semibold tracking-tight">Groundwork</h1>
         <p className="max-w-xl text-muted-foreground ">
-          Turns client ideas into ready-to-build tickets, grounded in your real docs — one view
-          across every project.
+          Keeps a whole team's AI agents grounded in the same docs, and lets the people who don't
+          use git keep the backlog in sync. Your project Markdown stays the single source of truth.
         </p>
         <Link
           href="/ops"

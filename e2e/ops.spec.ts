@@ -21,7 +21,11 @@ test("ops overview lists projects, READY queue, and DRAFT list", async ({ page }
   // draft task listed with its missing DoR fields
   const draft = page.getByTestId("draft-list");
   await expect(draft.getByText("S1.2")).toBeVisible();
-  await expect(draft.getByText(/missing:/)).toBeVisible();
+  // S1.2 lacks four DoR fields, so it shows the compact count rather than the
+  // full list — the detail stays in the tooltip.
+  const gaps = draft.getByText(/DoR fields missing/);
+  await expect(gaps).toBeVisible();
+  await expect(gaps).toHaveAttribute("title", /oracle/);
 });
 
 test("open a project and render an ADR with a resolved image", async ({ page }) => {

@@ -8,7 +8,7 @@ import type { BacklogWriter, WriteMode } from "@/lib/content/write";
 import { createFilesystemWriter } from "@/lib/content/writers/filesystem";
 import { createGitWriter, type GitResult } from "@/lib/content/writers/git";
 import { createGitHubPrWriter } from "@/lib/content/writers/github-pr";
-import { createMemoryWriter } from "@/lib/content/writers/memory";
+import { createMemoryWriter, type RecordedWrite } from "@/lib/content/writers/memory";
 
 export { createFilesystemWriter } from "@/lib/content/writers/filesystem";
 export { createGitWriter } from "@/lib/content/writers/git";
@@ -26,6 +26,26 @@ async function execGit(args: string[], cwd: string): Promise<GitResult> {
     const e = error as { code?: number; stdout?: string; stderr?: string };
     return { code: e.code ?? 1, stdout: e.stdout ?? "", stderr: e.stderr ?? String(error) };
   }
+}
+
+/**
+ * One memory writer for the process, not one per call.
+ *
+ * The dry run's whole value is being able to inspect what *would* have been
+ * written; a fresh recorder per request throws that away the instant it is
+ * created. Process-scoped, so it resets on restart and on a dev-server reload —
+ * fine for a dry run, and the UI says as much.
+ */
+let sharedMemoryWriter: ReturnType<typeof createMemoryWriter> | undefined;
+
+function memoryWriter() {
+  if (!sharedMemoryWriter) sharedMemoryWriter = createMemoryWriter();
+  return sharedMemoryWriter;
+}
+
+/** Everything the dry run has recorded this process, newest first. */
+export function recordedWrites(): RecordedWrite[] {
+  return [...(sharedMemoryWriter?.writes ?? [])].reverse();
 }
 
 export const WRITE_MODES = ["memory", "filesystem", "git-branch", "github-pr"] as const;
@@ -61,7 +81,7 @@ export function createWriter(mode: WriteMode, githubToken?: string): BacklogWrit
       return createGitHubPrWriter(client, systemClock);
     }
     default:
-      return createMemoryWriter();
+      return memoryWriter();
   }
 }
 

@@ -22,6 +22,13 @@ const ROUTE_CAPABILITY: { prefix: string; capability: Capability }[] = [
 /** `/ops/<project>/triage` — agent surfaces are engineer-only. */
 const TRIAGE = /^\/ops\/[^/]+\/triage/;
 
+/**
+ * `/ops/<project>/context.md` — the digest export. Hiding the Copy-context
+ * button from a client is courtesy; this is the control. Found by walking every
+ * route as every role: the client could fetch the digest by URL.
+ */
+const CONTEXT_EXPORT = /^\/ops\/[^/]+\/context\.md$/;
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const payload = await verifyToken(
@@ -44,7 +51,11 @@ export async function proxy(req: NextRequest) {
 
   const required =
     ROUTE_CAPABILITY.find((r) => pathname.startsWith(r.prefix))?.capability ??
-    (TRIAGE.test(pathname) ? ("agent.run" as const) : undefined);
+    (TRIAGE.test(pathname)
+      ? ("agent.run" as const)
+      : CONTEXT_EXPORT.test(pathname)
+        ? ("grounding.read" as const)
+        : undefined);
 
   if (required && !can(payload.role, required)) {
     const url = req.nextUrl.clone();

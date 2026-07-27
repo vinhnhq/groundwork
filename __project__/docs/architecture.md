@@ -26,6 +26,18 @@ lib first, Cloud tier later). AI cost = BYOK / local Claude subscription (no per
 ritual (`.claude/skills/ship-review`), session-log hook, and CI (`.github/workflows/ci.yml`) are
 materialized. Groundwork's deliberate divergences (biome, wrapper-shadcn) are noted in that file.
 
+**v2 + v3 shipped (2026-07-28, same day as the pivot).** Grounding: `renderBrain` (ADR-0004) served
+through three byte-identical doors — clipboard, `context.md`, and MCP over stdio (ADR-0006) or HTTP.
+Sync: a `BacklogWriter` seam (ADR-0002) with memory / filesystem / git-branch / GitHub-PR
+transports, a GitHub-backed `ContentSource`, and the task-capture + status-flip UI. Auth gained
+HMAC-signed sessions and a role matrix (engineer · PM · QA · client) enforced in the proxy, the
+server actions and the UI.
+
+**What is still mocked** — deliberately, pending credentials: the GitHub client (no token), the
+write-back transport (defaults to a dry run), the triage analyzer (no `ANTHROPIC_API_KEY`), and the
+auth store (in-memory; **the better-auth/Kysely adapter over Neon is not implemented**). `/ops/integrations`
+is the live inventory of which seam is real and what activates it.
+
 ---
 
 ## Name & positioning

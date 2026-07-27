@@ -1,6 +1,6 @@
 # ADR-0004 — The grounding digest: what `renderBrain` includes, and its size budget
 
-Status: Accepted (2026-07-28)
+Status: Accepted (2026-07-28) · Amended (2026-07-28, see *Amendment* below)
 
 ## Context
 
@@ -73,13 +73,58 @@ digest from a squeezed one.
   judgement about what is current and what is noise — which is why the include/exclude list above
   is a decision worth recording rather than an implementation detail.
 
+## Amendment (2026-07-28) — what a real repo taught us
+
+Pointing this at `infinite-oneness` (30 ADRs, 22 specs, two years of history) broke four of the
+assumptions above. All four were the same mistake: **treating the author's own house style as
+malformed input.**
+
+1. **Status is rarely a bare line.** That repo writes `- **Status:** Accepted`, sometimes
+   `- **Status:** ✅ **Accepted** · shipped v4.6`. The original matcher required `Status:` at
+   column zero and so found **zero decisions in twenty-nine ADRs** — a digest confidently telling
+   every agent that the project had settled nothing. Markdown decoration around a field label is
+   the common case, not an edge case, so the matcher now tolerates list markers and emphasis.
+   The consequence below — "an ADR without a `Status:` line is invisible" — stands, but the bar
+   for *having* one is now realistic.
+
+2. **`Superseded by:` is now honoured.** An ADR can be `Accepted` and also retired by a later one.
+   Reading the field costs nothing and directly serves the include/exclude rule already stated
+   above: a non-current decision misleads worse than an absent one.
+
+3. **Constraints needed a cap, not just a budget.** Twenty-two historical specs yielded **81**
+   out-of-scope bullets — mostly limits from versions shipped long ago. That is not grounding, it
+   is a wall of history. Constraints are now capped at 5 per spec and 15 overall, preferring the
+   newest specs (they sort by filename, `v1-…` before `v6-…`). Anything dropped is reported in
+   `omitted[]`, so a squeezed digest still admits what it left out.
+
+4. **Trim before deleting.** The original pressure order dropped *all* constraints before
+   shortening *any* decision statement, and on the real repo that is exactly what happened: 27
+   verbose decisions, zero constraints. A clamped statement still states its decision; a dropped
+   constraint says nothing at all. The order is now: ready tasks → trim decision statements →
+   constraints. **Decisions themselves are still never dropped.**
+
+Two extraction rules came out of the same pass:
+
+- **ADR header blocks are not prose.** For the quarter of ADRs with no `## Decision` heading, the
+  fallback was quoting `Status: … Date: … Deciders: …` as the decision. A paragraph that is mostly
+  `Field: value` lines is now skipped.
+- **Decision tables are read as tables.** Many ADRs record decisions as `| Question | Decision |`.
+  Collapsed naively that is a row of pipes and dashes; the columns are now read and emitted as
+  `Question → Decision` pairs, capped at six rows with a `(+N more)` note.
+
+The generalisable lesson: this digest reads *other people's* Markdown, and any rule that assumes
+one canonical formatting will silently produce a confident, empty digest. Silence is the dangerous
+failure here — nobody inspects a digest that looks fine.
+
 ## Consequences
 
-- The digest is only as good as the docs' discipline: an ADR without a `## Decision` section
-  falls back to its first paragraph, and an ADR without a `Status:` line is invisible to the
-  digest. That pressure toward well-formed ADRs is intended.
-- `Accepted` is matched at the start of the `Status:` line, so `Status: Accepted (2026-07-28)`
-  works. A project using different status vocabulary would need this extended.
+- The digest is only as good as the docs' discipline: an ADR with no `Status:` field in any
+  recognised shape is invisible to the digest. That pressure toward well-formed ADRs is intended.
+- `Accepted` is matched tolerantly (bullet, bold, trailing decoration), but the *vocabulary* is
+  still fixed. A project using different status words would need this extended.
+- The constraint caps are heuristics keyed on filename ordering. A project that does not version
+  its spec filenames gets an arbitrary 15 of them; that is a worse outcome than for one that does,
+  and would be the thing to revisit first.
 - Constraints are read from **specs only** today. Non-goals living in `architecture.md` are not
   picked up, because that file is not part of the `DocKind` set. If that proves limiting, widen
   the doc set rather than special-casing the filename.

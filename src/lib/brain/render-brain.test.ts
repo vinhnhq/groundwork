@@ -148,6 +148,211 @@ describe("renderBrain", () => {
     expect(brain.omitted.join(" ")).toMatch(/decision/i);
   });
 
+  /**
+   * Found by pointing this at a real repo: 29 ADRs, zero decisions, because
+   * they write `- **Status:** Accepted` rather than a bare line.
+   */
+  it("reads Status in the shapes real ADRs actually use", () => {
+    const shapes: [string, string][] = [
+      ["bare", "Status: Accepted"],
+      ["bold list item", "- **Status:** Accepted"],
+      ["bold value", "- **Status:** **Accepted**"],
+      ["decorated", "- **Status:** ✅ **Accepted** · shipped v4.6 (2026-06-11)"],
+      ["parenthesised", "**Status:** Accepted _(v5d CS.1)_"],
+      ["no bullet", "**Status:** Accepted (2026-06-05)"],
+    ];
+
+    for (const [label, statusLine] of shapes) {
+      const brain = renderBrain(
+        input({
+          docs: [
+            {
+              kind: "adr",
+              id: "x",
+              title: "ADR-X",
+              body: `# ADR-X\n\n${statusLine}\n\n## Decision\n\nDo the thing.\n`,
+            },
+          ],
+        }),
+      );
+      expect(
+        brain.decisions.map((d) => d.id),
+        `status shape: ${label}`,
+      ).toEqual(["x"]);
+    }
+  });
+
+  it("still refuses statuses that are not Accepted", () => {
+    for (const statusLine of [
+      "- **Status:** Superseded",
+      "- **Status:** Proposed",
+      "- **Status:** Rejected",
+      "> `Status:` line is the per-decision truth, not a status itself",
+    ]) {
+      const brain = renderBrain(
+        input({
+          docs: [
+            {
+              kind: "adr",
+              id: "x",
+              title: "ADR-X",
+              body: `# ADR-X\n\n${statusLine}\n\n## Decision\n\nNo.\n`,
+            },
+          ],
+        }),
+      );
+      expect(brain.decisions, `should not lock: ${statusLine}`).toEqual([]);
+    }
+  });
+
+  /**
+   * A quarter of the ADRs in a real repo have no `## Decision` heading; the
+   * first fallback quoted their header block as the decision.
+   */
+  it("falls back to real prose, not the ADR header block", () => {
+    const brain = renderBrain(
+      input({
+        docs: [
+          {
+            kind: "adr",
+            id: "x",
+            title: "ADR-X",
+            body: [
+              "# ADR-X — Database layer",
+              "",
+              "- **Status:** Accepted",
+              "- **Date:** 2026-05-13",
+              "- **Deciders:** Vinh",
+              "- **Supersedes:** none",
+              "",
+              "Use Kysely over Neon's serverless driver, with migrations checked into the repo.",
+              "",
+              "## Context",
+              "",
+              "Background nobody needs.",
+            ].join("\n"),
+          },
+        ],
+      }),
+    );
+
+    expect(brain.decisions[0].statement).toContain("Kysely over Neon");
+    expect(brain.decisions[0].statement).not.toContain("Deciders");
+    expect(brain.decisions[0].statement).not.toContain("2026-05-13");
+  });
+
+  /** Decision tables are common; collapsed naively they are a wall of pipes. */
+  it("reads a decision recorded as a Question/Decision table", () => {
+    const brain = renderBrain(
+      input({
+        docs: [
+          {
+            kind: "adr",
+            id: "x",
+            title: "ADR-X",
+            body: [
+              "# ADR-X",
+              "",
+              "Status: Accepted",
+              "",
+              "## Decision",
+              "",
+              "| # | Question | Decision |",
+              "| --- | --- | --- |",
+              "| 1 | Query builder | Kysely, not an ORM |",
+              "| 2 | Driver | Neon serverless over `pg` |",
+            ].join("\n"),
+          },
+        ],
+      }),
+    );
+
+    const statement = brain.decisions[0].statement;
+    expect(statement).toContain("Query builder → Kysely, not an ORM");
+    expect(statement).toContain("Driver → Neon serverless");
+    // None of the table scaffolding survives.
+    expect(statement).not.toContain("|");
+    expect(statement).not.toContain("---");
+  });
+
+  it("notes when a long decision table is truncated", () => {
+    const rows = Array.from({ length: 10 }, (_, i) => `| ${i} | Q${i} | D${i} |`);
+    const brain = renderBrain(
+      input({
+        docs: [
+          {
+            kind: "adr",
+            id: "x",
+            title: "ADR-X",
+            body: [
+              "# ADR-X",
+              "",
+              "Status: Accepted",
+              "",
+              "## Decision",
+              "",
+              "| # | Question | Decision |",
+              "| --- | --- | --- |",
+              ...rows,
+            ].join("\n"),
+          },
+        ],
+      }),
+    );
+
+    expect(brain.decisions[0].statement).toMatch(/\+4 more/);
+  });
+
+  it("drops an Accepted ADR that names a superseding decision", () => {
+    const body = (supersededBy: string) =>
+      `# ADR-X\n\n- **Status:** Accepted\n- **Superseded by:** ${supersededBy}\n\n## Decision\n\nOld ruling.\n`;
+
+    const live = renderBrain(
+      input({ docs: [{ kind: "adr", id: "x", title: "ADR-X", body: body("none") }] }),
+    );
+    expect(live.decisions).toHaveLength(1);
+
+    const retired = renderBrain(
+      input({
+        docs: [{ kind: "adr", id: "x", title: "ADR-X", body: body("[ADR-0031](0031-x.md)") }],
+      }),
+    );
+    expect(retired.decisions).toEqual([]);
+  });
+
+  /**
+   * A mature project has twenty-odd specs; every out-of-scope line from all of
+   * them is a wall of history, not grounding.
+   */
+  it("caps constraints per spec and overall, preferring the newest specs", () => {
+    const specDoc = (id: string, count: number): BrainDoc => ({
+      kind: "spec",
+      id,
+      title: `spec ${id}`,
+      body: [
+        `# ${id}`,
+        "",
+        "## Out of scope",
+        "",
+        ...Array.from({ length: count }, (_, i) => `- ${id} limit ${i}`),
+      ].join("\n"),
+    });
+
+    const brain = renderBrain(
+      input({ docs: Array.from({ length: 10 }, (_, i) => specDoc(`v${i}`, 10)) }),
+    );
+
+    expect(brain.constraints.length).toBeLessThanOrEqual(15);
+    // No single spec dominates…
+    const perSpec = new Map<string, number>();
+    for (const c of brain.constraints) perSpec.set(c.source, (perSpec.get(c.source) ?? 0) + 1);
+    expect(Math.max(...perSpec.values())).toBeLessThanOrEqual(5);
+    // …and the newest spec survives while the oldest does not.
+    expect(brain.constraints.some((c) => c.source === "spec v9")).toBe(true);
+    expect(brain.constraints.some((c) => c.source === "spec v0")).toBe(false);
+    expect(brain.omitted.join(" ")).toMatch(/older constraint/);
+  });
+
   it("is deterministic — same input, same digest", () => {
     expect(renderBrain(input()).text).toEqual(renderBrain(input()).text);
   });

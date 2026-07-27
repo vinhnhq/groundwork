@@ -4,6 +4,8 @@ import { StatusBadge, TierBadge } from "@/components/badges";
 import { CopyContext } from "@/components/copy-context";
 import { TaskCapture } from "@/components/task-capture";
 import { TaskStatusControl } from "@/components/task-status-control";
+import { getSession } from "@/lib/auth";
+import { can } from "@/lib/auth/roles";
 import type { DocKind } from "@/lib/content";
 import { loadProjectBrain } from "@/lib/ops/brain";
 import { loadProject } from "@/lib/ops/load";
@@ -16,11 +18,22 @@ const KIND_LABEL: Record<DocKind, string> = { adr: "ADRs", spec: "Specs", retro:
 
 export default async function ProjectPage({ params }: { params: Promise<{ project: string }> }) {
   const { project } = await params;
-  const [view, brain] = await Promise.all([loadProject(project), loadProjectBrain(project)]);
+  const [view, brain, session] = await Promise.all([
+    loadProject(project),
+    loadProjectBrain(project),
+    getSession(),
+  ]);
   if (!view) notFound();
 
   const kinds: DocKind[] = ["adr", "spec", "retro"];
   const writer = getWriter();
+
+  // Affordances follow capability (R1). Hiding them is courtesy, not security —
+  // the proxy gates the routes and the actions re-check before writing.
+  const role = session?.user.role ?? "client";
+  const mayWrite = can(role, "tasks.write");
+  const mayGround = can(role, "grounding.read");
+  const mayAgent = can(role, "agent.run");
 
   return (
     <div className="flex flex-col gap-8">
@@ -30,16 +43,18 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">{view.name}</h1>
-          <Link
-            href={`/ops/${project}/triage`}
-            className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 "
-          >
-            Triage an idea →
-          </Link>
+          {mayAgent && (
+            <Link
+              href={`/ops/${project}/triage`}
+              className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 "
+            >
+              Triage an idea →
+            </Link>
+          )}
         </div>
       </div>
 
-      {brain && (
+      {brain && mayGround && (
         <section data-testid="grounding" className="rounded-lg border border-border p-4">
           <div className="mb-1 flex flex-wrap items-baseline gap-2">
             <h2 className="text-lg font-semibold">Grounding</h2>
@@ -106,13 +121,15 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg font-semibold">Tasks</h2>
-          <span className="text-xs text-muted-foreground">
-            Write-back: <span className="font-medium">{writer.mode}</span>
-            {writer.mocked && " (mocked)"} — {writer.describe}
-          </span>
+          {mayWrite && (
+            <span className="text-xs text-muted-foreground">
+              Write-back: <span className="font-medium">{writer.mode}</span>
+              {writer.mocked && " (mocked)"} — {writer.describe}
+            </span>
+          )}
         </div>
 
-        <TaskCapture project={project} />
+        {mayWrite && <TaskCapture project={project} />}
 
         <ul className="divide-y divide-border rounded-lg border border-border ">
           {view.tasks.map((t) => {
@@ -133,7 +150,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
                       </span>
                     ))}
                 </div>
-                <TaskStatusControl project={project} taskId={t.id} status={t.status} />
+                {mayWrite && (
+                  <TaskStatusControl project={project} taskId={t.id} status={t.status} />
+                )}
               </li>
             );
           })}

@@ -23,7 +23,12 @@
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "overrides": [
     {
-      "includes": ["src/lib/**", "!src/lib/context.ts", "!src/lib/auth-mock.ts", "!src/lib/now.ts"],
+      "includes": [
+        "src/lib/**",
+        "!src/lib/context.ts",
+        "!src/lib/auth/index.ts",
+        "!src/lib/now.ts"
+      ],
       "linter": {
         "rules": {
           "style": {

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { signInAs } from "./helpers";
 
 // Matches playwright.config.ts. `next start` is production, where the
 // dev-token fallback is refused outright — so this exercises the real path.
@@ -33,10 +34,7 @@ test("tools/call over HTTP returns the same digest as the paste door", async ({ 
   // The paste door lives under /ops, which is cookie-gated — so this half needs
   // a session, unlike the token-gated MCP door above. Two different gates, one
   // digest behind them.
-  await page.goto("/ops");
-  await page.getByLabel("Password").fill("groundwork");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/ops$/);
+  await signInAs(page);
 
   const exported = await (await page.request.get("/ops/sample/context.md")).text();
 

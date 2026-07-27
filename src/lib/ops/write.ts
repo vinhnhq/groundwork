@@ -1,5 +1,4 @@
 import "server-only";
-import { getContentSource } from "@/lib/content";
 import type { BacklogWriter, WriteMode } from "@/lib/content/write";
 import { createWriter, isWriterMocked, parseWriteMode } from "@/lib/content/writers";
 import { serverEnv } from "@/lib/env-server";

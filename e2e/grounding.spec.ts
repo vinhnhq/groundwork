@@ -1,11 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { signInAs } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/ops");
-  await expect(page).toHaveURL(/\/sign-in/);
-  await page.getByLabel("Password").fill("groundwork");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/ops$/);
+  await signInAs(page);
 });
 
 test("Copy context and context.md serve the identical digest", async ({ page, context }) => {

@@ -1,10 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { signInAs } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/ops");
-  await page.getByLabel("Password").fill("groundwork");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/ops$/);
+  await signInAs(page);
 });
 
 test("triage: analyze an idea, ground it to READY, accept → backlog block", async ({ page }) => {

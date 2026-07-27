@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getSession } from "@/lib/auth-mock";
+import { getSession } from "@/lib/auth";
+import { can } from "@/lib/auth/roles";
 import { getContentSource } from "@/lib/content";
 import type { WriteOutcome } from "@/lib/content/write";
 import { getWriter } from "@/lib/ops/write";
@@ -20,15 +21,27 @@ export type ActionResult =
   | { ok: true; outcome: WriteOutcome; mocked: boolean }
   | { ok: false; error: string };
 
-async function actor(): Promise<string> {
+/**
+ * A server action is a callable endpoint, not a page: it must not assume the
+ * caller arrived through UI that hid the button. So every write re-checks the
+ * capability the proxy checked for navigation (R1).
+ */
+async function authorizeWrite(): Promise<{ actor: string } | { error: string }> {
   const session = await getSession();
-  return session?.user.name ?? "unknown";
+  if (!session) return { error: "Your session has expired — sign in again." };
+  if (!can(session.user.role, "tasks.write")) {
+    return { error: `The ${session.user.role} role cannot change tasks.` };
+  }
+  return { actor: session.user.email };
 }
 
 export async function captureTask(project: string, task: Task): Promise<ActionResult> {
+  const auth = await authorizeWrite();
+  if ("error" in auth) return { ok: false, error: auth.error };
+
   const { writer, mocked } = getWriter();
   const result = await appendTaskToProject(
-    { source: getContentSource(), writer, actor: await actor() },
+    { source: getContentSource(), writer, actor: auth.actor },
     project,
     task,
   );
@@ -44,9 +57,12 @@ export async function changeTaskStatus(
   taskId: string,
   status: TaskStatus,
 ): Promise<ActionResult> {
+  const auth = await authorizeWrite();
+  if ("error" in auth) return { ok: false, error: auth.error };
+
   const { writer, mocked } = getWriter();
   const result = await setProjectTaskStatus(
-    { source: getContentSource(), writer, actor: await actor() },
+    { source: getContentSource(), writer, actor: auth.actor },
     project,
     taskId,
     status,

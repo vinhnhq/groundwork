@@ -1,6 +1,6 @@
 import type { ContentSource } from "@/lib/content/source";
 import type { BacklogWriter, WriteError, WriteOutcome } from "@/lib/content/write";
-import { err, isErr, type Result } from "@/lib/result";
+import { err, isErr, ok, type Result } from "@/lib/result";
 import { appendTask, setTaskStatus } from "@/lib/tasks/serialize";
 import type { Task, TaskStatus } from "@/lib/tasks/types";
 
@@ -32,7 +32,7 @@ async function resolve(
     });
   }
 
-  return { _tag: "ok", value: { root: project.root, backlog } };
+  return ok({ root: project.root, backlog });
 }
 
 /** Capture a new task at the end of the project's backlog. */

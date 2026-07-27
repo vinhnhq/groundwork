@@ -18,10 +18,12 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --project unit",
     "test:e2e": "playwright test",
-    "summary": "bun run .claude/scripts/work-summary.ts"
+    "summary": "bun run .claude/scripts/work-summary.ts",
+    "mcp": "bun run src/mcp/server.ts"
   },
   "dependencies": {
     "@better-auth/kysely-adapter": "^1.6.25",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@neondatabase/serverless": "^1.1.0",
     "better-auth": "^1.5",
     "class-variance-authority": "^0.7.1",

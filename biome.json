@@ -20,5 +20,29 @@
   },
   "javascript": { "formatter": { "quoteStyle": "double" } },
   "css": { "parser": { "cssModules": true }, "formatter": { "enabled": true } },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } }
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "overrides": [
+    {
+      "includes": ["src/lib/**", "!src/lib/context.ts", "!src/lib/auth-mock.ts", "!src/lib/now.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "react": "src/lib is the pure core (dev-workflow rule 1) — keep React in components/hooks.",
+                  "react-dom": "src/lib is the pure core — no DOM.",
+                  "next": "src/lib is the pure core — no Next.",
+                  "next/headers": "Request context belongs in the ADR-0012 seam (excluded edge files), not the pure core.",
+                  "next/server": "src/lib is the pure core — no Next server APIs.",
+                  "next/navigation": "src/lib is the pure core — no Next navigation."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

@@ -1,21 +1,63 @@
-import type { DirEntry, GitHubReadClient, Repo } from "@/lib/content/github/client";
+import type { DirEntry, GitHubClient, PullRequest, Repo } from "@/lib/content/github/client";
 import { repoLabel } from "@/lib/content/github/client";
+
+export type MockGitHub = GitHubClient & {
+  /** Branches the mock was asked to create, in order. */
+  branches: { repo: string; branch: string; fromSha: string }[];
+  /** PRs the mock was asked to open, in order. */
+  pullRequests: (PullRequest & { repo: string; head: string; title: string; body: string })[];
+};
 
 /**
  * An in-memory stand-in for the GitHub API, keyed `owner/name:path`.
  *
- * Exists so the GitHub-backed source can be exercised — in tests and in the
- * running app — without a token. It is deliberately the same shape as the REST
- * client, so swapping in the real one changes a factory call and nothing else.
+ * Exists so the GitHub-backed source and PR write-back can be exercised — in
+ * tests and in the running app — without a token. Deliberately the same shape
+ * as the REST client, so swapping in the real one changes a factory call and
+ * nothing else. Writes mutate the in-memory file map, so a read after a write
+ * sees the change exactly as it would against GitHub.
  */
-export function createMockGitHubClient(files: Record<string, string>): GitHubReadClient {
+export function createMockGitHubClient(seed: Record<string, string>): MockGitHub {
+  const files = { ...seed };
   const key = (repo: Repo, path: string) => `${repoLabel(repo)}:${path}`;
+  const branches: MockGitHub["branches"] = [];
+  const pullRequests: MockGitHub["pullRequests"] = [];
 
   return {
     kind: "mock",
+    branches,
+    pullRequests,
 
     async getFile(repo, path) {
       return files[key(repo, path)] ?? null;
+    },
+
+    async headSha(repo) {
+      return `mocksha-${repoLabel(repo).replace("/", "-")}`;
+    },
+
+    async createBranch(repo, branch, fromSha) {
+      branches.push({ repo: repoLabel(repo), branch, fromSha });
+      return true;
+    },
+
+    async putFile(repo, _branch, path, content) {
+      files[key(repo, path)] = content;
+      return true;
+    },
+
+    async openPullRequest(repo, head, title, body) {
+      const number = pullRequests.length + 1;
+      const pr = {
+        number,
+        url: `https://github.com/${repoLabel(repo)}/pull/${number}`,
+        repo: repoLabel(repo),
+        head,
+        title,
+        body,
+      };
+      pullRequests.push(pr);
+      return { url: pr.url, number: pr.number };
     },
 
     async listDir(repo, path) {

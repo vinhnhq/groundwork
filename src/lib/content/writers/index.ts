@@ -2,13 +2,17 @@ import { execFile } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import { systemClock } from "@/lib/clock";
+import { createMockGitHubClient, DEMO_GITHUB_FILES } from "@/lib/content/github/mock-client";
+import { createRestGitHubClient } from "@/lib/content/github/rest-client";
 import type { BacklogWriter, WriteMode } from "@/lib/content/write";
 import { createFilesystemWriter } from "@/lib/content/writers/filesystem";
 import { createGitWriter, type GitResult } from "@/lib/content/writers/git";
+import { createGitHubPrWriter } from "@/lib/content/writers/github-pr";
 import { createMemoryWriter } from "@/lib/content/writers/memory";
 
 export { createFilesystemWriter } from "@/lib/content/writers/filesystem";
 export { createGitWriter } from "@/lib/content/writers/git";
+export { createGitHubPrWriter } from "@/lib/content/writers/github-pr";
 export { createMemoryWriter } from "@/lib/content/writers/memory";
 
 const run = promisify(execFile);
@@ -39,18 +43,31 @@ export function parseWriteMode(value: string | undefined): WriteMode {
  * deliberate act of configuration, not what happens when a variable is unset
  * (ADR-0002).
  *
- * `github-pr` is resolved by the caller that has a GitHub client (S4); asking
- * for it here without one falls back to the dry run rather than pretending.
+ * With no `GITHUB_TOKEN`, `github-pr` runs against the mock client: it opens a
+ * fake PR and returns a fake link. That keeps the flow explorable end to end,
+ * and /ops/integrations labels it as mock so the fake link is never mistaken
+ * for a real one.
  */
-export function createWriter(mode: WriteMode, githubWriter?: BacklogWriter): BacklogWriter {
+export function createWriter(mode: WriteMode, githubToken?: string): BacklogWriter {
   switch (mode) {
     case "filesystem":
       return createFilesystemWriter();
     case "git-branch":
       return createGitWriter({ run: execGit, writeText: writeFile, clock: systemClock });
-    case "github-pr":
-      return githubWriter ?? createMemoryWriter();
+    case "github-pr": {
+      const client = githubToken?.trim()
+        ? createRestGitHubClient(githubToken)
+        : createMockGitHubClient(DEMO_GITHUB_FILES);
+      return createGitHubPrWriter(client, systemClock);
+    }
     default:
       return createMemoryWriter();
   }
+}
+
+/** Is the configured transport actually backed by a real service? */
+export function isWriterMocked(mode: WriteMode, githubToken?: string): boolean {
+  if (mode === "memory") return true;
+  if (mode === "github-pr") return !githubToken?.trim();
+  return false;
 }

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge, TierBadge } from "@/components/badges";
+import { CopyContext } from "@/components/copy-context";
 import type { DocKind } from "@/lib/content";
+import { loadProjectBrain } from "@/lib/ops/brain";
 import { loadProject } from "@/lib/ops/load";
 import { readiness } from "@/lib/tasks/dor";
 
@@ -11,7 +13,7 @@ const KIND_LABEL: Record<DocKind, string> = { adr: "ADRs", spec: "Specs", retro:
 
 export default async function ProjectPage({ params }: { params: Promise<{ project: string }> }) {
   const { project } = await params;
-  const view = await loadProject(project);
+  const [view, brain] = await Promise.all([loadProject(project), loadProjectBrain(project)]);
   if (!view) notFound();
 
   const kinds: DocKind[] = ["adr", "spec", "retro"];
@@ -32,6 +34,41 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
           </Link>
         </div>
       </div>
+
+      {brain && (
+        <section data-testid="grounding" className="rounded-lg border border-border p-4">
+          <div className="mb-1 flex flex-wrap items-baseline gap-2">
+            <h2 className="text-lg font-semibold">Grounding</h2>
+            <span className="text-xs text-muted-foreground">
+              {brain.decisions.length} locked decision(s) · {brain.constraints.length} constraint(s)
+              · {brain.ready.length} ready task(s)
+            </span>
+          </div>
+          <p className="mb-3 text-sm text-muted-foreground">
+            One distilled digest of this project's current truth. Paste it into any agent — GPT or
+            Claude — so it reasons from the same decisions you did.
+          </p>
+
+          <CopyContext text={brain.text} exportHref={`/ops/${project}/context.md`} />
+
+          {brain.omitted.length > 0 && (
+            <ul className="mt-3 flex flex-col gap-0.5 text-xs text-amber-700 dark:text-amber-400">
+              {brain.omitted.map((note) => (
+                <li key={note}>⚠ {note}</li>
+              ))}
+            </ul>
+          )}
+
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-muted-foreground hover:underline">
+              Preview the digest
+            </summary>
+            <pre className="mt-2 max-h-96 overflow-auto rounded-md bg-muted/40 p-3 text-xs whitespace-pre-wrap">
+              {brain.text}
+            </pre>
+          </details>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Docs</h2>

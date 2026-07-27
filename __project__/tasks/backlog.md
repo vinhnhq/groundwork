@@ -49,25 +49,30 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 
 ### G · Grounding (headline — cheapest high-value, no new infra)
 
-- · **G1** `renderBrain(project) → digest` — pure digest (current state + locked decisions + open constraints + READY tasks) that any agent consumes.  → **[P]**
+- [x] **G1** `renderBrain(project) → digest` — pure digest (current state + locked decisions + open constraints + READY tasks) that any agent consumes.  → **[P]**
   - **Intent:** one distilled, size-bounded current-truth digest per project so mixed-agent teammates stop drifting from locked decisions.
   - **Touches:** `src/lib/brain/{render-brain,types}.ts` + `__tests__`. **Must NOT:** the ContentSource write layer, any route/UI.
   - **Oracle:** unit test — from fixture docs (project.yml + ADRs with `Status:` + backlog), the digest includes the locked decisions + open constraints + the READY list, excludes done/draft noise, and stays within the size budget.
   - **Evidence:** spec v2 §3 US-1/US-2 + §6 ADR-0004 · infinite-oneness v6 `renderBrain` Project-Brain precedent · existing `parseBacklog`/`readiness` in `src/lib/tasks`.
   - **Escalate if:** the digest can't stay in budget without dropping decisions → the selection/size policy is a product call (ADR-0004).
-- · **G2** Paste door — "Copy context" button + `context.md` export route.  → **[S]**
+- [x] **G2** Paste door — "Copy context" button + `context.md` export route.  → **[S]** *(2026-07-28)*
   - **Intent:** give non-Claude agents (PM's GPT) the digest with zero setup — copy + a `.md` export.
   - **Touches:** `src/components/copy-context.tsx`, `src/app/ops/[project]/context.md/route.ts`, wire into the project view. **Must NOT:** `renderBrain` internals (consume only), the write layer.
   - **Oracle:** E2E — Copy context puts the digest on the clipboard; `GET context.md` returns the same text (single source).
   - **Evidence:** spec v2 §3 US-2 · G1 output · existing `src/app/ops/[project]/page.tsx`.
   - **Escalate if:** clipboard API is blocked in a target browser → fall back to a select-all textarea.
-- · **G3** Local MCP server (stdio, read-only) — `list_projects` · `ready_tasks` · `get_project_context` · `get_doc`.  → **[P]**
+- [x] **G3** Local MCP server (stdio, read-only) — `list_projects` · `ready_tasks` · `get_project_context` · `get_doc`.  → **[P]** *(2026-07-28)*
   - **Intent:** let a local Claude Code session pull READY tasks + the Brain live, grounded without copy-paste.
   - **Touches:** `src/mcp/{server,tools}.ts` (reuse `lib/content`+`lib/tasks`+`lib/brain`), a `mcp` script. **Must NOT:** any mutation/write tool (read-only in v2), the auth layer.
   - **Oracle:** integration test — the four tools resolve; `ready_tasks` returns only DoR-passing tasks; no tool can write to a repo.
   - **Evidence:** spec v2 §3 US-1 + §6 ADR-0006 · architecture.md §10 · `@modelcontextprotocol/sdk`.
   - **Escalate if:** the MCP stdio server conflicts with Next bundling → ship it as a standalone bun entry, not under Next.
-- ✎ **G4** Remote MCP (HTTP + token) — the team's shared grounding endpoint. *(DRAFT — trails v4 auth; ground when F5 lands.)*
+- [x] **G4** Remote MCP (HTTP + token) — the team's shared grounding endpoint.  → **[P]** *(2026-07-28)*
+  - **Intent:** give teammates on other machines the same live grounding the engineer gets over stdio, without waiting for real auth.
+  - **Touches:** `src/mcp/{http,auth}.ts`, `src/app/api/mcp/route.ts`, `env-server` (`MCP_TOKEN`). **Must NOT:** the tool layer's read-only narrowing, the cookie session.
+  - **Oracle:** unit tests for the JSON-RPC dispatcher + token gate; E2E — unauthenticated POST is 401, a bearer token lists the four tools, and `tools/call` returns byte-identical text to `context.md`.
+  - **Evidence:** spec v2 §4 (G4) · ADR-0006 (transport-agnostic tool layer) · `src/mcp/tools.ts` · G3's stdio server.
+  - **Escalate if:** a client needs SSE / session ids — v2 ships the non-streaming half of Streamable HTTP only.
 
 ### v3 · Sync — git-free write-back  *(DRAFT — ground each when the phase begins)*
 - ✎ **S1** `ContentSource` gains a write method (`appendTask`/`updateTaskStatus`); in-memory + fs impls.

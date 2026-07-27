@@ -22,6 +22,9 @@ export default defineConfig({
     env: {
       // NODE_ENV=test skips .env.local — forward secrets the server needs here.
       PROJECT_ROOTS: process.env.PROJECT_ROOTS ?? "",
+      // `next start` runs as production, where the dev-token fallback is
+      // deliberately refused (G4) — so the remote MCP door needs a real token.
+      MCP_TOKEN: "e2e-mcp-token",
     },
   },
 });

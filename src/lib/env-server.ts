@@ -11,6 +11,8 @@ const schema = z.object({
   ADMIN_PASSWORD: z.string().optional(),
   // Triage agent (mock analyzer used when absent).
   ANTHROPIC_API_KEY: z.string().optional(),
+  // Remote MCP door (G4). Absent outside production ⇒ the dev token applies.
+  MCP_TOKEN: z.string().optional(),
   DATABASE_URL: z.string().optional(),
   DATABASE_TEST_URL: z.string().optional(),
   BETTER_AUTH_SECRET: z.string().optional(),

@@ -2,9 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge, TierBadge } from "@/components/badges";
 import { CopyContext } from "@/components/copy-context";
+import { TaskCapture } from "@/components/task-capture";
+import { TaskStatusControl } from "@/components/task-status-control";
 import type { DocKind } from "@/lib/content";
 import { loadProjectBrain } from "@/lib/ops/brain";
 import { loadProject } from "@/lib/ops/load";
+import { getWriter } from "@/lib/ops/write";
 import { readiness } from "@/lib/tasks/dor";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +20,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
   if (!view) notFound();
 
   const kinds: DocKind[] = ["adr", "spec", "retro"];
+  const writer = getWriter();
 
   return (
     <div className="flex flex-col gap-8">
@@ -99,25 +103,37 @@ export default async function ProjectPage({ params }: { params: Promise<{ projec
         </div>
       </section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Tasks</h2>
+      <section className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold">Tasks</h2>
+          <span className="text-xs text-muted-foreground">
+            Write-back: <span className="font-medium">{writer.mode}</span>
+            {writer.mocked && " (mocked)"} — {writer.describe}
+          </span>
+        </div>
+
+        <TaskCapture project={project} />
+
         <ul className="divide-y divide-border rounded-lg border border-border ">
           {view.tasks.map((t) => {
             const r = readiness(t);
             return (
-              <li key={t.id} className="flex flex-wrap items-center gap-2 p-3">
-                <span className="font-mono text-xs text-muted-foreground">{t.id}</span>
-                <span className="flex-1 text-sm">{t.title}</span>
-                <StatusBadge status={t.status} />
-                <TierBadge tier={t.autonomy} />
-                {t.status !== "done" &&
-                  (r.ready ? (
-                    <span className="text-xs text-emerald-700 dark:text-emerald-400">ready</span>
-                  ) : (
-                    <span className="text-xs text-amber-700 dark:text-amber-400">
-                      draft: {r.missing.join(", ")}
-                    </span>
-                  ))}
+              <li key={t.id} className="flex flex-col gap-2 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-xs text-muted-foreground">{t.id}</span>
+                  <span className="flex-1 text-sm">{t.title}</span>
+                  <StatusBadge status={t.status} />
+                  <TierBadge tier={t.autonomy} />
+                  {t.status !== "done" &&
+                    (r.ready ? (
+                      <span className="text-xs text-emerald-700 dark:text-emerald-400">ready</span>
+                    ) : (
+                      <span className="text-xs text-amber-700 dark:text-amber-400">
+                        draft: {r.missing.join(", ")}
+                      </span>
+                    ))}
+                </div>
+                <TaskStatusControl project={project} taskId={t.id} status={t.status} />
               </li>
             );
           })}

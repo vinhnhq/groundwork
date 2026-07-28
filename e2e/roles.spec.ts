@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signInAs } from "./helpers";
+import { signInAs, visible } from "./helpers";
 
 test("an unsigned-in visitor is sent to sign-in", async ({ page }) => {
   await page.goto("/ops");
@@ -62,7 +62,7 @@ test("QA can move a task but cannot reach integrations", async ({ page }) => {
   await signInAs(page, "qa");
 
   await page.goto("/ops/sample/tasks");
-  await expect(page.getByTestId("status-control-S1.1")).toBeVisible();
+  await expect(visible(page, "status-control-S1.1")).toBeVisible();
 
   await page.goto("/ops/integrations");
   await expect(page).toHaveURL(/\/ops\?denied=integrations.view/);

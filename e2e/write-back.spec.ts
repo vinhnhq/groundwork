@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signInAs } from "./helpers";
+import { signInAs, visible } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await signInAs(page);
@@ -79,10 +79,12 @@ test("a duplicate id is refused with a readable reason", async ({ page }) => {
 });
 
 test("flipping a status routes through the same write path", async ({ page }) => {
-  const control = page.getByTestId("status-control-S1.1");
+  const control = visible(page, "status-control-S1.1");
   await expect(control).toBeVisible();
 
-  await control.getByRole("button", { name: "in-progress" }).click();
+  // One trigger, then the moves — not four buttons in the row.
+  await control.click();
+  await page.getByRole("menuitem", { name: "in-progress" }).click();
 
   const outcome = page.getByTestId("write-outcome").first();
   await expect(outcome).toContainText("Proposed");

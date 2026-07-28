@@ -66,7 +66,18 @@ export default async function ProjectGrounding({
       {brain.decisions.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold">Locked decisions</h2>
-          <div className="rounded-lg border">
+          {/* Phone: a two-column table of long prose is a column of single
+              words. Stack them instead. */}
+          <ul className="flex flex-col gap-2 md:hidden">
+            {brain.decisions.map((decision) => (
+              <li key={decision.id} className="rounded-lg border p-3">
+                <p className="text-sm font-medium">{decision.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{decision.statement}</p>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden rounded-lg border md:block">
             {/* Fixed layout so a long decision statement wraps instead of
                 running the column off the right edge. */}
             <Table className="table-fixed">
@@ -96,7 +107,21 @@ export default async function ProjectGrounding({
       {brain.constraints.length > 0 && (
         <section className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold">Open constraints</h2>
-          <div className="rounded-lg border">
+          <ul className="flex flex-col gap-2 md:hidden">
+            {brain.constraints.map((constraint) => (
+              <li
+                key={`${constraint.source}-${constraint.text}`}
+                className="flex flex-col gap-1.5 rounded-lg border p-3"
+              >
+                <span className="text-sm">{constraint.text}</span>
+                <Badge variant="outline" className="w-fit">
+                  {constraint.source}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden rounded-lg border md:block">
             <Table className="table-fixed">
               <TableHeader>
                 <TableRow>

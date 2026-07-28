@@ -3,7 +3,7 @@ import { signInAs } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await signInAs(page);
-  await page.goto("/ops/sample");
+  await page.goto("/ops/sample/tasks");
 });
 
 test("capture form shows the Definition of Ready filling in live", async ({ page }) => {

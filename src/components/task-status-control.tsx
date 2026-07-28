@@ -35,7 +35,10 @@ export function TaskStatusControl({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center gap-1" data-testid={`status-control-${taskId}`}>
+      <div
+        className="flex w-max flex-wrap items-center gap-1"
+        data-testid={`status-control-${taskId}`}
+      >
         {pending && <Loader2 className="size-3 animate-spin text-muted-foreground" />}
         {FLOW.map((option) => (
           <button

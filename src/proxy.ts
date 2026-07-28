@@ -27,7 +27,7 @@ const TRIAGE = /^\/ops\/[^/]+\/triage/;
  * button from a client is courtesy; this is the control. Found by walking every
  * route as every role: the client could fetch the digest by URL.
  */
-const CONTEXT_EXPORT = /^\/ops\/[^/]+\/context\.md$/;
+const CONTEXT_EXPORT = /^\/ops\/[^/]+\/(context\.md|grounding)$/;
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;

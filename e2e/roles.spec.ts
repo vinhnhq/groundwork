@@ -19,14 +19,18 @@ test("a forged session cookie is rejected and cleared", async ({ page, context }
   await expect(page).toHaveURL(/\/sign-in/);
 });
 
-test("the engineer sees the whole console", async ({ page }) => {
+test("the engineer sees every section", async ({ page }) => {
   await signInAs(page, "engineer");
 
   await expect(page.getByTestId("whoami")).toContainText("Engineer");
   await expect(page.getByRole("link", { name: "Integrations" })).toBeVisible();
 
   await page.goto("/ops/sample");
-  await expect(page.getByRole("link", { name: /Triage an idea/ })).toBeVisible();
+  for (const section of ["Docs", "Tasks", "Grounding", "Triage"]) {
+    await expect(page.getByRole("link", { name: section }).first()).toBeVisible();
+  }
+
+  await page.goto("/ops/sample/tasks");
   await expect(page.getByTestId("open-capture")).toBeVisible();
 });
 
@@ -37,10 +41,13 @@ test("the PM gets the board and grounding, but not the agent or integrations", a
   await expect(page.getByRole("link", { name: "Integrations" })).toHaveCount(0);
 
   await page.goto("/ops/sample");
-  await expect(page.getByTestId("open-capture")).toBeVisible();
-  await expect(page.getByTestId("grounding")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Grounding" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Triage" })).toHaveCount(0);
 
-  // Hiding the link is not the control — the route itself must refuse.
+  await page.goto("/ops/sample/tasks");
+  await expect(page.getByTestId("open-capture")).toBeVisible();
+
+  // Hiding the nav item is not the control — the route itself must refuse.
   await page.goto("/ops/sample/triage");
   await expect(page).toHaveURL(/\/ops\?denied=agent.run/);
 
@@ -54,7 +61,7 @@ test("the PM gets the board and grounding, but not the agent or integrations", a
 test("QA can move a task but cannot reach integrations", async ({ page }) => {
   await signInAs(page, "qa");
 
-  await page.goto("/ops/sample");
+  await page.goto("/ops/sample/tasks");
   await expect(page.getByTestId("status-control-S1.1")).toBeVisible();
 
   await page.goto("/ops/integrations");
@@ -67,10 +74,12 @@ test("a client can read but not write", async ({ page }) => {
   await page.goto("/ops/sample");
   await expect(page.getByRole("heading", { name: "Sample Project" })).toBeVisible();
 
-  // No write affordances at all for a read-only role.
+  // Grounding is not even a section for a read-only role.
+  await expect(page.getByRole("link", { name: "Grounding" })).toHaveCount(0);
+
+  await page.goto("/ops/sample/tasks");
   await expect(page.getByTestId("open-capture")).toHaveCount(0);
   await expect(page.getByTestId("status-control-S1.1")).toHaveCount(0);
-  await expect(page.getByTestId("grounding")).toHaveCount(0);
 });
 
 /**
@@ -88,6 +97,10 @@ test("a client cannot fetch the grounding digest by URL", async ({ page }) => {
   // Whatever the mechanism, the digest must not come back.
   const followed = await page.request.get("/ops/sample/context.md");
   expect(await followed.text()).not.toContain("project brain");
+
+  // Same for the Grounding page itself.
+  await page.goto("/ops/sample/grounding");
+  await expect(page).toHaveURL(/\/ops\?denied=grounding.read/);
 });
 
 test("roles that may ground can still fetch it", async ({ page }) => {

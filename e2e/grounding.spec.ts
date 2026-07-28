@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
 
 test("Copy context and context.md serve the identical digest", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("/ops/sample");
+  await page.goto("/ops/sample/grounding");
 
   const grounding = page.getByTestId("grounding");
   await expect(grounding).toBeVisible();

@@ -21,7 +21,7 @@ export default function IntegrationsPage() {
   const mocked = integrations.filter((i) => i.state === "mock").length;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
       <div>
         <Link href="/ops" className="text-sm text-muted-foreground hover:underline">
           ← ops

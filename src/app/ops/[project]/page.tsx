@@ -1,6 +1,7 @@
 import { Brain, FileText, ListTodo } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { OverviewCockpit } from "@/components/overview-cockpit";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/lib/auth";
@@ -92,6 +93,9 @@ export default async function ProjectOverview({
           </Link>
         ))}
       </div>
+
+      {/* The tiles above say how many; this says what to look at. */}
+      <OverviewCockpit slug={slug} tasks={view.tasks} docs={view.docs} />
 
       <Card>
         <CardHeader>

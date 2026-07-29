@@ -1,8 +1,20 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 import { acceptDraft, analyzeIdea } from "@/app/ops/[project]/triage/actions";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { readiness } from "@/lib/tasks/dor";
 import type { AutonomyTier, Task } from "@/lib/tasks/types";
 import type { DraftTicket, TriageKind, TriageResult } from "@/lib/triage/types";
@@ -16,6 +28,9 @@ const KIND_STYLE: Record<TriageKind, string> = {
 
 const TIERS: AutonomyTier[] = ["supervised", "plan-gated", "dark", "trivial"];
 
+/** Radix Select rejects `value=""`, so absence needs a sentinel. */
+const NO_TIER = "__none__";
+
 const csv = (arr: string[]) => arr.join(", ");
 const parseCsv = (s: string) =>
   s
@@ -26,8 +41,6 @@ const parseCsv = (s: string) =>
 function toTask(project: string, d: DraftTicket): Task {
   return { ...d, project, status: "todo" };
 }
-
-const inputCls = "w-full rounded-md border border-input bg-transparent px-2.5 py-1.5 text-sm ";
 
 export function TriageWorkbench({ project }: { project: string }) {
   const [text, setText] = useState("");
@@ -65,31 +78,50 @@ export function TriageWorkbench({ project }: { project: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <textarea
-          aria-label="Client idea"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={3}
-          placeholder="e.g. The client wants a monthly revenue export as a spreadsheet…"
-          className={inputCls}
-        />
-        <div>
-          <button
-            type="button"
-            onClick={analyze}
-            disabled={pending || !text.trim()}
-            aria-busy={pending}
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60 "
-          >
-            {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-            Analyze against docs
-          </button>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">The idea</CardTitle>
+          <CardDescription>
+            In the client's words. The agent checks it against this project's locked decisions and
+            open constraints before drafting anything.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <Field>
+            <FieldLabel htmlFor="triage-idea">Client idea</FieldLabel>
+            <Textarea
+              id="triage-idea"
+              aria-label="Client idea"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={4}
+              placeholder="e.g. The client wants a monthly revenue export as a spreadsheet…"
+            />
+            <FieldDescription>
+              Nothing is written to the backlog until you ground the draft and accept it.
+            </FieldDescription>
+          </Field>
+
+          <div>
+            <Button
+              type="button"
+              onClick={analyze}
+              disabled={pending || !text.trim()}
+              aria-busy={pending}
+            >
+              {pending ? (
+                <Loader2 className="animate-spin" aria-hidden />
+              ) : (
+                <Sparkles aria-hidden />
+              )}
+              Analyze against docs
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {result && draft && (
-        <div className="flex flex-col gap-5 rounded-lg border bg-card p-4">
+        <div className="flex flex-col gap-5 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
           <div className="flex flex-col gap-2">
             <span
               className={`inline-flex w-fit items-center rounded-md px-2 py-0.5 text-xs font-medium ${KIND_STYLE[result.kind]}`}
@@ -105,65 +137,75 @@ export function TriageWorkbench({ project }: { project: string }) {
           </div>
 
           <div className="grid gap-3">
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              Title
-              <input
-                className={inputCls}
+            <Field>
+              <FieldLabel htmlFor="draft-title">Title</FieldLabel>
+              <Input
+                id="draft-title"
                 value={draft.title}
                 onChange={(e) => set("title", e.target.value)}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              Autonomy
-              <select
-                className={inputCls}
-                value={draft.autonomy ?? ""}
-                onChange={(e) => set("autonomy", (e.target.value || undefined) as AutonomyTier)}
+            </Field>
+            <Field>
+              <FieldLabel>Autonomy</FieldLabel>
+              <Select
+                value={draft.autonomy ?? NO_TIER}
+                onValueChange={(v) =>
+                  set("autonomy", v === NO_TIER ? undefined : (v as AutonomyTier))
+                }
               >
-                <option value="">— none —</option>
-                {TIERS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              Intent
-              <input
-                className={inputCls}
+                <SelectTrigger aria-label="Autonomy">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {/* Radix forbids an empty-string item value, so "no tier"
+                      carries a sentinel that maps back to `undefined`. */}
+                  <SelectItem value={NO_TIER}>— none —</SelectItem>
+                  {TIERS.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="draft-intent">Intent</FieldLabel>
+              <Input
+                id="draft-intent"
                 value={draft.intent ?? ""}
                 onChange={(e) => set("intent", e.target.value)}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              Touches (comma-separated)
-              <input
-                className={inputCls}
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="draft-touches">Touches (comma-separated)</FieldLabel>
+              <Input
+                id="draft-touches"
                 value={csv(draft.touches)}
                 onChange={(e) => set("touches", parseCsv(e.target.value))}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              Must NOT (comma-separated)
-              <input
-                className={inputCls}
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="draft-must-not">Must NOT (comma-separated)</FieldLabel>
+              <Input
+                id="draft-must-not"
                 value={csv(draft.mustNot)}
                 onChange={(e) => set("mustNot", parseCsv(e.target.value))}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              Oracle (how "done" is verified)
-              <input
-                className={inputCls}
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="draft-oracle">
+                Oracle (how &quot;done&quot; is verified)
+              </FieldLabel>
+              <Input
+                id="draft-oracle"
                 value={draft.oracle ?? ""}
                 onChange={(e) => set("oracle", e.target.value)}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              Evidence (comma-separated, ≥2)
-              <input
-                className={inputCls}
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="draft-evidence">Evidence (comma-separated, ≥2)</FieldLabel>
+              <Input
+                id="draft-evidence"
                 value={csv(draft.evidence.map((ev) => ev.ref))}
                 onChange={(e) =>
                   set(
@@ -172,15 +214,15 @@ export function TriageWorkbench({ project }: { project: string }) {
                   )
                 }
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              Escalate if
-              <input
-                className={inputCls}
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="draft-escalate-if">Escalate if</FieldLabel>
+              <Input
+                id="draft-escalate-if"
                 value={draft.escalateIf ?? ""}
                 onChange={(e) => set("escalateIf", e.target.value)}
               />
-            </label>
+            </Field>
           </div>
 
           <div className="flex flex-wrap items-center gap-3" data-testid="dor-status">
@@ -193,21 +235,12 @@ export function TriageWorkbench({ project }: { project: string }) {
                 missing: {dor?.missing.join(", ")}
               </span>
             )}
-            <button
-              type="button"
-              onClick={accept}
-              disabled={!dor?.ready || pending}
-              className="inline-flex h-9 items-center rounded-md bg-emerald-600 px-3 text-sm font-medium text-white disabled:opacity-50"
-            >
+            <Button type="button" size="sm" onClick={accept} disabled={!dor?.ready || pending}>
               Accept → backlog
-            </button>
-            <button
-              type="button"
-              onClick={dismiss}
-              className="inline-flex h-9 items-center rounded-md border border-input px-3 text-sm "
-            >
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={dismiss}>
               Dismiss
-            </button>
+            </Button>
           </div>
         </div>
       )}

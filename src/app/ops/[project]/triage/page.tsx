@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCapability } from "@/app/ops/guard";
 import { TriageWorkbench } from "@/components/triage-workbench";
@@ -18,10 +17,10 @@ export default async function TriagePage({ params }: { params: Promise<{ project
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Link href={`/ops/${project}`} className="text-sm text-muted-foreground hover:underline">
-          ← {p.meta.name}
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Triage an idea</h1>
+        {/* No back link: the sidebar already says which project you are in and
+            the header carries the breadcrumb, so this was a third copy of the
+            same fact costing a row of vertical space above the fold. */}
+        <h1 className="text-2xl font-semibold tracking-tight">Triage an idea</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Paste a client idea. The agent checks it against this project's docs, then drafts a
           Definition-of-Ready ticket — you ground it and dispose.

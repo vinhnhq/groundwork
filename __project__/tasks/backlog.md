@@ -174,6 +174,116 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Evidence:** ADR-0001 amendment (GitHub adapter in scope) · `src/lib/content/index.ts` `resolveSourceKind()` · `/ops/integrations` names both variables.
   - **Escalate if:** a fine-grained token cannot be scoped to contents-read on those repos alone — the write-back path would then need a separate, narrower token.
 
+### W · Workspace UX — lift the infinite-oneness surfaces  *(2026-07-29)*
+
+> The ops surfaces were built shape-first and read as a wireframe next to the `infinite-oneness`
+> workspace they were meant to mirror. This is the pass that closes the gap. The primitives are
+> already byte-identical (ADR-0009); what is missing is the *composition* — item rows, tabs, a
+> real form layout, a tree — plus motion, which the standards mandated (`tech-standards §13`) and
+> nothing ever installed.
+>
+> Order matters: **W1 unblocks every other ticket** (they all compose its primitives), and **W2
+> changes the content layer**, so it lands before the surfaces that read from it.
+
+- · **W1** Port the missing radix-maia primitives + install `motion`.  → **[T]**
+  - **Intent:** every ticket below composes `Item`/`Tabs`/`Field`/`Textarea`/`Empty`, and Groundwork
+    has none of them — without this each surface would hand-roll its own row and input, which is
+    exactly the divergence ADR-0009 exists to stop.
+  - **Touches:** `src/components/ui/{item,tabs,textarea,field,label,empty,collapsible}.tsx`,
+    `package.json`. **Must NOT:** edit any existing `ui/*` file — wrapper-over-pristine (CLAUDE.md).
+  - **Oracle:** `bun run typecheck` + `bun run lint` clean with each new file imported by at least
+    one surface; the files are byte-identical to `infinite-oneness/src/components/ui/<same>.tsx`.
+  - **Evidence:** ADR-0009 (primitives already identical; composition is the gap) ·
+    `infinite-oneness/src/components/ui/item.tsx` · `tech-standards.md §13` mandates `motion`.
+  - **Escalate if:** a ported primitive needs a dependency Groundwork does not carry — then it is a
+    stack decision, not a port.
+
+- · **W2** Docs as a real folder tree over the whole `__project__/`.  → **[P]**
+  - **Intent:** the source only scans three fixed paths (`docs/decisions/*`, `specs/*`,
+    `docs/retro.md`), so `architecture.md` and `tech-standards.md` — the two files CLAUDE.md calls
+    the *authoritative sources* — are **not ingested at all**. The console cannot show the docs it
+    tells agents to read. A tree that mirrors the repo fixes the omission and the navigation in one
+    change.
+  - **Touches:** `src/lib/content/{types,filesystem-source,github-source}.ts`,
+    `src/app/ops/[project]/docs/**`, `src/app/ops/[project]/[kind]/[id]/**`, `src/mcp/tools.ts`.
+    **Must NOT:** break the existing `adr`/`spec`/`retro` kinds or their URLs — additive only, and
+    the digest's decision/constraint extraction keys on `kind`.
+  - **Oracle:** integration test — the filesystem source over `repo-ok` returns `docs/architecture.md`
+    with its relative path; E2E — `/ops/groundwork/docs` renders a collapsible tree whose leaves
+    open, and every pre-existing ADR URL still resolves.
+  - **Evidence:** `src/lib/content/filesystem-source.ts:51-70` (three hard-coded paths) ·
+    `src/lib/content/types.ts` `DocRef` has `path` but no repo-relative form · `CLAUDE.md`
+    "Authoritative sources" names two files the console cannot display.
+  - **Escalate if:** a repo's `__project__/` holds non-Markdown or very large files — the walk needs
+    an extension filter and a size guard before it ships, not after.
+
+- · **W3** Tasks: board ⇄ table view toggle.  → **[P]**
+  - **Intent:** a table answers "what is the state of everything"; a status-column board answers
+    "what is in flight" — the backlog is worked both ways and currently supports only the first.
+  - **Touches:** `src/components/tasks-table.tsx` → split into `tasks-view.tsx` + `tasks-board.tsx`.
+    **Must NOT:** change the write path — `TaskStatusControl` stays the only status mutation.
+  - **Oracle:** E2E — toggling to Board renders one column per status with the same task count as
+    the table, the choice survives a reload, and the phone breakpoint still renders cards.
+  - **Evidence:** `src/components/tasks-table.tsx` (filters already client-side) ·
+    `infinite-oneness/.../tasks-table.tsx` filter-row pattern · `e2e/mobile.spec.ts` pins the card
+    breakpoint.
+  - **Escalate if:** drag-to-move between columns is wanted — that is a write path with optimistic
+    state and belongs in its own ticket.
+
+- · **W4** Overview → cockpit.  → **[P]**
+  - **Intent:** the overview is three count tiles and a repo path; it answers "how many" but not
+    "what should I look at", which is the question someone opening a project actually has.
+  - **Touches:** `src/app/ops/[project]/page.tsx`, new `src/components/overview-cockpit.tsx`.
+    **Must NOT:** add a query — everything shown must come from the already-loaded project view.
+  - **Oracle:** E2E — the overview lists the READY queue and the newest docs as activatable rows,
+    and a client role sees no grounding card.
+  - **Evidence:** `infinite-oneness/.../overview-cockpit.tsx` (CockpitCard/CockpitRow shape) ·
+    `src/app/ops/[project]/page.tsx` current three-tile version · `src/lib/ops/load.ts` already
+    returns docs + tasks.
+  - **Escalate if:** the cockpit needs data the project view does not carry — then W2 lands first.
+
+- · **W5** Triage → the create-project form layout.  → **[T]**
+  - **Intent:** the triage page is a bare textarea and a grey button under a redundant back link;
+    the sidebar already shows where you are, so the link is chrome that costs a row of vertical space.
+  - **Touches:** `src/app/ops/[project]/triage/page.tsx`, `src/components/triage-workbench.tsx`.
+    **Must NOT:** change `analyze`/`accept` server actions or the DoR grounding flow.
+  - **Oracle:** E2E — `triage.spec.ts` passes unchanged (it drives the real controls), and no
+    `← <project>` link remains in the page.
+  - **Evidence:** `infinite-oneness/.../new/project-form-fields.tsx` (Field/FieldLabel/FieldError) ·
+    `src/app/ops/[project]/triage/page.tsx:16-18` back link · `e2e/triage.spec.ts`.
+  - **Escalate if:** removing the back link strands a surface with no way up on a phone — then the
+    breadcrumb has to cover it first.
+
+- · **W6** Grounding: relayout + audience-scoped digests.  → **[P]**
+  - **Intent:** one digest serves an engineer's agent and a client's agent equally badly — the first
+    wants locked ADRs and READY tasks, the second wants state and progress and must not be handed
+    the team's internal reasoning. Splitting it is also a *disclosure* control, not just ergonomics.
+  - **Touches:** `src/lib/brain/render-brain.ts` (add an audience parameter),
+    `src/app/ops/[project]/grounding/page.tsx`, `src/components/copy-context.tsx`,
+    `src/app/ops/[project]/context.md/route.ts` (`?audience=`), `src/mcp/tools.ts`.
+    **Must NOT:** change the default digest bytes — the three doors must stay byte-identical
+    (ADR-0004/ADR-0006), so `both` remains exactly today's output.
+  - **Oracle:** unit — `renderBrain(x, "biz")` contains no `## Locked decisions` section and
+    `renderBrain(x, "both")` is byte-identical to `renderBrain(x)`; E2E — each variant's copy button
+    and its `context.md?audience=` response agree byte for byte.
+  - **Evidence:** ADR-0004 (selection + size budget) · `src/lib/brain/render-brain.ts:306-342`
+    section order · `e2e/grounding.spec.ts` pins door-identity.
+  - **Escalate if:** `biz` would still leak an unshipped decision through a task title — then the
+    audience split needs a field on the task, not a section filter.
+
+- · **W7** Motion pass.  → **[T]**
+  - **Intent:** `tech-standards §13` mandates `motion` and it was never installed; every surface
+    transitions instantly, which reads as a page swap rather than a state change.
+  - **Touches:** the surfaces above + `src/app/globals.css`. **Must NOT:** animate layout-affecting
+    properties (transform/opacity only), and must respect the existing
+    `prefers-reduced-motion` override in `globals.css`.
+  - **Oracle:** E2E at `prefers-reduced-motion: reduce` — no surface animates and every assertion
+    still passes; a Playwright screenshot after settle is identical to the pre-motion one.
+  - **Evidence:** `tech-standards.md §13` "Motion" · `src/app/globals.css:93-100` reduced-motion
+    block already exists · `infinite-oneness` uses `motion` in 4 components.
+  - **Escalate if:** motion regresses the mobile no-sideways-scroll E2E — transform animations can
+    overflow, and that test is the guard.
+
 ### v5 · Packaging — open-core  *(DRAFT / stretch — deliberately not started)*
 - ↷ **P1** extract `@groundwork/engine` (workspace) — the pure core both hosts import.
 - ↷ **P2** `@groundwork/cli init` + `groundwork.config.ts` scaffold (self-host).

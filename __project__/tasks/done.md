@@ -2,6 +2,13 @@
 
 Format: `- YYYY-MM-DD · <sha> · <task-id> short description`
 
+- 2026-07-29 · W7 · Motion pass — one `Reveal` primitive, transform/opacity only, `useReducedMotion` checked in JS (the CSS override cannot reach Motion's rAF-driven values)
+- 2026-07-29 · W6 · Grounding relayout + audience digests (tech/biz/both); `biz` also had to drop task intent+oracle — the backlog's own rationale was leaking into the delivery view
+- 2026-07-29 · W5 · Triage → create-project form layout; Field/FieldLabel needed explicit htmlFor/id (an a11y regression, not just a test break)
+- 2026-07-29 · W4 · Overview → cockpit (ready / blocked+draft / docs), no extra query
+- 2026-07-29 · W3 · Tasks board ⇄ table toggle; fixed a pre-existing `SidebarInset` min-width bug that let any wide surface scroll the page
+- 2026-07-29 · W2 · Docs folder tree over the whole `__project__/` — architecture.md and tech-standards.md had never been ingested (7 docs → 13)
+- 2026-07-29 · W1 · Ported item/tabs/textarea/field/label/empty + installed `motion`
 - 2026-07-29 · UI · radix-maia token set completed (`--sidebar-*` ×8 were referenced 92× and defined 0×; `tw-animate-css` missing so every overlay had no transition) + borderless tables, status variants, tasks filter row — ADR-0009
 - 2026-07-29 · F5 · better-auth over Kysely/Postgres, username+password, no social — ADR-0008. Closed a live gap: /ops/integrations and /ops/*/triage had no server-side capability check
 - 2026-07-29 · favicon · lucide `list-checks` (ISC, no attribution) — stroke 2.75 + cropped viewBox for 16px legibility

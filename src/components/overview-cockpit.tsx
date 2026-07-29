@@ -1,6 +1,8 @@
 import { ArrowUpRight, CircleAlert, FileText, ListChecks } from "lucide-react";
 import Link from "next/link";
 import { DorGaps, TierBadge } from "@/components/badges";
+import { Reveal } from "@/components/reveal";
+import { staggerDelay } from "@/components/stagger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Item,
@@ -51,6 +53,7 @@ export function OverviewCockpit({
         empty="Nothing passes the Definition of Ready yet."
         href={`/ops/${slug}/tasks`}
         total={ready.length}
+        index={0}
       >
         {ready.slice(0, LIMIT).map((task) => (
           <Row
@@ -69,6 +72,7 @@ export function OverviewCockpit({
         empty="Every open task carries its Definition of Ready."
         href={`/ops/${slug}/tasks`}
         total={blocked.length + draft.length}
+        index={1}
       >
         {[...blocked, ...draft].slice(0, LIMIT).map((task) => (
           <Row
@@ -93,6 +97,7 @@ export function OverviewCockpit({
         empty="Nothing under __project__/ yet."
         href={`/ops/${slug}/docs`}
         total={docs.length}
+        index={2}
       >
         {docs.slice(0, LIMIT).map((doc) => (
           <Row
@@ -113,6 +118,7 @@ function CockpitCard({
   empty,
   href,
   total,
+  index,
   children,
 }: {
   title: string;
@@ -120,36 +126,39 @@ function CockpitCard({
   empty: string;
   href: string;
   total: number;
+  index: number;
   children: React.ReactNode[];
 }) {
   return (
-    <Card size="sm" className="flex flex-col">
-      {/* `flex`, not just `flex-row`: CardHeader is a grid, so the display
+    <Reveal delay={staggerDelay(index)} className="flex">
+      <Card size="sm" className="flex w-full flex-col">
+        {/* `flex`, not just `flex-row`: CardHeader is a grid, so the display
           utility has to be overridden or the count drops below the title. */}
-      <CardHeader className="flex flex-row items-center gap-2">
-        <Icon className="size-4 text-muted-foreground" aria-hidden />
-        <CardTitle className="flex-1 text-sm">{title}</CardTitle>
-        <span className="text-xs text-muted-foreground tabular-nums">{total}</span>
-      </CardHeader>
-      <CardContent className="flex-1">
-        {children.length === 0 ? (
-          <p className="py-2 text-sm text-muted-foreground">{empty}</p>
-        ) : (
-          <ItemGroup>{children}</ItemGroup>
-        )}
-      </CardContent>
-      {total > LIMIT && (
-        <CardContent className="pt-0">
-          <Link
-            href={href}
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline"
-          >
-            {total - LIMIT} more
-            <ArrowUpRight className="size-3" aria-hidden />
-          </Link>
+        <CardHeader className="flex flex-row items-center gap-2">
+          <Icon className="size-4 text-muted-foreground" aria-hidden />
+          <CardTitle className="flex-1 text-sm">{title}</CardTitle>
+          <span className="text-xs text-muted-foreground tabular-nums">{total}</span>
+        </CardHeader>
+        <CardContent className="flex-1">
+          {children.length === 0 ? (
+            <p className="py-2 text-sm text-muted-foreground">{empty}</p>
+          ) : (
+            <ItemGroup>{children}</ItemGroup>
+          )}
         </CardContent>
-      )}
-    </Card>
+        {total > LIMIT && (
+          <CardContent className="pt-0">
+            <Link
+              href={href}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline"
+            >
+              {total - LIMIT} more
+              <ArrowUpRight className="size-3" aria-hidden />
+            </Link>
+          </CardContent>
+        )}
+      </Card>
+    </Reveal>
   );
 }
 

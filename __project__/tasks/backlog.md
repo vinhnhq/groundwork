@@ -184,8 +184,12 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 >
 > Order matters: **W1 unblocks every other ticket** (they all compose its primitives), and **W2
 > changes the content layer**, so it lands before the surfaces that read from it.
+>
+> **All seven shipped 2026-07-29.** One follow-up stayed open — see W6's escalation below: the
+> `biz` digest no longer carries decisions, intents or oracles, but a task *title* can still be
+> indiscreet, and closing that needs a per-task visibility field rather than a section filter.
 
-- · **W1** Port the missing radix-maia primitives + install `motion`.  → **[T]**
+- [x] **W1** Port the missing radix-maia primitives + install `motion`.  → **[T]**
   - **Intent:** every ticket below composes `Item`/`Tabs`/`Field`/`Textarea`/`Empty`, and Groundwork
     has none of them — without this each surface would hand-roll its own row and input, which is
     exactly the divergence ADR-0009 exists to stop.
@@ -198,7 +202,7 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Escalate if:** a ported primitive needs a dependency Groundwork does not carry — then it is a
     stack decision, not a port.
 
-- · **W2** Docs as a real folder tree over the whole `__project__/`.  → **[P]**
+- [x] **W2** Docs as a real folder tree over the whole `__project__/`.  → **[P]**
   - **Intent:** the source only scans three fixed paths (`docs/decisions/*`, `specs/*`,
     `docs/retro.md`), so `architecture.md` and `tech-standards.md` — the two files CLAUDE.md calls
     the *authoritative sources* — are **not ingested at all**. The console cannot show the docs it
@@ -217,7 +221,7 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Escalate if:** a repo's `__project__/` holds non-Markdown or very large files — the walk needs
     an extension filter and a size guard before it ships, not after.
 
-- · **W3** Tasks: board ⇄ table view toggle.  → **[P]**
+- [x] **W3** Tasks: board ⇄ table view toggle.  → **[P]**
   - **Intent:** a table answers "what is the state of everything"; a status-column board answers
     "what is in flight" — the backlog is worked both ways and currently supports only the first.
   - **Touches:** `src/components/tasks-table.tsx` → split into `tasks-view.tsx` + `tasks-board.tsx`.
@@ -230,7 +234,7 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Escalate if:** drag-to-move between columns is wanted — that is a write path with optimistic
     state and belongs in its own ticket.
 
-- · **W4** Overview → cockpit.  → **[P]**
+- [x] **W4** Overview → cockpit.  → **[P]**
   - **Intent:** the overview is three count tiles and a repo path; it answers "how many" but not
     "what should I look at", which is the question someone opening a project actually has.
   - **Touches:** `src/app/ops/[project]/page.tsx`, new `src/components/overview-cockpit.tsx`.
@@ -242,7 +246,7 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
     returns docs + tasks.
   - **Escalate if:** the cockpit needs data the project view does not carry — then W2 lands first.
 
-- · **W5** Triage → the create-project form layout.  → **[T]**
+- [x] **W5** Triage → the create-project form layout.  → **[T]**
   - **Intent:** the triage page is a bare textarea and a grey button under a redundant back link;
     the sidebar already shows where you are, so the link is chrome that costs a row of vertical space.
   - **Touches:** `src/app/ops/[project]/triage/page.tsx`, `src/components/triage-workbench.tsx`.
@@ -254,7 +258,7 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Escalate if:** removing the back link strands a surface with no way up on a phone — then the
     breadcrumb has to cover it first.
 
-- · **W6** Grounding: relayout + audience-scoped digests.  → **[P]**
+- [x] **W6** Grounding: relayout + audience-scoped digests.  → **[P]**
   - **Intent:** one digest serves an engineer's agent and a client's agent equally badly — the first
     wants locked ADRs and READY tasks, the second wants state and progress and must not be handed
     the team's internal reasoning. Splitting it is also a *disclosure* control, not just ergonomics.
@@ -271,7 +275,7 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Escalate if:** `biz` would still leak an unshipped decision through a task title — then the
     audience split needs a field on the task, not a section filter.
 
-- · **W7** Motion pass.  → **[T]**
+- [x] **W7** Motion pass.  → **[T]**
   - **Intent:** `tech-standards §13` mandates `motion` and it was never installed; every surface
     transitions instantly, which reads as a page swap rather than a state change.
   - **Touches:** the surfaces above + `src/app/globals.css`. **Must NOT:** animate layout-affecting

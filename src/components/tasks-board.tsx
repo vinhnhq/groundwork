@@ -1,6 +1,8 @@
 "use client";
 
 import { DorGaps, TierBadge } from "@/components/badges";
+import { Reveal } from "@/components/reveal";
+import { staggerDelay } from "@/components/stagger";
 import { TaskStatusControl } from "@/components/task-status-control";
 import { readiness } from "@/lib/tasks/dor";
 import type { Task, TaskStatus } from "@/lib/tasks/types";
@@ -43,54 +45,57 @@ export function TasksBoard({
     // `mobile.spec.ts` pins that no surface scrolls the viewport sideways.
     <div className="-mx-1 w-full min-w-0 overflow-x-auto px-1 pb-2">
       <div className="flex min-w-max gap-3" data-testid="task-board">
-        {COLUMNS.map((column) => {
+        {COLUMNS.map((column, index) => {
           const inColumn = tasks.filter((t) => t.status === column.status);
           return (
-            <section
-              key={column.status}
-              aria-label={column.label}
-              data-testid={`board-column-${column.status}`}
-              className="flex w-72 shrink-0 flex-col gap-2"
-            >
-              <header className="flex items-center gap-2 px-1">
-                <h2 className="text-sm font-medium">{column.label}</h2>
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  {inColumn.length}
-                </span>
-              </header>
+            // The wrapper is the flex item now, so it carries the column's
+            // width and no-shrink — otherwise the track collapses.
+            <Reveal key={column.status} delay={staggerDelay(index)} className="w-72 shrink-0">
+              <section
+                aria-label={column.label}
+                data-testid={`board-column-${column.status}`}
+                className="flex flex-col gap-2"
+              >
+                <header className="flex items-center gap-2 px-1">
+                  <h2 className="text-sm font-medium">{column.label}</h2>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {inColumn.length}
+                  </span>
+                </header>
 
-              <div className="flex flex-col gap-2">
-                {inColumn.length === 0 ? (
-                  <p className="rounded-lg border border-dashed px-3 py-6 text-center text-xs text-muted-foreground">
-                    Nothing here
-                  </p>
-                ) : (
-                  inColumn.map((task) => (
-                    <article
-                      key={task.id}
-                      className="flex flex-col gap-2 rounded-lg border bg-card p-3 transition-colors hover:border-foreground/20"
-                    >
-                      {/* No status badge: the column already says the status,
+                <div className="flex flex-col gap-2">
+                  {inColumn.length === 0 ? (
+                    <p className="rounded-lg border border-dashed px-3 py-6 text-center text-xs text-muted-foreground">
+                      Nothing here
+                    </p>
+                  ) : (
+                    inColumn.map((task) => (
+                      <article
+                        key={task.id}
+                        className="flex flex-col gap-2 rounded-lg border bg-card p-3 transition-colors hover:border-foreground/20"
+                      >
+                        {/* No status badge: the column already says the status,
                           and repeating it in every card is the noise the
                           neutral-variant change removed from the table. */}
-                      <span className="font-mono text-xs text-muted-foreground">{task.id}</span>
-                      <p className="text-sm font-medium break-words">{task.title}</p>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <TierBadge tier={task.autonomy} />
-                        <Readiness task={task} />
-                      </div>
-                      {mayWrite && (
-                        <TaskStatusControl
-                          project={project}
-                          taskId={task.id}
-                          status={task.status}
-                        />
-                      )}
-                    </article>
-                  ))
-                )}
-              </div>
-            </section>
+                        <span className="font-mono text-xs text-muted-foreground">{task.id}</span>
+                        <p className="text-sm font-medium break-words">{task.title}</p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <TierBadge tier={task.autonomy} />
+                          <Readiness task={task} />
+                        </div>
+                        {mayWrite && (
+                          <TaskStatusControl
+                            project={project}
+                            taskId={task.id}
+                            status={task.status}
+                          />
+                        )}
+                      </article>
+                    ))
+                  )}
+                </div>
+              </section>
+            </Reveal>
           );
         })}
       </div>

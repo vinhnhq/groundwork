@@ -3,6 +3,7 @@
 import { Briefcase, Layers, Wrench } from "lucide-react";
 import { useState } from "react";
 import { CopyContext } from "@/components/copy-context";
+import { Reveal } from "@/components/reveal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BrainAudience } from "@/lib/brain";
@@ -66,12 +67,17 @@ export function GroundingDoors({ project, doors }: { project: string; doors: Doo
           text={active.text}
           exportHref={`/ops/${project}/context.md?audience=${active.audience}`}
         />
-        <pre
-          data-testid="digest-preview"
-          className="max-h-96 overflow-auto rounded-lg bg-muted/40 p-3 font-mono text-xs whitespace-pre-wrap"
-        >
-          {active.text}
-        </pre>
+        {/* Keyed on the audience so switching re-runs the entrance: the digests
+            differ by thousands of characters, and a silent swap of a wall of
+            monospace is easy to miss. */}
+        <Reveal key={active.audience}>
+          <pre
+            data-testid="digest-preview"
+            className="max-h-96 overflow-auto rounded-lg bg-muted/40 p-3 font-mono text-xs whitespace-pre-wrap"
+          >
+            {active.text}
+          </pre>
+        </Reveal>
       </CardContent>
     </Card>
   );

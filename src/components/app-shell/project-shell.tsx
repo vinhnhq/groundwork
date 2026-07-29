@@ -2,8 +2,11 @@
 
 import { ArrowLeft, Brain, FileText, LayoutDashboard, ListTodo, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { type NavGroup, SidebarShell } from "@/components/app-shell/sidebar-shell";
+import { DocTree } from "@/components/doc-tree";
 import { Badge } from "@/components/ui/badge";
+import type { DocNode } from "@/lib/content/doc-tree";
 
 /**
  * The per-project workspace chrome: one nav item per section, each its own
@@ -18,6 +21,8 @@ export function ProjectShell({
   name,
   status,
   counts,
+  docTree,
+  docFolders,
   mayGround,
   mayAgent,
   userChrome,
@@ -27,6 +32,9 @@ export function ProjectShell({
   name: string;
   status: string;
   counts: { docs: number; tasks: number; ready: number };
+  /** The repo's `__project__/` tree, shown in the sidebar while reading docs. */
+  docTree: DocNode[];
+  docFolders: string[];
   mayGround: boolean;
   mayAgent: boolean;
   /** Rendered on the right of the workspace header (server component). */
@@ -34,6 +42,16 @@ export function ProjectShell({
   children: React.ReactNode;
 }) {
   const base = `/ops/${slug}`;
+  const pathname = usePathname();
+
+  /**
+   * The tree accompanies every docs surface — the index *and* each document, so
+   * it stays put while you read. Matching on the doc-kind segments rather than
+   * just `/docs` is what keeps it visible on `/ops/<slug>/adr/0008-…`.
+   */
+  const inDocs =
+    pathname.startsWith(`${base}/docs`) ||
+    /^\/ops\/[^/]+\/(adr|spec|retro|doc)(\/|$)/.test(pathname);
 
   const nav: NavGroup[] = [
     {
@@ -52,6 +70,11 @@ export function ProjectShell({
   return (
     <SidebarShell
       nav={nav}
+      subnav={
+        inDocs && docTree.length > 0 ? (
+          <DocTree nodes={docTree} openPaths={docFolders} variant="sidebar" />
+        ) : undefined
+      }
       header={
         <div className="flex flex-col gap-1 px-2 py-1.5 group-data-[collapsible=icon]:hidden">
           <Link

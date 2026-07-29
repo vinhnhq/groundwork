@@ -43,11 +43,13 @@ test("Tasks lists the backlog with its readiness", async ({ page }) => {
   await expect(gaps).toHaveAttribute("title", /oracle/);
 });
 
-test("open a doc from the Docs tree and render its image", async ({ page }) => {
+test("open a doc from the sidebar tree and render its image", async ({ page }) => {
   await page.goto("/ops/sample/docs");
 
+  // At desktop width the tree lives in the SIDEBAR and the pane on the right is
+  // where the document lands — the page-level tree is the phone fallback.
   await page
-    .getByTestId("doc-tree")
+    .getByTestId("doc-tree-nav")
     .getByRole("link", { name: /Sample decision/ })
     .click();
   await expect(page.getByRole("heading", { name: /Sample decision/ })).toBeVisible();
@@ -71,7 +73,7 @@ test("the Docs tree mirrors __project__ and reaches files outside the legacy fol
   page,
 }) => {
   await page.goto("/ops/sample/docs");
-  const tree = page.getByTestId("doc-tree");
+  const tree = page.getByTestId("doc-tree-nav");
 
   // Folders from the fixture repo, as folder rows rather than links.
   await expect(tree.getByRole("button", { name: /decisions/ })).toBeVisible();
@@ -86,6 +88,33 @@ test("the Docs tree mirrors __project__ and reaches files outside the legacy fol
   const before = await tree.getByRole("link").count();
   await tree.getByRole("button", { name: /decisions/ }).click();
   expect(await tree.getByRole("link").count()).toBeLessThan(before);
+});
+
+/**
+ * Master-detail: the tree stays in the sidebar while the document occupies the
+ * pane. It is built in the project LAYOUT, so React keeps it mounted across doc
+ * navigations — that is what makes a collapsed folder stay collapsed as you read.
+ */
+test("the sidebar tree persists across documents and marks the open one", async ({ page }) => {
+  await page.goto("/ops/sample/docs");
+  const tree = page.getByTestId("doc-tree-nav");
+
+  // The index pane invites a choice rather than repeating the tree.
+  await expect(page.getByText("Pick a document")).toBeVisible();
+
+  await tree.getByRole("link", { name: /Sample decision/ }).click();
+  await expect(page.getByRole("heading", { name: /Sample decision/ })).toBeVisible();
+
+  // Still there, and the open document is the current one.
+  await expect(tree).toBeVisible();
+  await expect(tree.locator('[aria-current="page"]')).toContainText("Sample decision");
+
+  // A folder collapsed while reading stays collapsed after opening another doc.
+  await tree.getByRole("button", { name: /^specs/ }).click();
+  const collapsed = await tree.getByRole("link").count();
+  await tree.getByRole("link", { name: /Backlog/i }).click();
+  await expect(page).toHaveURL(/\/doc\/tasks\/backlog$/);
+  expect(await tree.getByRole("link").count()).toBe(collapsed);
 });
 
 /** Every ADR/spec URL minted before the tree existed must still resolve. */

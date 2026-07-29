@@ -46,12 +46,21 @@ export type NavGroup = { label?: string; items: NavItem[] };
 export function SidebarShell({
   header,
   nav,
+  subnav,
   footer,
   breadcrumb,
   children,
 }: {
   header: React.ReactNode;
   nav: NavGroup[];
+  /**
+   * A section's own navigator, below the nav — the docs tree, today.
+   *
+   * Lives in the shell rather than in the page so it survives navigation
+   * between documents: React keeps the layout mounted, so the tree's scroll
+   * position and collapsed folders persist while you read.
+   */
+  subnav?: React.ReactNode;
   footer?: React.ReactNode;
   breadcrumb?: React.ReactNode;
   children: React.ReactNode;
@@ -93,6 +102,14 @@ export function SidebarShell({
                 </SidebarGroupContent>
               </SidebarGroup>
             ))}
+
+            {/* Hidden when the sidebar is collapsed to icons — a tree has no
+                icon-only form, and squeezing one into 3rem reads as corruption. */}
+            {subnav && (
+              <SidebarGroup className="min-h-0 group-data-[collapsible=icon]:hidden">
+                <SidebarGroupContent className="overflow-y-auto">{subnav}</SidebarGroupContent>
+              </SidebarGroup>
+            )}
           </SidebarContent>
 
           {footer && <SidebarFooter>{footer}</SidebarFooter>}

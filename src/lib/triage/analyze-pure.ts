@@ -1,3 +1,4 @@
+import type { DocKind } from "@/lib/content/types";
 import type { AutonomyTier } from "@/lib/tasks/types";
 import type { Citation, DraftTicket, TriageKind, TriageResult } from "@/lib/triage/types";
 
@@ -6,7 +7,7 @@ import type { Citation, DraftTicket, TriageKind, TriageResult } from "@/lib/tria
  * "AI proposes, human disposes" shape: cite real docs, draft a DoR ticket, leave
  * boundaries/oracle for the human to ground. */
 
-export type DocLite = { kind: "adr" | "spec" | "retro"; id: string; title: string };
+export type DocLite = { kind: DocKind; id: string; title: string };
 export type TaskLite = { id: string; title: string; intent?: string };
 
 const STOP = new Set([

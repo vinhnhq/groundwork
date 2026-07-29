@@ -25,12 +25,38 @@ describe("filesystem content source", () => {
     expect(await source.getProject("nope")).toBeNull();
   });
 
-  it("lists docs across adr/spec/retro with titles", async () => {
+  /**
+   * The walk covers the whole `__project__/` tree, so a file outside the three
+   * formerly hard-coded folders (here `tasks/backlog.md`) is ingested as a
+   * generic `doc`. That omission is the reason this changed: `architecture.md`
+   * and `tech-standards.md` had been invisible to the console.
+   */
+  it("walks the whole __project__ tree, classifying each file", async () => {
     const docs = await source.listDocs("sample");
-    const kinds = docs.map((d) => d.kind).sort();
-    expect(kinds).toEqual(["adr", "retro", "spec"]);
-    const adr = docs.find((d) => d.kind === "adr");
-    expect(adr?.title).toBe("ADR-0001 — Sample decision");
+
+    expect(docs.map((d) => d.relPath).sort()).toEqual([
+      "docs/decisions/0001-sample.md",
+      "docs/retro.md",
+      "specs/v1-foo.md",
+      "tasks/backlog.md",
+    ]);
+
+    const byRel = new Map(docs.map((d) => [d.relPath, d]));
+    expect(byRel.get("docs/decisions/0001-sample.md")).toMatchObject({
+      kind: "adr",
+      id: "0001-sample",
+      title: "ADR-0001 — Sample decision",
+    });
+    expect(byRel.get("specs/v1-foo.md")?.kind).toBe("spec");
+    expect(byRel.get("docs/retro.md")?.kind).toBe("retro");
+    // Outside the recognised folders ⇒ a path-shaped id, reachable at
+    // /ops/<slug>/doc/tasks/backlog.
+    expect(byRel.get("tasks/backlog.md")).toMatchObject({ kind: "doc", id: "tasks/backlog" });
+  });
+
+  it("does not ingest non-markdown assets sitting beside the docs", async () => {
+    const docs = await source.listDocs("sample");
+    expect(docs.some((d) => d.relPath.endsWith(".png"))).toBe(false);
   });
 
   it("reads a doc body and returns null for a missing one", async () => {

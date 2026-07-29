@@ -43,16 +43,55 @@ test("Tasks lists the backlog with its readiness", async ({ page }) => {
   await expect(gaps).toHaveAttribute("title", /oracle/);
 });
 
-test("open a doc from the Docs table and render its image", async ({ page }) => {
+test("open a doc from the Docs tree and render its image", async ({ page }) => {
   await page.goto("/ops/sample/docs");
 
-  await page.getByRole("link", { name: /Sample decision/ }).click();
+  await page
+    .getByTestId("doc-tree")
+    .getByRole("link", { name: /Sample decision/ })
+    .click();
   await expect(page.getByRole("heading", { name: /Sample decision/ })).toBeVisible();
 
   // The relative image resolves through the asset route and actually loads.
+  // The doc's folder is derived from its own relPath now, not a kind→dir table,
+  // so this also pins that a doc outside the three legacy folders would resolve.
   const img = page.locator("article img").first();
   await expect(img).toBeVisible();
   await expect
     .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
     .toBeGreaterThan(0);
+});
+
+/**
+ * The tree mirrors the repo's folders. Before W2 the source scanned three fixed
+ * paths, so any Markdown outside them — `architecture.md` and `tech-standards.md`
+ * in the real repo — was invisible to the console that tells agents to read it.
+ */
+test("the Docs tree mirrors __project__ and reaches files outside the legacy folders", async ({
+  page,
+}) => {
+  await page.goto("/ops/sample/docs");
+  const tree = page.getByTestId("doc-tree");
+
+  // Folders from the fixture repo, as folder rows rather than links.
+  await expect(tree.getByRole("button", { name: /decisions/ })).toBeVisible();
+  await expect(tree.getByRole("button", { name: /^specs/ })).toBeVisible();
+
+  // `tasks/backlog.md` sits outside adr/spec/retro and is reachable as a `doc`.
+  const backlog = tree.getByRole("link", { name: /Backlog/i });
+  await expect(backlog).toBeVisible();
+  await expect(backlog).toHaveAttribute("href", /\/doc\/tasks\/backlog$/);
+
+  // Collapsing a folder hides its documents.
+  const before = await tree.getByRole("link").count();
+  await tree.getByRole("button", { name: /decisions/ }).click();
+  expect(await tree.getByRole("link").count()).toBeLessThan(before);
+});
+
+/** Every ADR/spec URL minted before the tree existed must still resolve. */
+test("pre-tree document URLs still resolve", async ({ page }) => {
+  for (const path of ["/ops/sample/adr/0001-sample", "/ops/sample/spec/v1-foo"]) {
+    const res = await page.request.get(path);
+    expect(res.status(), path).toBe(200);
+  }
 });

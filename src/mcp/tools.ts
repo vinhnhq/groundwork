@@ -28,7 +28,13 @@ export type ToolDef = {
   handler: (args: Record<string, unknown>) => Promise<string>;
 };
 
-const DOC_KINDS = ["adr", "spec", "retro"] as const;
+/**
+ * Mirrors `DOC_KINDS` in content/types. `doc` covers every Markdown file
+ * outside the three recognised folders — including `architecture.md` and
+ * `tech-standards.md`, which an agent asking "what did this team decide"
+ * previously could not reach through this tool at all.
+ */
+const DOC_KINDS = ["adr", "spec", "retro", "doc"] as const;
 
 function taskLine(t: Task): string {
   const facts = [t.autonomy ? `tier: ${t.autonomy}` : null, t.oracle ? `oracle: ${t.oracle}` : null]
@@ -135,7 +141,7 @@ export function createGroundworkTools(source: ReadOnlySource): ToolDef[] {
       name: "get_doc",
       title: "Get a document",
       description:
-        "Read one full document (ADR, spec or retro) when the digest is not enough detail. Call with no `id` to list what exists.",
+        "Read one full document when the digest is not enough detail. `kind` is adr, spec, retro, or doc for anything else under __project__/ (a doc's id is its path, e.g. `docs/architecture`). Call with no `id` to list what exists.",
       inputSchema: {
         project: z.string().describe("Project slug"),
         kind: z.enum(DOC_KINDS).describe("Document kind"),

@@ -45,11 +45,35 @@ describe("createGitHubSource", () => {
     expect(entries[0].status).toBe("unconfigured");
   });
 
-  it("lists ADRs and specs, skipping non-markdown", async () => {
+  /**
+   * The walk covers the whole `__project__/` tree, not three fixed folders, so
+   * every Markdown file in the repo appears — `tasks/backlog.md` included. The
+   * Tasks page renders a *parsed projection* of that file; Docs shows the file
+   * itself, which is why both surfaces legitimately reference it.
+   */
+  it("walks the whole __project__ tree, skipping non-markdown", async () => {
     const docs = await source.listDocs("checkout");
 
-    expect(docs.map((d) => d.id)).toEqual(["0001-stripe-over-adyen", "v1-checkout"]);
-    expect(docs[0].title).toContain("Stripe over Adyen");
+    expect(docs.map((d) => d.relPath)).toEqual([
+      "docs/decisions/0001-stripe-over-adyen.md",
+      "specs/v1-checkout.md",
+      "tasks/backlog.md",
+    ]);
+  });
+
+  /** Recognised kinds keep their bare ids, so pre-tree URLs still resolve. */
+  it("keeps ADR and spec ids bare, and gives loose files a path id", async () => {
+    const byRel = new Map((await source.listDocs("checkout")).map((d) => [d.relPath, d]));
+
+    expect(byRel.get("docs/decisions/0001-stripe-over-adyen.md")).toMatchObject({
+      kind: "adr",
+      id: "0001-stripe-over-adyen",
+    });
+    expect(byRel.get("specs/v1-checkout.md")).toMatchObject({ kind: "spec", id: "v1-checkout" });
+    expect(byRel.get("tasks/backlog.md")).toMatchObject({ kind: "doc", id: "tasks/backlog" });
+    expect(byRel.get("docs/decisions/0001-stripe-over-adyen.md")?.title).toContain(
+      "Stripe over Adyen",
+    );
   });
 
   it("reads a doc and the backlog", async () => {

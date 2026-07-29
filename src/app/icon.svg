@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Groundwork">
+  <title>Groundwork</title>
+  <!--
+    One task READY, one still DRAFT — the Definition-of-Ready gate, which is
+    the mechanic the whole product turns on.
+
+    Deliberately simpler than a full checklist glyph: a favicon is rendered at
+    16px, where paired text bars merge into a smudge. One bar per row, a solid
+    (not outlined) checked box, and generous stroke weights so the two states
+    stay distinguishable at tab size.
+  -->
+  <style>
+    svg { --fg: #0a0a0a; --bg: #ffffff; }
+    @media (prefers-color-scheme: dark) { svg { --fg: #fafafa; --bg: #0a0a0a; } }
+  </style>
+
+  <!-- READY: filled box + check knocked out, so it reads as "done" at any size -->
+  <rect x="1.5" y="2" width="13" height="13" rx="4" fill="var(--fg)" />
+  <path
+    d="M4.9 8.6 L7.2 10.9 L11.3 5.9"
+    fill="none"
+    stroke="var(--bg)"
+    stroke-width="2.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <rect x="17.5" y="6" width="13" height="5" rx="2.5" fill="var(--fg)" />
+
+  <!-- DRAFT: outlined box, still empty -->
+  <rect
+    x="3.2"
+    y="18.7"
+    width="9.6"
+    height="9.6"
+    rx="2.8"
+    fill="none"
+    stroke="var(--fg)"
+    stroke-width="3.4"
+  />
+  <rect x="17.5" y="21" width="13" height="5" rx="2.5" fill="var(--fg)" opacity="0.45" />
+</svg>

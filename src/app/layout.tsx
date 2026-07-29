@@ -9,7 +9,8 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: "Groundwork",
-  description: "One ops view + agent triage across all your project repos",
+  description:
+    "Keeps a whole team's AI agents grounded in the same docs, and lets the people who don't use git keep the backlog in sync.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

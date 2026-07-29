@@ -1,5 +1,12 @@
 /** Edge-safe constants (no server-only / next-headers imports) for the proxy. */
-export const SESSION_COOKIE = "gw_session";
+
+/**
+ * better-auth names its cookies `<prefix>.session_token` and
+ * `<prefix>.session_data`, and prefixes both with `__Secure-` when cookies are
+ * secure. Nothing should hard-code those names — pass this to better-auth's
+ * `getSessionCookie` / `getCookieCache`, which apply the same rules.
+ */
+export const COOKIE_PREFIX = "gw";
 
 /**
  * Fallback signing secret, for development only.
@@ -10,6 +17,17 @@ export const SESSION_COOKIE = "gw_session";
  * it in production rather than quietly signing with it.
  */
 export const DEV_SESSION_SECRET = "groundwork-dev-secret-not-for-production";
+
+/**
+ * The password `bun run seed` gives the four role accounts when
+ * `ADMIN_PASSWORD` is unset.
+ *
+ * Twelve characters because `minPasswordLength: 12` would otherwise reject the
+ * seed. Shared between the seeder and the sign-in page's development hint so
+ * the prefill cannot drift from the password that was actually set — and, like
+ * the secret above, never offered in production.
+ */
+export const DEV_ACCOUNT_PASSWORD = "groundwork-dev";
 
 /**
  * The signing secret, or `null` when production has none configured.

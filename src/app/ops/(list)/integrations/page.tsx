@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireCapability } from "@/app/ops/guard";
 import type { IntegrationState } from "@/lib/ops/integrations";
 import { listIntegrations } from "@/lib/ops/integrations";
 
@@ -16,7 +17,12 @@ const STATE_LABEL: Record<IntegrationState, string> = {
   disabled: "off",
 };
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+  // This page prints every environment variable name and which seams are live.
+  // The proxy gates it, but only while its five-minute cookie cache is warm —
+  // this is the check that holds when it is not.
+  await requireCapability("integrations.view");
+
   const integrations = listIntegrations();
   const mocked = integrations.filter((i) => i.state === "mock").length;
 

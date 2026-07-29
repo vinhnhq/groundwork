@@ -1,4 +1,4 @@
-import { authStatus, demoAccounts } from "@/lib/auth";
+import { authStatus, devAccounts } from "@/lib/auth";
 import { SignInForm } from "./sign-in-form";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export default async function SignInPage({
         <p className="mt-1 text-sm text-muted-foreground">Sign in to the ops console.</p>
       </div>
 
-      <SignInForm from={from ?? "/ops"} accounts={demoAccounts()} />
+      <SignInForm from={from ?? "/ops"} accounts={devAccounts()} />
 
       <p className="text-xs text-muted-foreground">{status.note}</p>
     </main>

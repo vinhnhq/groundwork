@@ -6,11 +6,11 @@ import { ROLE_BLURB, ROLE_LABEL } from "@/lib/auth/roles";
 import type { Role } from "@/lib/auth/types";
 import { signInAction } from "./actions";
 
-export type DemoAccount = { email: string; role: Role; password?: string };
+export type DemoAccount = { username: string; role: Role; password?: string };
 
 export function SignInForm({ from, accounts }: { from: string; accounts: DemoAccount[] }) {
   const [state, action, pending] = useActionState(signInAction, {});
-  const [email, setEmail] = useState(accounts[0]?.email ?? "");
+  const [username, setUsername] = useState(accounts[0]?.username ?? "");
   const [password, setPassword] = useState(accounts[0]?.password ?? "");
 
   return (
@@ -19,14 +19,17 @@ export function SignInForm({ from, accounts }: { from: string; accounts: DemoAcc
         <input type="hidden" name="from" value={from} />
 
         <label className="flex flex-col gap-1 text-sm">
-          Email
+          Username
           <input
-            name="email"
-            type="email"
+            name="username"
+            type="text"
             autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="h-11 rounded-md border border-input px-3"
           />
         </label>
@@ -67,22 +70,22 @@ export function SignInForm({ from, accounts }: { from: string; accounts: DemoAcc
       {accounts.length > 0 && (
         <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
           <p className="text-xs font-medium text-muted-foreground">
-            Demo accounts — one per role, so every permission path is reachable by hand
+            Seeded accounts — one per role, so every permission path is reachable by hand
           </p>
           <div className="flex flex-col gap-1">
             {accounts.map((account) => (
               <button
-                key={account.email}
+                key={account.username}
                 type="button"
                 data-testid={`demo-${account.role}`}
                 onClick={() => {
-                  setEmail(account.email);
+                  setUsername(account.username);
                   setPassword(account.password ?? "");
                 }}
                 className="flex flex-col items-start rounded-md px-2 py-1.5 text-left hover:bg-muted"
               >
                 <span className="text-sm">
-                  {ROLE_LABEL[account.role]} · <code className="text-xs">{account.email}</code>
+                  {ROLE_LABEL[account.role]} · <code className="text-xs">{account.username}</code>
                 </span>
                 <span className="text-xs text-muted-foreground">{ROLE_BLURB[account.role]}</span>
               </button>

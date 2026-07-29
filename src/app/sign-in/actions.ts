@@ -7,13 +7,13 @@ export async function signInAction(
   _prev: { error?: string },
   formData: FormData,
 ): Promise<{ error?: string }> {
-  const email = String(formData.get("email") ?? "");
+  const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const from = String(formData.get("from") ?? "/ops");
 
-  // One message for both a bad email and a bad password — naming which was
-  // wrong turns the form into an account enumerator.
-  if (!(await signIn(email, password))) return { error: "Incorrect email or password." };
+  // One message for both an unknown username and a wrong password — naming
+  // which was wrong turns the form into an account enumerator.
+  if (!(await signIn(username, password))) return { error: "Incorrect username or password." };
 
   redirect(from.startsWith("/ops") ? from : "/ops");
 }

@@ -1,0 +1,30 @@
+# Local Postgres for development and integration tests.
+#
+# Production runs on Neon; this exists so the better-auth schema migration and
+# the sign-in path can actually be *executed* on a laptop rather than asserted.
+# The two databases mirror the two DATABASE_* env vars: `groundwork` for dev,
+# `groundwork_test` for the Vitest `integration` project, which truncates
+# between runs and must never point at the dev database.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: groundwork-pg
+    environment:
+      POSTGRES_USER: groundwork
+      POSTGRES_PASSWORD: groundwork
+      POSTGRES_DB: groundwork
+    # 55432, not 5432: a stock Postgres on the host would otherwise win the
+    # port and the app would silently talk to the wrong database.
+    ports:
+      - "55432:5432"
+    volumes:
+      - groundwork-pgdata:/var/lib/postgresql/data
+      - ./scripts/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U groundwork"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  groundwork-pgdata:

@@ -6,9 +6,11 @@
 # deploys; this runs the four gates on every PR, in the same order the
 # ship ritual runs them locally, plus the browser suite.
 #
-# Groundwork is mock-only today (no DB): unit + integration tests are
-# filesystem-based, so `test:coverage` runs unconditionally. When F5 lands a
-# Neon test branch, add a DATABASE_TEST_URL secret and gate integration on it.
+# Both jobs run a Postgres service container. Auth is better-auth over
+# Kysely/Neon (F5), and its integration suite asserts things a mock cannot —
+# that a password round-trips through scrypt, that `username` is really unique,
+# that sign-up is really disabled. Production is Neon; the driver is chosen by
+# URL host, so a stock Postgres here exercises the same code path.
 #
 # Toolchain (bun/node) is pinned in mise.toml — CI and laptops share one source.
 name: CI
@@ -26,6 +28,26 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: groundwork
+          POSTGRES_PASSWORD: groundwork
+          POSTGRES_DB: groundwork_test
+        ports:
+          - 5432:5432
+        # Without this the first migration races the server's own startup.
+        options: >-
+          --health-cmd "pg_isready -U groundwork"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_TEST_URL: postgres://groundwork:groundwork@localhost:5432/groundwork_test
+
     steps:
       - uses: actions/checkout@v5
 
@@ -66,6 +88,11 @@ jobs:
       - name: Type-check
         run: bunx tsc --noEmit
 
+      # better-auth derives the DDL from the same options object the app runs
+      # on, so this is also a check that the two have not drifted.
+      - name: Migrate test database
+        run: bun run migrate --test
+
       - name: Tests
         run: bun run test:coverage
 
@@ -82,6 +109,32 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    # The browser suite signs in as each of the four roles, and sign-in is no
+    # longer mocked — it goes through better-auth to a real `user` table.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: groundwork
+          POSTGRES_PASSWORD: groundwork
+          POSTGRES_DB: groundwork
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U groundwork"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://groundwork:groundwork@localhost:5432/groundwork
+      # A fixed value, not a secret: this database is destroyed with the runner,
+      # and leaving it unset would make `bun run start` (NODE_ENV=production)
+      # lock itself and refuse every session — see sessionSecretFrom.
+      BETTER_AUTH_SECRET: ci-only-secret-for-an-ephemeral-database
+      BETTER_AUTH_URL: http://localhost:3100
+
     steps:
       - uses: actions/checkout@v5
 
@@ -107,6 +160,11 @@ jobs:
       # `bun run start` serves a production build, so the build has to exist.
       - name: Build
         run: bun run build
+
+      # The four role accounts are the test fixtures: `signInAs` drives the real
+      # form, so without them every role test fails at the first click.
+      - name: Migrate and seed
+        run: bun run migrate && bun run seed
 
       # The fixture repos ARE the test data: a repo with __project__/ docs and
       # a bare one, so "unconfigured root" stays covered.

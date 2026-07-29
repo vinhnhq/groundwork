@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { requireCapability } from "@/app/ops/guard";
 import { TriageWorkbench } from "@/components/triage-workbench";
 import { getContentSource } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
 export default async function TriagePage({ params }: { params: Promise<{ project: string }> }) {
+  // The triage agent spends tokens and proposes work — engineer-only. Same
+  // reason as /ops/integrations: the proxy's cookie cache expires, this does not.
+  await requireCapability("agent.run");
+
   const { project } = await params;
   const p = await getContentSource().getProject(project);
   if (!p) notFound();

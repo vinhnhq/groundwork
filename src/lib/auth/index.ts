@@ -1,40 +1,16 @@
 import "server-only";
-import { cookies } from "next/headers";
-import { type AuthAdapter, createMemoryAuthAdapter } from "@/lib/auth/memory-adapter";
-import { signToken, verifyToken } from "@/lib/auth/session-token";
-import type { Session } from "@/lib/auth/types";
-import { SESSION_COOKIE, sessionSecretFrom } from "@/lib/auth-constants";
+import { headers } from "next/headers";
+import { databaseConfigured } from "@/db";
+import { SESSION_DAYS } from "@/lib/auth/options";
+import { auth, sessionSecret } from "@/lib/auth/server";
+import { isRole, ROLES, type Role, type Session } from "@/lib/auth/types";
+import { COOKIE_PREFIX, DEV_ACCOUNT_PASSWORD } from "@/lib/auth-constants";
 import { serverEnv } from "@/lib/env-server";
 
-export { SESSION_COOKIE };
-
-const SESSION_DAYS = 7;
-
-export function sessionSecret(): string | null {
-  return sessionSecretFrom(
-    { BETTER_AUTH_SECRET: serverEnv().BETTER_AUTH_SECRET },
-    process.env.NODE_ENV === "production",
-  );
-}
-
-let adapter: AuthAdapter | undefined;
-
-/**
- * The account store.
- *
- * F5's real adapter — better-auth over Kysely/Neon — is not wired: it cannot be
- * built or verified without `DATABASE_URL` + `BETTER_AUTH_SECRET`, and shipping
- * unverified auth that switches itself on the moment an env var appears is
- * worse than a clearly-labelled gap. `authStatus()` says so out loud, and
- * /ops/integrations shows it.
- */
-function getAdapter(): AuthAdapter {
-  if (!adapter) adapter = createMemoryAuthAdapter(serverEnv().ADMIN_PASSWORD || undefined);
-  return adapter;
-}
+export { COOKIE_PREFIX, sessionSecret };
 
 export type AuthStatus = {
-  adapter: "memory" | "better-auth";
+  adapter: "better-auth";
   mocked: boolean;
   secretConfigured: boolean;
   databaseConfigured: boolean;
@@ -44,75 +20,128 @@ export type AuthStatus = {
 export function authStatus(): AuthStatus {
   const env = serverEnv();
   const secretConfigured = Boolean(env.BETTER_AUTH_SECRET?.trim());
-  const databaseConfigured = Boolean(env.DATABASE_URL?.trim());
+  const hasDb = databaseConfigured();
 
   return {
-    adapter: "memory",
-    mocked: true,
+    adapter: "better-auth",
+    // No longer a mock: real accounts, real scrypt hashes, a real session
+    // table. Without a database there is nothing to authenticate *against*,
+    // which is a broken deployment rather than a mocked one.
+    mocked: false,
     secretConfigured,
-    databaseConfigured,
+    databaseConfigured: hasDb,
     note: !sessionSecret()
       ? "LOCKED: production with no BETTER_AUTH_SECRET — no session can be issued or accepted."
-      : databaseConfigured
-        ? "DATABASE_URL is set, but the better-auth adapter is not implemented yet — still using the in-memory store."
-        : "In-memory accounts, one per role. Sessions are HMAC-signed and expire after 7 days.",
+      : !hasDb
+        ? "DATABASE_URL is unset — better-auth has no store, so no one can sign in. Run `docker compose up -d` then `bun run migrate && bun run seed`."
+        : "better-auth over Kysely/Neon: username + password, no social providers. Sessions last 7 days; the edge proxy reads a 5-minute signed cookie cache.",
   };
 }
 
-export async function getSession(): Promise<Session | null> {
-  const secret = sessionSecret();
-  if (!secret) return null;
+/** The role better-auth stored, narrowed — an unknown value is not a licence. */
+const roleOf = (value: unknown): Role =>
+  typeof value === "string" && isRole(value) ? value : "client";
 
-  const jar = await cookies();
-  const payload = await verifyToken(jar.get(SESSION_COOKIE)?.value, secret);
-  if (!payload) return null;
+/**
+ * The current session, read from the database.
+ *
+ * Authoritative: it validates the session token against the `session` table on
+ * every call, so a revoked session stops working immediately. The proxy's
+ * cookie-cache check is the fast path in front of this, not a replacement —
+ * see `requireCapability`.
+ */
+export async function getSession(): Promise<Session | null> {
+  const instance = auth();
+  if (!instance) return null;
+
+  const result = await instance.api.getSession({ headers: await headers() });
+  if (!result) return null;
 
   return {
-    user: { id: payload.sub, email: payload.email, name: payload.name, role: payload.role },
-    expiresAt: new Date(payload.exp * 1000),
+    user: {
+      id: result.user.id,
+      email: result.user.email,
+      name: result.user.name,
+      role: roleOf((result.user as { role?: unknown }).role),
+    },
+    expiresAt: new Date(result.session.expiresAt),
   };
-}
-
-export async function signIn(email: string, password: string): Promise<Session | null> {
-  // Refuse to mint a session we could not safely sign.
-  const secret = sessionSecret();
-  if (!secret) return null;
-
-  const user = await getAdapter().verify(email, password);
-  if (!user) return null;
-
-  const exp = Math.floor(Date.now() / 1000) + SESSION_DAYS * 24 * 60 * 60;
-  const token = await signToken(
-    { sub: user.id, email: user.email, name: user.name, role: user.role, exp },
-    secret,
-  );
-
-  (await cookies()).set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    expires: new Date(exp * 1000),
-  });
-
-  return { user, expiresAt: new Date(exp * 1000) };
-}
-
-export async function signOut(): Promise<void> {
-  (await cookies()).delete(SESSION_COOKIE);
 }
 
 /**
- * The demo accounts, **development only**.
+ * Sign in with a username and password.
  *
- * `listDemoAccounts()` returns the real password so the sign-in page can
- * prefill it — which is a convenience on a laptop and an open door on a public
- * URL: the page would print working `engineer` credentials to every visitor,
- * and setting ADMIN_PASSWORD would only change which password it printed.
- *
- * In production the accounts still exist (the store is in-memory until the
- * better-auth adapter lands) but they are not advertised, so signing in
- * requires knowing an address and the configured ADMIN_PASSWORD.
+ * Returns `null` for every failure — unknown username, wrong password, locked
+ * instance — because naming which one was wrong turns the form into an account
+ * enumerator.
  */
-export const demoAccounts = (): ReturnType<AuthAdapter["listDemoAccounts"]> =>
-  process.env.NODE_ENV === "production" ? [] : getAdapter().listDemoAccounts();
+export async function signIn(username: string, password: string): Promise<Session | null> {
+  const instance = auth();
+  if (!instance) return null;
+
+  try {
+    const result = await instance.api.signInUsername({
+      body: { username, password },
+      // Required for better-auth to write the session cookie through Next's
+      // cookie store; without it the call succeeds and the browser gets nothing.
+      headers: await headers(),
+      asResponse: false,
+    });
+    if (!result) return null;
+
+    // Build the session from what sign-in returned rather than calling
+    // `getSession()`. `getSession()` reads `headers()`, which are the *incoming*
+    // request's headers — the cookie this call just issued is not in them, so it
+    // returns null and the caller reports a perfectly good password as wrong.
+    return {
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.name,
+        role: roleOf((result.user as { role?: unknown }).role),
+      },
+      expiresAt: new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000),
+    };
+  } catch {
+    // Unknown username, wrong password, or an unreachable store — all the same
+    // answer to the caller, on purpose.
+    return null;
+  }
+}
+
+export type DevAccount = { username: string; role: Role; password?: string };
+
+/**
+ * The seeded accounts, **development only**.
+ *
+ * Returning the password so the sign-in page can prefill it is a convenience on
+ * a laptop and an open door on a public URL: the page would print working
+ * `engineer` credentials to every visitor, and setting `ADMIN_PASSWORD` would
+ * only change which password it printed. So production gets an empty list —
+ * the accounts still exist, they are simply not advertised, and signing in
+ * requires knowing the configured `ADMIN_PASSWORD`.
+ *
+ * The password is omitted (not guessed) when `ADMIN_PASSWORD` is set, because
+ * then the seed did not use the development literal and a prefill would be
+ * wrong rather than helpful.
+ */
+export function devAccounts(): DevAccount[] {
+  if (process.env.NODE_ENV === "production") return [];
+  const seeded = !serverEnv().ADMIN_PASSWORD?.trim();
+  return ROLES.map((role) => ({
+    username: role,
+    role,
+    password: seeded ? DEV_ACCOUNT_PASSWORD : undefined,
+  }));
+}
+
+export async function signOut(): Promise<void> {
+  const instance = auth();
+  if (!instance) return;
+  try {
+    await instance.api.signOut({ headers: await headers() });
+  } catch {
+    // Already signed out, or the store is unreachable. Either way the caller
+    // redirects to /sign-in, and a stale cookie fails its next verification.
+  }
+}

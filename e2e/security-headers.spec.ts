@@ -38,16 +38,17 @@ test("the other hardening headers are present", async ({ request }) => {
 test("the production sign-in page advertises no credentials", async ({ page }) => {
   await page.goto("/sign-in");
 
-  await expect(page.getByText(/demo accounts/i)).toHaveCount(0);
+  await expect(page.getByText(/seeded accounts/i)).toHaveCount(0);
   for (const role of ["Engineer", "PM", "QA", "Client"]) {
     await expect(page.getByTestId(`demo-${role.toLowerCase()}`)).toHaveCount(0);
   }
 
   // And nothing is pre-filled for the visitor.
-  await expect(page.getByLabel("Email")).toHaveValue("");
+  await expect(page.getByLabel("Username")).toHaveValue("");
   await expect(page.getByLabel("Password")).toHaveValue("");
 
   const html = await page.content();
-  expect(html).not.toContain("groundwork@");
-  expect(html.toLowerCase()).not.toContain("engineer@groundwork.local");
+  // Neither the seeded addresses nor the development password may appear.
+  expect(html).not.toContain("@groundwork.invalid");
+  expect(html).not.toContain("groundwork-dev");
 });

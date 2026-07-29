@@ -28,3 +28,26 @@ test("the other hardening headers are present", async ({ request }) => {
   expect(headers["x-content-type-options"]).toBe("nosniff");
   expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
 });
+
+/**
+ * The E2E server is a production build, so this pins the deployed behaviour:
+ * the sign-in page must not hand a visitor working credentials. It did — it
+ * listed all four demo accounts and prefilled the password field — which would
+ * have made the first public deploy an open door to the engineer role.
+ */
+test("the production sign-in page advertises no credentials", async ({ page }) => {
+  await page.goto("/sign-in");
+
+  await expect(page.getByText(/demo accounts/i)).toHaveCount(0);
+  for (const role of ["Engineer", "PM", "QA", "Client"]) {
+    await expect(page.getByTestId(`demo-${role.toLowerCase()}`)).toHaveCount(0);
+  }
+
+  // And nothing is pre-filled for the visitor.
+  await expect(page.getByLabel("Email")).toHaveValue("");
+  await expect(page.getByLabel("Password")).toHaveValue("");
+
+  const html = await page.content();
+  expect(html).not.toContain("groundwork@");
+  expect(html.toLowerCase()).not.toContain("engineer@groundwork.local");
+});

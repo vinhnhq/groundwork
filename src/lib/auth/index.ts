@@ -102,4 +102,17 @@ export async function signOut(): Promise<void> {
   (await cookies()).delete(SESSION_COOKIE);
 }
 
-export const demoAccounts = () => getAdapter().listDemoAccounts();
+/**
+ * The demo accounts, **development only**.
+ *
+ * `listDemoAccounts()` returns the real password so the sign-in page can
+ * prefill it — which is a convenience on a laptop and an open door on a public
+ * URL: the page would print working `engineer` credentials to every visitor,
+ * and setting ADMIN_PASSWORD would only change which password it printed.
+ *
+ * In production the accounts still exist (the store is in-memory until the
+ * better-auth adapter lands) but they are not advertised, so signing in
+ * requires knowing an address and the configured ADMIN_PASSWORD.
+ */
+export const demoAccounts = (): ReturnType<AuthAdapter["listDemoAccounts"]> =>
+  process.env.NODE_ENV === "production" ? [] : getAdapter().listDemoAccounts();

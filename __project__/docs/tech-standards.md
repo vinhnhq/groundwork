@@ -161,6 +161,25 @@ Anything varying per request (db connection, user, requestId, trace, tenant) —
 
 ## 7. Auth (better-auth, basic)
 
+> **Groundwork diverges here — see ADR-0008 (2026-07-29).** This section is the
+> `infinite-oneness` playbook; three of its rules did **not** survive contact with what
+> Groundwork actually needs, and following them now would be wrong:
+>
+> 1. **Sign-in is by username, not email.** The `username` plugin, `minUsernameLength: 2`
+>    (the role names are the usernames and two of them are two characters).
+> 2. **No integer `users.id` override.** better-auth's `text` ids are kept as-is. There is
+>    no `UserId` brand and no `Number(...)` at callsites — the footgun below does not exist
+>    here because the workaround that creates it was not adopted.
+> 3. **No dev-bypass `setSession` route.** The E2E suite signs in through the real form
+>    against a seeded database (`docker compose up -d && bun run migrate && bun run seed`),
+>    so there is no production-gated seam to defend. Table names are better-auth's defaults
+>    (`user`, `session`, `account`, `verification`), not the prefixed ones below.
+>
+> Also Groundwork-specific: the edge proxy is a **fast path**, not the authority — it reads
+> a five-minute signed cookie cache, and a miss falls through to `requireCapability`, which
+> checks the database. Any role-gated page that skips that call is ungated for five minutes
+> at a time.
+
 - **better-auth `^1.5` + `@better-auth/kysely-adapter` + `better-auth/next-js` (`nextCookies()`).** DB-backed sessions (opaque cookie → `getSession()` lookup, wrapped in `React.cache`).
 - **Schema:** `users` + `better_auth_sessions`/`better_auth_accounts`/`verification` (`id text` PK/UUID; `accounts` keeps an unused `password` column for the contract).
 - **Integer `users.id` override:** better-auth defaults user PK to UUID → `generateId: ({model}) => model==='user' ? false : crypto.randomUUID()` so Postgres SERIAL assigns it. **Footgun:** every callsite returns `session.user.id` as a *string* — `Number(...)` it everywhere. Brand at the boundary: `UserId = Tagged<number,'UserId'>` via `parseUserId → Result`.
@@ -249,6 +268,12 @@ Co-located `messages.ts` per feature folder exporting `{ en, vi } as const` (bot
 - **Tokens:** radius `0.625rem`; **type scale = Tailwind defaults** ("font 16" = `text-base`); `neutral` base + Tailwind palette for semantic color; reach for a fixed `bg-emerald-500` over inventing a `--success` token unless the value varies by mode/theme. Numeric chips `tabular-nums`. Theme via `next-themes` (style both themes).
 - **Motion:** Framer Motion for components; native `<ViewTransition>` for routes; `tw-animate-css` in `globals.css`; prefer transform/opacity-only. Co-locate feature CSS (`*.module.css`); `globals.css` for app-wide only.
 - **shadcn gotchas** (see §14 for the full list): `size-N` on the SVG not the parent; `gap-0!` to beat `:has()` variants; brand icons via `@icons-pack/react-simple-icons`; standalone page buttons `variant="secondary"`; static ItemGroup rows `gap-0`, interactive rows keep padding.
+- **Port the token set whole, or the components fail silently** (ADR-0009, 2026-07-29). Groundwork
+  copied the radix-maia primitives but only *part* of `globals.css`: the eight `--sidebar-*` tokens
+  `ui/sidebar.tsx` uses 92 times were never defined, and `tw-animate-css` — mandated one line above —
+  was never installed, so every overlay mounted with no transition. **A class that resolves to
+  nothing is invisible to lint, tsc, unit tests and E2E.** After porting primitives, diff
+  `globals.css` against the source repo and check a token's *computed* value on a painted element.
 
 ---
 

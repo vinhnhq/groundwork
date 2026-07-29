@@ -2,6 +2,8 @@
 
 Format: `- YYYY-MM-DD · <sha> · <task-id> short description`
 
+- 2026-07-29 · UI · radix-maia token set completed (`--sidebar-*` ×8 were referenced 92× and defined 0×; `tw-animate-css` missing so every overlay had no transition) + borderless tables, status variants, tasks filter row — ADR-0009
+- 2026-07-29 · F5 · better-auth over Kysely/Postgres, username+password, no social — ADR-0008. Closed a live gap: /ops/integrations and /ops/*/triage had no server-side capability check
 - 2026-07-29 · favicon · lucide `list-checks` (ISC, no attribution) — stroke 2.75 + cropped viewBox for 16px legibility
 - 2026-07-29 · deploy · Vercel project connected to GitHub (PR → preview, main → production); public at groundwork-zeta-wheat.vercel.app
 - 2026-07-29 · sec · Never advertise demo credentials in production — the sign-in page printed working engineer creds (PR #3)

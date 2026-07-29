@@ -19,8 +19,10 @@ dashboard is a **read-only projection** of them + a thin write-back path for new
 
 ## Locked kickoff decisions (from tech-standards §0)
 
-- Stack: **Next 16 · React 19 + Compiler · TS 6 · Bun · Biome 2 · Tailwind v4 · Kysely + Neon · better-auth (basic) · Zod v4 · Vitest + Playwright · shadcn radix-maia**.
+- Stack: **Next 16 · React 19 + Compiler · TS 6 · Bun · Biome 2 · Tailwind v4 · Kysely + Neon · better-auth (username + password, no social — ADR-0008) · Zod v4 · Vitest + Playwright · shadcn radix-maia**.
 - Test runner: **Vitest** projects (`unit` + `integration`). Never `bun test` — use `bun run test`.
+- **A database is required to sign in.** `docker compose up -d && bun run migrate && bun run seed`,
+  then sign in as username `engineer`. The integration + e2e suites need it too.
 - shadcn: **wrapper-over-pristine** (`ui/*` untouched, tweaks in `components/*`).
 - FP errors: homemade `Result` → graduate to `purify-ts` `Either` at ≥3 chained fallible steps.
 

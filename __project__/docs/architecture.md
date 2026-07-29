@@ -38,11 +38,15 @@ What the deployed instance actually is, stated plainly because the gap matters:
 - **Demo data, not your repos.** `CONTENT_SOURCE=github` with no `GITHUB_TOKEN` serves the built-in
   fixture repo. Add `GITHUB_TOKEN` (contents: read) + `GITHUB_REPOS` to read real ones — no code
   change; see `/ops/integrations`, which reports exactly this.
-- **Auth is the in-memory store.** Four seeded accounts, one per role, are the entire user table.
-  `ADMIN_PASSWORD` (set in Vercel, generated) is the only thing guarding the engineer role. The
-  better-auth/Neon adapter is still unbuilt — treat this as a demo URL until F5 lands.
+- **Auth is real (F5, 2026-07-29).** better-auth over Kysely/Postgres, **username + password**, four
+  seeded accounts — one per role. Passwords are scrypt hashes in a `user` table, sessions live in a
+  `session` table. Public sign-up is disabled: accounts come from `bun run seed`, never from a form.
+  `ADMIN_PASSWORD` sets the seeded password on the deployed instance.
+- **The deployed instance needs `DATABASE_URL`.** Without it nobody can sign in at all — there is no
+  fallback store any more. Provision the Neon database and set it before the next deploy;
+  `/ops/integrations` reports this state.
 - Env set on production + preview: `BETTER_AUTH_SECRET`, `ADMIN_PASSWORD`, `MCP_TOKEN`,
-  `CONTENT_SOURCE=github`.
+  `CONTENT_SOURCE=github`. **Still to add: `DATABASE_URL`.**
 
 Two production guards exist because a default credential reachable from the internet fails
 silently: with no `BETTER_AUTH_SECRET`, production issues and accepts **no session at all** rather
@@ -58,9 +62,16 @@ HMAC-signed sessions and a role matrix (engineer · PM · QA · client) enforced
 server actions and the UI.
 
 **What is still mocked** — deliberately, pending credentials: the GitHub client (no token), the
-write-back transport (defaults to a dry run), the triage analyzer (no `ANTHROPIC_API_KEY`), and the
-auth store (in-memory; **the better-auth/Kysely adapter over Neon is not implemented**). `/ops/integrations`
-is the live inventory of which seam is real and what activates it.
+write-back transport (defaults to a dry run), and the triage analyzer (no `ANTHROPIC_API_KEY`).
+**Auth is no longer among them** — see F5 below. `/ops/integrations` is the live inventory of which
+seam is real and what activates it.
+
+**F5 shipped (2026-07-29).** better-auth over Kysely/Postgres with the `username` plugin; the
+in-memory adapter and the hand-rolled HMAC session cookie are gone. Two things the migration forced
+into the open: `/ops/integrations` and `/ops/<project>/triage` had **no** server-side capability
+check — they leaned entirely on the edge proxy, which was survivable while the proxy verified a
+signed role on every request and is not now that the edge reads a five-minute cookie cache. Both
+call `requireCapability` against the database, and an e2e test drops the cache cookie to prove it.
 
 ---
 
@@ -119,7 +130,7 @@ tickets.** Same data, two projections: a curated public portfolio and a complete
 | Surface | Audience | Auth | Content |
 |---|---|---|---|
 | `/` `/projects/[slug]` (portfolio) | public / clients | none | curated project cards, tech, links, selected screenshots |
-| `/ops` (dashboard) | just me + agent | better-auth (basic) | every ADR/spec/task/retro, DoR board, cross-project READY queue |
+| `/ops` (dashboard) | just me + agent | better-auth (username+password) | every ADR/spec/task/retro, DoR board, cross-project READY queue |
 | `/ops/[project]/triage` | me (+ client in the room) | better-auth | live agent chat over the project's docs → draft ticket |
 | MCP server | any Claude session | local/token | tools to query + triage across all projects |
 
@@ -253,11 +264,20 @@ context inside) · immutable `Cache-Control` on hashed asset URLs (repo-served o
 
 ---
 
-## 8. Auth (better-auth, basic only)
+## 8. Auth (better-auth, username + password) — shipped, ADR-0008
 
-- **Email + password only** this time (no OAuth/social). Single admin identity = you.
-- Better-auth over the same Neon/Kysely instance (Kysely adapter). Session cookie gates `/ops/**` via
-  `proxy.ts` (Next 16 middleware). `/` and `/projects/**` stay public.
+- **Username + password only** (no OAuth/social) — see ADR-0008 for why. Four accounts, one per
+  role; the role name *is* the username (`engineer`, `pm`, `qa`, `client`).
+- better-auth over the same Neon/Kysely instance. `/` and `/projects/**` stay public.
+- **Two layers gate `/ops/**`, and the split is deliberate.** `proxy.ts` runs on the edge with no
+  database handle, so it can only check that a session cookie exists and read the role out of
+  better-auth's signed five-minute cookie cache — a fast path that fails closed on "no cookie" but
+  cannot be the authority. Every role-gated page calls `requireCapability`, which validates against
+  the `session` table; route handlers use `capabilityResponse` so a `fetch` gets a 403 rather than a
+  200 whose body is the sign-in page. A cache miss is **not** a denial — it falls through to the
+  page, which is exactly why the page must check.
+- `role` is a better-auth additional field with `input: false`: it cannot be set through any request
+  payload, only server-side. Public sign-up is disabled — this is a private console, not a product.
 - Optional: a per-project "share" read link later if a client needs to see one board. Deferred.
 
 ---
@@ -321,7 +341,7 @@ aggregator script** is the cheaper 80% — graduate to a real MCP server when yo
 - **Next.js 16 + TS, RSC-first**, React Compiler on. shadcn (composition components; reuse the `radix-maia`
   muscle memory or start fresh `neutral`). Tailwind v4 (`@theme` in CSS).
 - **Kysely + Neon** (mirror `infinite-oneness`), migrations via the same Kysely `Migrator` pattern.
-- **better-auth** (basic email/password).
+- **better-auth** (username + password; no social — ADR-0008).
 - **Anthropic SDK** for the triage agent (Haiku default — cheapest Claude; upgradeable per the `model` seam).
 - **Object storage:** Vercel Blob (or R2). **MCP:** `@modelcontextprotocol/sdk` (stdio locally, http if hosted).
 
@@ -378,7 +398,7 @@ with your agent sessions.
   members add/flip/annotate tasks in the UI, but every change **writes back to the repo `backlog.md`**
   (git-free for them; git stays the transport). It does not edit tasks in a private DB. No comments DB
   or attachment store in v2 (repo assets per §7).
-- No OAuth (email+password only, v4/F5). No realtime multi-viewer (SSE only) until a real second
+- No OAuth (username+password only — ADR-0008). No realtime multi-viewer (SSE only) until a real second
   concurrent editor exists. No portfolio CMS — frontmatter is the CMS. No multi-tenant SaaS / billing
   (self-hosted; Cloud tier is v5+ and a separate decision).
 ```

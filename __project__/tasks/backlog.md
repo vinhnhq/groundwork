@@ -11,8 +11,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 ## v1 — Foundation (rungs 1–4)
 
 > **Status 2026-07-25:** F0–F4 + F6 SHIPPED (autonomous build, gated per rung — see done.md).
-> **F5 (auth) is the intended stop point — blocked on a Neon `DATABASE_URL` + `BETTER_AUTH_SECRET`
-> (owner-provided).** The ops console runs read-only against local repos today.
+> **F5 (auth) SHIPPED 2026-07-29** — better-auth over Kysely/Postgres, username + password, no
+> social providers (ADR-0008). Local dev runs on `docker compose up -d`; the deployed instance
+> still needs a Neon `DATABASE_URL`.
 >
 > Dogfood finding: pointed at its own root, Groundwork parses its 9 tasks but flags most as DRAFT
 > "missing intent" — because these tasks carry intent in the title, not an explicit `**Intent:**`
@@ -29,8 +30,8 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 - [x] **F4.2** Project detail + doc render pages + asset route. *(2026-07-25)*
 - [x] **F6.1** Dogfood (Groundwork ingests itself) + ADR-0001 + status. *(2026-07-25)*
 
-### F5 · Auth gate (rung 4)  → **[P]**  ⏸ blocked on owner-provided Neon creds
-- ⏸ **F5.1** better-auth (email+password, single admin) over Kysely/Neon; migration for the auth tables (integer `users.id` override per tech-standards §7); `src/proxy.ts` gates `/ops/**`; `/` public; the `NODE_ENV`-gated dev-session E2E seam. Also un-defers `db.ts`/`db-pool.ts`.
+### F5 · Auth gate (rung 4)  → **[P]**  ✅ shipped 2026-07-29 (ADR-0008)
+- [x] **F5.1** better-auth (**username**+password, four role accounts) over Kysely/Postgres; schema derived from the same options object the app runs on (better-auth owns its four tables and their **text** ids — the integer `users.id` override in tech-standards §7 does not apply and was dropped); `src/proxy.ts` gates `/ops/**` as a fast path, `requireCapability` is the authority; `/` public. Un-defers `db.ts` as `src/db/`.
   - **Intent:** gate the private ops console behind a session; keep `/` public.
   - **Touches:** `src/lib/{db,db-pool,auth,auth-client}.ts`, `src/db/**`, `src/proxy.ts`, `src/app/sign-in/**`. **Must NOT:** the content/tasks read layer.
   - **Oracle:** integration test (session lookup) + Playwright: signed-out `/ops` → redirect to sign-in; signed-in → ops home.
@@ -109,12 +110,14 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 
 ### v4 · Team & auth
 
-- → **F5** Auth seam + signed sessions; **better-auth over Neon still not wired**.  → **[P]** *(2026-07-28)*
+- [x] **F5** Auth seam + better-auth over Kysely/Postgres.  → **[P]** *(2026-07-29)*
   - **Intent:** gate the console per-person and per-role, and stop treating any cookie value as an admin.
   - **Touches:** `src/lib/auth/**`, `src/proxy.ts`, `src/app/sign-in/**`. **Must NOT:** ship unverified DB-backed auth that self-activates on an env var.
   - **Oracle:** unit — a tampered role, a foreign secret, an expired token and garbage all verify to null; E2E — a forged cookie redirects to sign-in.
-  - **Evidence:** tech-standards §7 · spec v2 §4 (F5) · `src/lib/auth/session-token.ts`.
-  - **Escalate if:** no Neon creds — **hit.** The in-memory adapter fills the seam; `authStatus()` and /ops/integrations report it. **Remaining:** implement the better-auth/Kysely adapter + migration, then set `DATABASE_URL` + `BETTER_AUTH_SECRET`.
+  - **Evidence:** ADR-0008 · `src/lib/auth/options.ts` · `src/tests/integration/auth.int.test.ts`.
+  - **Escalate if:** no Neon creds — **resolved** by running Postgres locally in Docker, so the
+    migration and sign-in are executed rather than asserted. **Remaining:** set `DATABASE_URL` on
+    the Vercel project and seed it; until then nobody can sign in to the deployed instance.
 - [x] **R1** Roles: engineer · PM/QA · client.  → **[P]** *(2026-07-28)*
   - **Intent:** PM/QA run the board without spending tokens or seeing secrets; a client reads only.
   - **Touches:** `src/lib/auth/roles.ts`, `src/proxy.ts`, ops layout + project page, the write actions. **Must NOT:** rely on hidden UI as the control.

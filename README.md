@@ -24,24 +24,30 @@ plus a write-back path — it never becomes a second database of tasks.
 - Decisions → [`__project__/docs/decisions/`](__project__/docs/decisions/)
 
 **Live:** <https://groundwork-zeta-wheat.vercel.app> — deployed from `main` via Vercel.
-It serves **demo data** and an **in-memory auth store**; see *Status* below.
+It serves **demo data**; see *Status* below.
 
 ## Status
 
-🟢 **v1 Foundation + v2 Grounding + v3 Sync shipped.** 🟡 **Several integrations are still mocked
-on purpose** — no API keys or database yet. Sign in and open **/ops/integrations**: it lists every
+🟢 **v1 Foundation + v2 Grounding + v3 Sync + F5 Auth shipped.** 🟡 **Several integrations are
+still mocked on purpose** — no API keys yet. Sign in and open **/ops/integrations**: it lists every
 seam, whether it is live or mocked, and the exact variable that makes it real.
 
-Still to do: the **better-auth / Kysely adapter over Neon** (the seam and UI exist; the DB-backed
-adapter does not), and v5 packaging (`@groundwork/engine`, CLI).
+Auth is real as of 2026-07-29: **better-auth over Kysely/Postgres, username + password, no social
+providers** ([ADR-0008](__project__/docs/decisions/0008-auth-username-password.md)). Four accounts,
+one per role; the role name is the username. Public sign-up is disabled.
+
+Still to do: **`DATABASE_URL` on the deployed instance** (without it nobody can sign in — there is
+no fallback store), and v5 packaging (`@groundwork/engine`, CLI).
 
 ### Deploy
 
 Vercel is connected to this repo: a PR gets a preview deployment, a merge to `main` goes to
 production. To make the deployed instance read **real** repos instead of the built-in fixture, add
-`GITHUB_TOKEN` (contents: read) and `GITHUB_REPOS` in the Vercel project — no code change. Until
-the better-auth adapter lands, the four seeded accounts are the entire user table and
-`ADMIN_PASSWORD` is the only thing guarding the engineer role, so treat the URL as a demo.
+`GITHUB_TOKEN` (contents: read) and `GITHUB_REPOS` in the Vercel project — no code change.
+
+The deployed instance needs a **`DATABASE_URL`** (Neon) plus `bun run migrate && bun run seed`
+against it. Set `ADMIN_PASSWORD` first, or the seeder refuses to run: it will not put the
+development password on a public URL.
 
 ## Run
 
@@ -50,9 +56,17 @@ git clone https://github.com/vinhnhq/groundwork.git
 cd groundwork
 bun install
 cp .env.example .env.local          # set PROJECT_ROOTS to your repo paths (comma-separated)
+
+docker compose up -d                # Postgres on 55432 (dev + test databases)
+bun run migrate && bun run seed     # better-auth schema + the four role accounts
+bun run migrate --test              # schema for the integration suite
+
 PROJECT_ROOTS="/abs/path/to/repo-a,/abs/path/to/groundwork" bun run dev
-# open http://localhost:3000/ops
+# open http://localhost:3000/ops — sign in as `engineer` / `groundwork-dev`
 ```
+
+The four accounts are `engineer`, `pm`, `qa`, `client` — the role name is the username. Re-running
+the seed is safe: it re-asserts roles and leaves existing passwords alone.
 
 Every project root needs a `__project__/project.yml`; without one it shows as *unconfigured*
 rather than failing. Groundwork's own repo is a valid root — point it at itself to see the

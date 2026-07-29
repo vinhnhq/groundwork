@@ -77,12 +77,12 @@ export default async function ProjectGrounding({
             ))}
           </ul>
 
-          <div className="hidden rounded-lg border md:block">
+          <div className="hidden md:block">
             {/* Fixed layout so a long decision statement wraps instead of
                 running the column off the right edge. */}
             <Table className="table-fixed">
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableHead className="w-72">Decision</TableHead>
                   <TableHead>What was settled</TableHead>
                 </TableRow>
@@ -121,10 +121,10 @@ export default async function ProjectGrounding({
             ))}
           </ul>
 
-          <div className="hidden rounded-lg border md:block">
+          <div className="hidden md:block">
             <Table className="table-fixed">
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableHead>Constraint</TableHead>
                   <TableHead className="w-64">Source</TableHead>
                 </TableRow>

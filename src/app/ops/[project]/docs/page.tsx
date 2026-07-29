@@ -1,14 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DocRow } from "@/components/doc-row";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DocKind } from "@/lib/content";
 import { loadProject } from "@/lib/ops/load";
 
@@ -53,10 +47,12 @@ export default async function ProjectDocs({ params }: { params: Promise<{ projec
             ))}
           </ul>
 
-          <div className="hidden rounded-lg border md:block">
+          {/* No card wrapper and no outer border — the header rule and the row
+              hairlines carry the structure. */}
+          <div className="hidden md:block">
             <Table className="table-fixed">
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableHead className="w-20">Kind</TableHead>
                   <TableHead className="w-56">ID</TableHead>
                   <TableHead>Title</TableHead>
@@ -64,19 +60,13 @@ export default async function ProjectDocs({ params }: { params: Promise<{ projec
               </TableHeader>
               <TableBody>
                 {view.docs.map((doc) => (
-                  <TableRow key={`${doc.kind}/${doc.id}`}>
-                    <TableCell>
-                      <Badge variant="outline">{KIND_LABEL[doc.kind]}</Badge>
-                    </TableCell>
-                    <TableCell className="truncate font-mono text-xs text-muted-foreground">
-                      {doc.id}
-                    </TableCell>
-                    <TableCell className="break-words whitespace-normal">
-                      <Link href={`/ops/${slug}/${doc.kind}/${doc.id}`} className="hover:underline">
-                        {doc.title}
-                      </Link>
-                    </TableCell>
-                  </TableRow>
+                  <DocRow
+                    key={`${doc.kind}/${doc.id}`}
+                    href={`/ops/${slug}/${doc.kind}/${doc.id}`}
+                    kindLabel={KIND_LABEL[doc.kind]}
+                    id={doc.id}
+                    title={doc.title}
+                  />
                 ))}
               </TableBody>
             </Table>

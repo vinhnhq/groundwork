@@ -1,14 +1,14 @@
 slug: groundwork
 name: Groundwork
-tagline: One ops view + agent triage across all your project repos
+tagline: A git-backed grounding layer for a mixed-agent team
 status: active            # active | paused | shipped | archived
 visibility: public
-stack: [next, ts, react, kysely, neon, better-auth, tailwind, shadcn]
+stack: [next, ts, react, kysely, neon, better-auth, tailwind, shadcn, mcp]
 links:
-  repo: ""
+  repo: https://github.com/vinhnhq/groundwork
   live: ""
 cover: ""
 public_highlights:
-  - "Read-only projection over canonical Markdown in each project repo"
-  - "Definition-of-Ready gate — every ticket grounded in ≥2 evidences"
-  - "Client-idea triage: agent analyzes an idea against live docs before it becomes a task"
+  - "One Brain digest per project, served through three byte-identical doors — clipboard, context.md, and MCP"
+  - "Git-free write-back: PM and QA capture and move tasks; the change lands in the repo's backlog.md"
+  - "Definition-of-Ready gate — every ticket grounded in ≥2 evidences before it can start"

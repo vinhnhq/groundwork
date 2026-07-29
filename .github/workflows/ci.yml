@@ -1,0 +1,124 @@
+# Seeded from @vinhnnn/dev-workflow templates/pipeline/ — owned by this repo.
+# Repo: https://github.com/vinhnhq/groundwork
+#
+# Quality gate. Why it exists: a broken test once shipped because the only
+# thing running in CI was the deploy provider's build. The host still owns
+# deploys; this runs the four gates on every PR, in the same order the
+# ship ritual runs them locally, plus the browser suite.
+#
+# Groundwork is mock-only today (no DB): unit + integration tests are
+# filesystem-based, so `test:coverage` runs unconditionally. When F5 lands a
+# Neon test branch, add a DATABASE_TEST_URL secret and gate integration on it.
+#
+# Toolchain (bun/node) is pinned in mise.toml — CI and laptops share one source.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      # Installs the bun/node pinned in mise.toml — CI and laptops share one
+      # source of truth for toolchain versions.
+      - uses: jdx/mise-action@v4
+        with:
+          cache: true
+
+      # Bun's package cache — keyed on the lockfile; saves the install step
+      # re-downloading every tarball per run.
+      - name: Cache bun install
+        uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      # Next.js incremental build cache. Keyed on lockfile + source hash;
+      # restore-keys let a source-only change reuse the previous cache.
+      - name: Cache framework build
+        uses: actions/cache@v6
+        with:
+          path: .next/cache
+          key: build-${{ runner.os }}-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**/*.ts', 'src/**/*.tsx') }}
+          restore-keys: |
+            build-${{ runner.os }}-${{ hashFiles('bun.lock') }}-
+            build-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # The four gates, same as the ship ritual runs locally — in the same
+      # order, so a CI failure maps onto a command you can re-run.
+      - name: Lint
+        run: bun run lint
+
+      - name: Type-check
+        run: bunx tsc --noEmit
+
+      - name: Tests
+        run: bun run test:coverage
+
+      - name: Build
+        run: bun run build
+
+  # E2E is a separate job so a Playwright failure is distinguishable at a
+  # glance from a lint or type error, and so the two run concurrently.
+  #
+  # It earns its place: the browser suite is what caught a role gate that let a
+  # read-only client fetch another team's grounding digest, and a CSP that
+  # broke every page in development. Neither is visible to lint, tsc or the
+  # unit tests.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v4
+        with:
+          cache: true
+
+      - name: Cache bun install
+        uses: actions/cache@v6
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Chromium only — the suite runs one project, and pulling all three
+      # browsers costs minutes for coverage we do not assert.
+      - name: Install Playwright browser
+        run: bunx playwright install --with-deps chromium
+
+      # `bun run start` serves a production build, so the build has to exist.
+      - name: Build
+        run: bun run build
+
+      # The fixture repos ARE the test data: a repo with __project__/ docs and
+      # a bare one, so "unconfigured root" stays covered.
+      - name: E2E
+        env:
+          PROJECT_ROOTS: ${{ github.workspace }}/src/tests/fixtures/repo-ok,${{ github.workspace }}/src/tests/fixtures/repo-bare
+        run: bun run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

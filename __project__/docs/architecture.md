@@ -6,6 +6,43 @@
 
 ---
 
+## Current state (2026-07-28)
+
+**v1 Foundation shipped** (mock-based, autonomous gated build F0–F4 + F6 — see `tasks/done.md`):
+read/render of each repo's `__project__/**`, the DoR-gated task model + cross-project READY queue,
+doc pages, mock auth gate, client-idea triage on a mock analyzer, and the public portfolio
+projection. Design system ported from infinite-oneness (radix-maia). F5 (real auth/DB) is the
+intended v1 stop — blocked on owner Neon creds.
+
+**Pivot → v2 (spec `specs/v2-grounding.md`, ADR-0007):** Groundwork becomes a **grounding layer
+for a mixed-agent team** (engineer + PM + QA). Two headline capabilities: (1) a **Brain digest**
+(`renderBrain`) served through two doors — a live **MCP** tool and **copy-paste/export** — so every
+teammate's agent (GPT or Claude) reasons from the same current docs; (2) **git-free write-back** so
+non-technical members sync tasks without touching git. This **reverses the solo non-goal in §14**.
+Build order + DoR-tagged tasks: `tasks/backlog.md` (v2 = G1–G4). Delivery = open-core (self-host
+lib first, Cloud tier later). AI cost = BYOK / local Claude subscription (no per-token cost).
+
+**Process:** `dev-workflow.md` seeded from `@vinhnnn/dev-workflow` v2.4.1 (2026-07-28); the ship
+ritual (`.claude/skills/ship-review`), session-log hook, and CI (`.github/workflows/ci.yml`) are
+materialized. Groundwork's deliberate divergences (biome, wrapper-shadcn) are noted in that file.
+
+**Repo:** <https://github.com/vinhnhq/groundwork>. CI runs the four gates plus the Playwright
+suite on every PR.
+
+**v2 + v3 shipped (2026-07-28, same day as the pivot).** Grounding: `renderBrain` (ADR-0004) served
+through three byte-identical doors — clipboard, `context.md`, and MCP over stdio (ADR-0006) or HTTP.
+Sync: a `BacklogWriter` seam (ADR-0002) with memory / filesystem / git-branch / GitHub-PR
+transports, a GitHub-backed `ContentSource`, and the task-capture + status-flip UI. Auth gained
+HMAC-signed sessions and a role matrix (engineer · PM · QA · client) enforced in the proxy, the
+server actions and the UI.
+
+**What is still mocked** — deliberately, pending credentials: the GitHub client (no token), the
+write-back transport (defaults to a dry run), the triage analyzer (no `ANTHROPIC_API_KEY`), and the
+auth store (in-memory; **the better-auth/Kysely adapter over Neon is not implemented**). `/ops/integrations`
+is the live inventory of which seam is real and what activates it.
+
+---
+
 ## Name & positioning
 
 - **Product name:** **Groundwork** — the ops tool (the reusable thing that could be commercialized).
@@ -312,6 +349,15 @@ with your agent sessions.
 
 ## 14. Non-goals / deferred
 
-- No multi-user / team boards (solo). No task *editing* in the dashboard (edit in repo). No OAuth. No realtime
-  multi-viewer (SSE only) until a real second viewer exists. No portfolio CMS — frontmatter is the CMS.
+> **Amended 2026-07-28 (ADR-0007):** the original "solo, no team boards" non-goal is **reversed** —
+> v2 is explicitly a small-team tool (engineer + PM + QA). The remaining non-goals below still hold.
+
+- ~~No multi-user / team boards (solo).~~ **Reversed** — see the pivot in *Current state* + `specs/v2-grounding.md`.
+- **Task editing model:** the dashboard still never becomes a *second source of truth*. Non-technical
+  members add/flip/annotate tasks in the UI, but every change **writes back to the repo `backlog.md`**
+  (git-free for them; git stays the transport). It does not edit tasks in a private DB. No comments DB
+  or attachment store in v2 (repo assets per §7).
+- No OAuth (email+password only, v4/F5). No realtime multi-viewer (SSE only) until a real second
+  concurrent editor exists. No portfolio CMS — frontmatter is the CMS. No multi-tenant SaaS / billing
+  (self-hosted; Cloud tier is v5+ and a separate decision).
 ```

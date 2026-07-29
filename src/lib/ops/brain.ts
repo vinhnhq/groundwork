@@ -1,0 +1,9 @@
+import "server-only";
+import type { Brain } from "@/lib/brain";
+import { loadBrain } from "@/lib/brain";
+import { getContentSource } from "@/lib/content";
+
+/** The app-side entry to the digest: same assembler, app's configured source. */
+export function loadProjectBrain(slug: string, budget?: number): Promise<Brain | null> {
+  return loadBrain(slug, getContentSource(), budget);
+}

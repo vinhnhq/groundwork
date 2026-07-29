@@ -12,3 +12,9 @@ coverage/
 .turbo/
 playwright-report/
 test-results/
+
+# tsc incremental build cache — local artifact, not source.
+tsconfig.tsbuildinfo
+
+# Agent worktrees (ship-review QA runs) — never part of the repo.
+.claude/worktrees/

@@ -22,6 +22,11 @@ export default defineConfig({
     env: {
       // NODE_ENV=test skips .env.local — forward secrets the server needs here.
       PROJECT_ROOTS: process.env.PROJECT_ROOTS ?? "",
+      // `next start` runs as production, where both default credentials are
+      // deliberately refused — so E2E must supply real ones, which also means
+      // it exercises the configured path rather than the dev fallback.
+      MCP_TOKEN: "e2e-mcp-token",
+      BETTER_AUTH_SECRET: "e2e-session-secret-not-the-published-one",
     },
   },
 });

@@ -162,6 +162,15 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Intent:** `ops.spec.ts` matches the project by text rather than by link role, so the entry point no longer has to be a link at all.
   - **Evidence:** PR #1 QA loosened-assertion verdict · `e2e/ops.spec.ts`.
 
+### D · Deployed instance  *(2026-07-29)*
+
+- · **D1** Point the deployed instance at the real repos.  → **[S]**
+  - **Intent:** the live site serves the built-in fixture repo, so it demonstrates the shape of the product rather than the team's actual work — the thing it exists to show.
+  - **Touches:** Vercel env only (`GITHUB_TOKEN`, `GITHUB_REPOS`). **Must NOT:** any source change; the adapter already exists (S3).
+  - **Oracle:** `/ops` on the production URL lists groundwork + infinite-oneness rather than Acme Checkout, and `/ops/integrations` reports the content source as `github` rather than `github-mock`.
+  - **Evidence:** ADR-0001 amendment (GitHub adapter in scope) · `src/lib/content/index.ts` `resolveSourceKind()` · `/ops/integrations` names both variables.
+  - **Escalate if:** a fine-grained token cannot be scoped to contents-read on those repos alone — the write-back path would then need a separate, narrower token.
+
 ### v5 · Packaging — open-core  *(DRAFT / stretch — deliberately not started)*
 - ↷ **P1** extract `@groundwork/engine` (workspace) — the pure core both hosts import.
 - ↷ **P2** `@groundwork/cli init` + `groundwork.config.ts` scaffold (self-host).

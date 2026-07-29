@@ -23,6 +23,9 @@ plus a write-back path — it never becomes a second database of tasks.
 - What's next → [`__project__/tasks/backlog.md`](__project__/tasks/backlog.md)
 - Decisions → [`__project__/docs/decisions/`](__project__/docs/decisions/)
 
+**Live:** <https://groundwork-zeta-wheat.vercel.app> — deployed from `main` via Vercel.
+It serves **demo data** and an **in-memory auth store**; see *Status* below.
+
 ## Status
 
 🟢 **v1 Foundation + v2 Grounding + v3 Sync shipped.** 🟡 **Several integrations are still mocked
@@ -31,6 +34,14 @@ seam, whether it is live or mocked, and the exact variable that makes it real.
 
 Still to do: the **better-auth / Kysely adapter over Neon** (the seam and UI exist; the DB-backed
 adapter does not), and v5 packaging (`@groundwork/engine`, CLI).
+
+### Deploy
+
+Vercel is connected to this repo: a PR gets a preview deployment, a merge to `main` goes to
+production. To make the deployed instance read **real** repos instead of the built-in fixture, add
+`GITHUB_TOKEN` (contents: read) and `GITHUB_REPOS` in the Vercel project — no code change. Until
+the better-auth adapter lands, the four seeded accounts are the entire user table and
+`ADMIN_PASSWORD` is the only thing guarding the engineer role, so treat the URL as a demo.
 
 ## Run
 

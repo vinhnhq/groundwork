@@ -1,16 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { DorGaps, StatusBadge, TierBadge } from "@/components/badges";
 import { TaskStatusControl } from "@/components/task-status-control";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -20,10 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { readiness } from "@/lib/tasks/dor";
-import type { AutonomyTier, Task, TaskStatus } from "@/lib/tasks/types";
-
-const STATUSES: TaskStatus[] = ["todo", "in-progress", "done", "blocked", "stretch"];
-const TIERS: AutonomyTier[] = ["supervised", "plan-gated", "dark", "trivial"];
+import type { Task } from "@/lib/tasks/types";
 
 function Readiness({ task }: { task: Task }) {
   if (task.status === "done") return null;
@@ -36,79 +24,23 @@ function Readiness({ task }: { task: Task }) {
 }
 
 /**
- * The backlog, as a scan surface.
+ * The backlog as a scannable table — the "what is the state of everything" view.
  *
- * Filtering is client-side over the already-loaded tasks — a backlog is tens of
- * rows, not thousands, so a round-trip per filter change would buy nothing and
- * cost the interaction.
+ * A pure renderer over already-filtered tasks: the filter row and the
+ * board/table switch live in `TasksView`, so both views filter identically
+ * rather than each growing its own copy.
  */
 export function TasksTable({
   project,
-  tasks,
+  tasks: filtered,
   mayWrite,
 }: {
   project: string;
   tasks: Task[];
   mayWrite: boolean;
 }) {
-  const [status, setStatus] = useState<string>("all");
-  const [tier, setTier] = useState<string>("all");
-  const [readyOnly, setReadyOnly] = useState(false);
-  const [blockedOnly, setBlockedOnly] = useState(false);
-
-  const filtered = tasks.filter((t) => {
-    if (status !== "all" && t.status !== status) return false;
-    if (tier !== "all" && (t.autonomy ?? "") !== tier) return false;
-    if (readyOnly && !readiness(t).ready) return false;
-    if (blockedOnly && t.status !== "blocked") return false;
-    return true;
-  });
-
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterSelect
-          label="Status"
-          value={status}
-          onChange={setStatus}
-          options={[
-            { value: "all", label: "All statuses" },
-            ...STATUSES.map((s) => ({ value: s, label: s })),
-          ]}
-        />
-        <FilterSelect
-          label="Tier"
-          value={tier}
-          onChange={setTier}
-          options={[
-            { value: "all", label: "All tiers" },
-            ...TIERS.map((t) => ({ value: t, label: t })),
-          ]}
-        />
-        <Button
-          type="button"
-          size="sm"
-          variant={readyOnly ? "default" : "outline"}
-          aria-pressed={readyOnly}
-          onClick={() => setReadyOnly((v) => !v)}
-        >
-          READY only
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={blockedOnly ? "default" : "outline"}
-          aria-pressed={blockedOnly}
-          onClick={() => setBlockedOnly((v) => !v)}
-        >
-          Blocked
-        </Button>
-
-        <span className="ml-auto text-xs text-muted-foreground tabular-nums">
-          {filtered.length} of {tasks.length}
-        </span>
-      </div>
-
       {/* Phone: one card per task. A six-column table at 390px is either an
           unreadable squeeze or a sideways scroll that hides the status
           controls — neither is a backlog you would actually work from. */}
@@ -194,32 +126,5 @@ function TaskRow({ task, project, mayWrite }: { task: Task; project: string; may
         </TableCell>
       )}
     </TableRow>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger size="sm" className="w-fit gap-1.5" aria-label={label}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
   );
 }

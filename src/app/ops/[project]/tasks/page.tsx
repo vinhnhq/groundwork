@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProposedChanges } from "@/components/proposed-changes";
 import { TaskCapture } from "@/components/task-capture";
-import { TasksTable } from "@/components/tasks-table";
+import { TasksView } from "@/components/tasks-view";
 import { getSession } from "@/lib/auth";
 import { can } from "@/lib/auth/roles";
 import { recordedWrites } from "@/lib/content/writers";
@@ -41,7 +41,7 @@ export default async function ProjectTasks({ params }: { params: Promise<{ proje
       {view.tasks.length === 0 ? (
         <p className="text-sm text-muted-foreground">No parseable tasks in backlog.md.</p>
       ) : (
-        <TasksTable project={slug} tasks={view.tasks} mayWrite={mayWrite} />
+        <TasksView project={slug} tasks={view.tasks} mayWrite={mayWrite} />
       )}
 
       {mayWrite && <ProposedChanges writes={recordedWrites().filter((w) => w.slug === slug)} />}

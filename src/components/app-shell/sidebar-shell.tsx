@@ -99,13 +99,23 @@ export function SidebarShell({
           <SidebarRail />
         </Sidebar>
 
-        <SidebarInset>
+        {/* `min-w-0` at the call site, not in `ui/sidebar.tsx` — that file stays
+            pristine (CLAUDE.md). Without it the inset keeps `min-width: auto`
+            and grows to its widest child instead of shrinking, so a wide
+            surface scrolls the page sideways rather than scrolling itself. */}
+        <SidebarInset className="min-w-0">
           <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur md:px-4">
             <SidebarTrigger />
             <Separator orientation="vertical" className="mr-1 h-4" />
             {breadcrumb}
           </header>
-          <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">{children}</div>
+          {/* `min-w-0`: a flex item defaults to `min-width: auto`, so it refuses
+              to shrink below its content's intrinsic width. Any wide child — the
+              tasks board's `min-w-max` column track is the first — would push
+              this column past the viewport and scroll the whole page sideways
+              instead of scrolling inside itself. Belongs here rather than on the
+              child so every surface inherits it. */}
+          <div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

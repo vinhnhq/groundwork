@@ -95,3 +95,35 @@ test("pre-tree document URLs still resolve", async ({ page }) => {
     expect(res.status(), path).toBe(200);
   }
 });
+
+/**
+ * The board answers "what is in flight" where the table answers "what is the
+ * state of everything". Both filter through the same row in `TasksView`, so the
+ * counts must agree — a drift there would mean each view grew its own filter.
+ */
+test("tasks switch between table and board, and the choice sticks", async ({ page }) => {
+  await page.goto("/ops/sample/tasks");
+
+  const rows = await page.locator("tbody tr").count();
+
+  await page.getByTestId("view-board").click();
+  const board = page.getByTestId("task-board");
+  await expect(board).toBeVisible();
+  await expect(board.locator("section")).toHaveCount(5);
+  expect(await board.locator("article").count()).toBe(rows);
+
+  // The board's column track is wider than the viewport; it must scroll inside
+  // itself. Before `min-w-0` on the inset it grew the page instead.
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    ),
+    "the board must not scroll the page sideways",
+  ).toBe(true);
+
+  await page.reload();
+  await expect(page.getByTestId("task-board")).toBeVisible();
+
+  await page.getByTestId("view-table").click();
+  await expect(page.locator("tbody tr").first()).toBeVisible();
+});

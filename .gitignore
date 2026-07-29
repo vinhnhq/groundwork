@@ -18,3 +18,4 @@ tsconfig.tsbuildinfo
 
 # Agent worktrees (ship-review QA runs) — never part of the repo.
 .claude/worktrees/
+.vercel

@@ -122,6 +122,46 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Evidence:** spec v2 §4 (R1) · ADR-0007 (the team pivot) · `src/lib/auth/session-token.ts` (signed role claim).
   - **Escalate if:** roles need to differ per project — they are global today.
 
+### Q · Quality follow-ups — from the PR #1 review  *(2026-07-29)*
+
+> Found by the ship-review QA pass on PR #1 and left unfixed there on purpose: correctness and
+> honesty issues, not security (the two security holes were fixed before merge). Grounded here so
+> they are tickets rather than a buried review comment.
+
+- · **Q1** Digest: keep wrapped constraint bullets whole.  → **[D]**
+  - **Intent:** every constraint in the v2 spec ships as a dangling half-sentence, so the digest tells an agent half a rule and gives no sign it was cut.
+  - **Touches:** `src/lib/brain/render-brain.ts` (`openConstraints`), `render-brain.test.ts`. **Must NOT:** the decision extraction, the size-budget policy.
+  - **Oracle:** unit — a spec whose out-of-scope bullet wraps across source lines yields one constraint containing the whole sentence; a bullet truncated by the size budget ends in an ellipsis.
+  - **Evidence:** ADR-0004 (selection policy) · `src/lib/brain/render-brain.ts` `openConstraints` is line-based · PR #1 QA finding 4.
+  - **Escalate if:** joining continuation lines would swallow the next bullet — the parser has that failure mode already (field bleed).
+- · **Q2** Digest: stop quoting an ADR's `Status:` line as its decision.  → **[D]**
+  - **Intent:** ADR-0002 renders with "Status: Accepted (2026-07-28)" as its locked decision, which is exactly the failure ADR-0004's amendment claims to have fixed.
+  - **Touches:** `src/lib/brain/render-brain.ts` (`sectionOf`, `isMetadataBlock`), `render-brain.test.ts`. **Must NOT:** the Accepted/superseded matching.
+  - **Oracle:** unit — an ADR whose `## Decision` contains `###` subheadings keeps the whole section; a one-line `Status:` paragraph is never returned as the statement.
+  - **Evidence:** `sectionOf` breaks at any `#{2,4}` heading · `isMetadataBlock` requires ≥2 field lines · PR #1 QA finding 5.
+  - **Escalate if:** honouring subheadings blows the size budget for long ADRs — then it is a budget question, not an extraction one (ADR-0004).
+- · **Q3** `ready_tasks` returns nothing for either real project.  → **[P]**
+  - **Intent:** the headline MCP tool is empty on 2 of 2 real repos, because their backlogs carry intent in the title rather than an explicit `**Intent:**` field — so the feature reads as broken rather than strict.
+  - **Touches:** `src/lib/tasks/parse-backlog.ts` or the DoR deriver, plus whichever fixture proves it. **Must NOT:** weaken the ≥2-evidence rule.
+  - **Oracle:** unit — a task whose intent lives only in its title derives READY under the agreed rule; `ready_tasks` over the Groundwork repo returns a non-empty list.
+  - **Evidence:** dogfood run — Groundwork 0 of 23 READY, infinite-oneness 0 of 24 · PR #1 QA finding 6 · ADR-0003 is still unwritten.
+  - **Escalate if:** relaxing the rule would let a genuinely unspecced task through — that is a product decision and belongs in ADR-0003 first.
+- · **Q4** Make the MCP read-only claim true, or narrow the claim.  → **[P]**
+  - **Intent:** ADR-0006 says the tools are read-only "by type", but `ContentSource` has no write methods yet, so the `Pick` guards nothing, and `tools.ts` casts back to the full interface.
+  - **Touches:** `src/mcp/tools.ts` (drop the cast), `__project__/docs/decisions/0006-mcp-surface.md`. **Must NOT:** add any mutating tool.
+  - **Oracle:** the cast is gone and `bunx tsc --noEmit` still passes; a deliberate write call inside a tool fails to compile.
+  - **Evidence:** `src/mcp/tools.ts:127` `source as ContentSource` · ADR-0006 "enforced by this type, not by discipline" · PR #1 QA finding 7.
+  - **Escalate if:** `loadBrain` genuinely needs the wider type — then the honest fix is to narrow `loadBrain`, not to cast at the call site.
+- · **Q5** `parseBacklog` should report the lines it skipped.  → **[D]**
+  - **Intent:** the parser drops anything off-grammar in silence; three of my own backlog edits vanished that way (an unknown status marker, a duplicated section, an id containing `/`).
+  - **Touches:** `src/lib/tasks/parse-backlog.ts`, its test, and whichever surface shows the count. **Must NOT:** loosen the grammar itself.
+  - **Oracle:** unit — a backlog with a `[~]` marker and an id containing `/` returns those lines in a `skipped` list; the ops UI shows the count.
+  - **Evidence:** dogfood — `[~] **F5**` parsed as nothing · `**US-3/US-4**` parsed as nothing · F3 escalate-if says conform the file, not the parser.
+  - **Escalate if:** reporting skips would flag ordinary prose in every backlog — then it needs a heuristic, and a noisy warning is worse than none.
+- · **Q6** Restore the link assertion on the ops project card.  → **[T]**
+  - **Intent:** `ops.spec.ts` matches the project by text rather than by link role, so the entry point no longer has to be a link at all.
+  - **Evidence:** PR #1 QA loosened-assertion verdict · `e2e/ops.spec.ts`.
+
 ### v5 · Packaging — open-core  *(DRAFT / stretch — deliberately not started)*
 - ↷ **P1** extract `@groundwork/engine` (workspace) — the pure core both hosts import.
 - ↷ **P2** `@groundwork/cli init` + `groundwork.config.ts` scaffold (self-host).

@@ -126,8 +126,8 @@ export function TaskCapture({ project }: { project: string }) {
           </Button>
         </DrawerTrigger>
 
-        <DrawerContent data-testid="capture">
-          <div className="mx-auto flex max-h-[88svh] w-full max-w-2xl flex-col">
+        <DrawerContent data-testid="capture" className="max-h-[90svh]">
+          <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-col">
             <DrawerHeader className="text-left">
               <DrawerTitle>Capture a task</DrawerTitle>
               <DrawerDescription>
@@ -137,7 +137,7 @@ export function TaskCapture({ project }: { project: string }) {
 
             {/* Only the fields scroll; the footer stays reachable without
                 scrolling nine inputs on a phone. */}
-            <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 pb-2">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-2">
               <div className="grid gap-2 sm:grid-cols-[9rem_1fr]">
                 <Input
                   placeholder="ID (e.g. C1.3)"

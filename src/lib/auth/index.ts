@@ -3,21 +3,18 @@ import { cookies } from "next/headers";
 import { type AuthAdapter, createMemoryAuthAdapter } from "@/lib/auth/memory-adapter";
 import { signToken, verifyToken } from "@/lib/auth/session-token";
 import type { Session } from "@/lib/auth/types";
-import { SESSION_COOKIE } from "@/lib/auth-constants";
+import { SESSION_COOKIE, sessionSecretFrom } from "@/lib/auth-constants";
 import { serverEnv } from "@/lib/env-server";
 
 export { SESSION_COOKIE };
 
 const SESSION_DAYS = 7;
 
-/**
- * Dev fallback so sign-in works with no configuration. Never used when
- * BETTER_AUTH_SECRET is set, and `authStatus()` reports which is in play.
- */
-const DEV_SECRET = "groundwork-dev-secret-not-for-production";
-
-export function sessionSecret(): string {
-  return serverEnv().BETTER_AUTH_SECRET?.trim() || DEV_SECRET;
+export function sessionSecret(): string | null {
+  return sessionSecretFrom(
+    { BETTER_AUTH_SECRET: serverEnv().BETTER_AUTH_SECRET },
+    process.env.NODE_ENV === "production",
+  );
 }
 
 let adapter: AuthAdapter | undefined;
@@ -54,15 +51,20 @@ export function authStatus(): AuthStatus {
     mocked: true,
     secretConfigured,
     databaseConfigured,
-    note: databaseConfigured
-      ? "DATABASE_URL is set, but the better-auth adapter is not implemented yet — still using the in-memory store."
-      : "In-memory accounts, one per role. Sessions are HMAC-signed and expire after 7 days.",
+    note: !sessionSecret()
+      ? "LOCKED: production with no BETTER_AUTH_SECRET — no session can be issued or accepted."
+      : databaseConfigured
+        ? "DATABASE_URL is set, but the better-auth adapter is not implemented yet — still using the in-memory store."
+        : "In-memory accounts, one per role. Sessions are HMAC-signed and expire after 7 days.",
   };
 }
 
 export async function getSession(): Promise<Session | null> {
+  const secret = sessionSecret();
+  if (!secret) return null;
+
   const jar = await cookies();
-  const payload = await verifyToken(jar.get(SESSION_COOKIE)?.value, sessionSecret());
+  const payload = await verifyToken(jar.get(SESSION_COOKIE)?.value, secret);
   if (!payload) return null;
 
   return {
@@ -72,13 +74,17 @@ export async function getSession(): Promise<Session | null> {
 }
 
 export async function signIn(email: string, password: string): Promise<Session | null> {
+  // Refuse to mint a session we could not safely sign.
+  const secret = sessionSecret();
+  if (!secret) return null;
+
   const user = await getAdapter().verify(email, password);
   if (!user) return null;
 
   const exp = Math.floor(Date.now() / 1000) + SESSION_DAYS * 24 * 60 * 60;
   const token = await signToken(
     { sub: user.id, email: user.email, name: user.name, role: user.role, exp },
-    sessionSecret(),
+    secret,
   );
 
   (await cookies()).set(SESSION_COOKIE, token, {

@@ -31,12 +31,16 @@ const CONTEXT_EXPORT = /^\/ops\/[^/]+\/(context\.md|grounding)$/;
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const payload = await verifyToken(
-    req.cookies.get(SESSION_COOKIE)?.value,
-    // Read the one field explicitly: `process.env` is an index-signature type,
-    // so passing it whole shares no declared properties with the parameter.
-    sessionSecretFrom({ BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET }),
+  // Read the one field explicitly: `process.env` is an index-signature type,
+  // so passing it whole shares no declared properties with the parameter.
+  const secret = sessionSecretFrom(
+    { BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET },
+    process.env.NODE_ENV === "production",
   );
+
+  // Production with no BETTER_AUTH_SECRET: accept nobody rather than trust a
+  // secret that is published in the repo.
+  const payload = secret ? await verifyToken(req.cookies.get(SESSION_COOKIE)?.value, secret) : null;
 
   if (!payload) {
     const url = req.nextUrl.clone();

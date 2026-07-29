@@ -1,22 +1,45 @@
 import { expect, test } from "@playwright/test";
-import { signInAs, visible } from "./helpers";
+import { DEV_SESSION_SECRET, signInAs, signWith, visible } from "./helpers";
 
 test("an unsigned-in visitor is sent to sign-in", async ({ page }) => {
   await page.goto("/ops");
   await expect(page).toHaveURL(/\/sign-in/);
 });
 
-/**
- * The reason sessions are signed at all: without it, typing a cookie is a
- * privilege escalation.
- */
-test("a forged session cookie is rejected and cleared", async ({ page, context }) => {
+test("a garbage session cookie is rejected", async ({ page, context }) => {
   await context.addCookies([
     { name: "gw_session", value: "totally.forged", url: "http://localhost:3100" },
   ]);
 
   await page.goto("/ops");
   await expect(page).toHaveURL(/\/sign-in/);
+});
+
+/**
+ * The threat the signature actually defends against: a *validly signed* token
+ * minted with the published dev secret, claiming the engineer role.
+ *
+ * The previous version of this test passed a garbage string, which the parser
+ * rejects before any signature check — so it never exercised the secret at all
+ * and would have stayed green while a real forgery worked.
+ */
+test("a cookie signed with the published dev secret is rejected", async ({ page, context }) => {
+  const forged = await signWith(DEV_SESSION_SECRET, {
+    sub: "attacker",
+    email: "attacker@example.com",
+    name: "Attacker",
+    role: "engineer",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  });
+
+  await context.addCookies([{ name: "gw_session", value: forged, url: "http://localhost:3100" }]);
+
+  await page.goto("/ops");
+  await expect(page).toHaveURL(/\/sign-in/);
+
+  // And it must not open the doors the engineer role would.
+  const digest = await page.request.get("/ops/sample/context.md", { maxRedirects: 0 });
+  expect([302, 303, 307, 308, 403]).toContain(digest.status());
 });
 
 test("the engineer sees every section", async ({ page }) => {
@@ -109,4 +132,32 @@ test("roles that may ground can still fetch it", async ({ page }) => {
   const res = await page.request.get("/ops/sample/context.md");
   expect(res.status()).toBe(200);
   expect(await res.text()).toContain("project brain");
+});
+
+/**
+ * The asset route reads the filesystem on behalf of a browser request. It used
+ * to resolve against the repo root with an octet-stream fallback, so any
+ * signed-in role could pull `.env` or `.git/config` through it.
+ */
+test("the asset route cannot be used to read outside the docs directory", async ({ page }) => {
+  await signInAs(page, "client");
+
+  for (const path of [".env", ".git/config", "package.json"]) {
+    const res = await page.request.get(`/ops/sample/asset/${path}`, { maxRedirects: 0 });
+    expect([403, 404, 415], `${path} was served`).toContain(res.status());
+  }
+
+  // Traversal stays rejected.
+  const up = await page.request.get("/ops/sample/asset/../../../etc/passwd", { maxRedirects: 0 });
+  expect(up.status()).not.toBe(200);
+});
+
+test("a legitimate doc image still loads", async ({ page }) => {
+  await signInAs(page, "engineer");
+
+  const img = await page.request.get(
+    "/ops/sample/asset/__project__/docs/decisions/assets/diagram.png",
+  );
+  expect(img.status()).toBe(200);
+  expect(img.headers()["content-type"]).toBe("image/png");
 });

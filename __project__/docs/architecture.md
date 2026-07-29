@@ -27,7 +27,28 @@ ritual (`.claude/skills/ship-review`), session-log hook, and CI (`.github/workfl
 materialized. Groundwork's deliberate divergences (biome, wrapper-shadcn) are noted in that file.
 
 **Repo:** <https://github.com/vinhnhq/groundwork>. CI runs the four gates plus the Playwright
-suite on every PR.
+suite on every PR, in two jobs so a browser failure is distinguishable from a type error.
+
+**Deployed (2026-07-29):** <https://groundwork-zeta-wheat.vercel.app> — Vercel project
+`vinhnguyen-projects/groundwork`, connected to the GitHub repo, so a PR gets a preview deploy and a
+merge to `main` goes to production. Deployment Protection is off, so the site is public.
+
+What the deployed instance actually is, stated plainly because the gap matters:
+
+- **Demo data, not your repos.** `CONTENT_SOURCE=github` with no `GITHUB_TOKEN` serves the built-in
+  fixture repo. Add `GITHUB_TOKEN` (contents: read) + `GITHUB_REPOS` to read real ones — no code
+  change; see `/ops/integrations`, which reports exactly this.
+- **Auth is the in-memory store.** Four seeded accounts, one per role, are the entire user table.
+  `ADMIN_PASSWORD` (set in Vercel, generated) is the only thing guarding the engineer role. The
+  better-auth/Neon adapter is still unbuilt — treat this as a demo URL until F5 lands.
+- Env set on production + preview: `BETTER_AUTH_SECRET`, `ADMIN_PASSWORD`, `MCP_TOKEN`,
+  `CONTENT_SOURCE=github`.
+
+Two production guards exist because a default credential reachable from the internet fails
+silently: with no `BETTER_AUTH_SECRET`, production issues and accepts **no session at all** rather
+than signing with the secret published in this repo; with no `MCP_TOKEN`, `/api/mcp` returns 503
+rather than accepting the well-known dev token. Demo credentials are never advertised in
+production.
 
 **v2 + v3 shipped (2026-07-28, same day as the pivot).** Grounding: `renderBrain` (ADR-0004) served
 through three byte-identical doors — clipboard, `context.md`, and MCP over stdio (ADR-0006) or HTTP.

@@ -2,6 +2,12 @@
 
 Format: `- YYYY-MM-DD · <sha> · <task-id> short description`
 
+- 2026-07-29 · favicon · lucide `list-checks` (ISC, no attribution) — stroke 2.75 + cropped viewBox for 16px legibility
+- 2026-07-29 · deploy · Vercel project connected to GitHub (PR → preview, main → production); public at groundwork-zeta-wheat.vercel.app
+- 2026-07-29 · sec · Never advertise demo credentials in production — the sign-in page printed working engineer creds (PR #3)
+- 2026-07-29 · sec · Refuse to sign sessions with the published dev secret; asset route confined to `__project__/` (PR #1 QA)
+- 2026-07-29 · Q1–Q6 · Six QA findings grounded as DoR-ready tickets (PR #2)
+- 2026-07-29 · CI · Playwright suite runs on every PR (PR #1)
 - 2026-07-28 · F5/R1 · Signed sessions (Web Crypto HMAC, edge-safe) + role matrix + /ops/integrations. better-auth over Neon still NOT wired
 - 2026-07-28 · US-3/US-4 · Task capture + status flip UI — live DoR, honest pending/mocked reporting
 - 2026-07-28 · S4 · GitHub write-back — branch → commit → PR, mock client (no token)

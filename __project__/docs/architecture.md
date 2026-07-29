@@ -26,6 +26,9 @@ lib first, Cloud tier later). AI cost = BYOK / local Claude subscription (no per
 ritual (`.claude/skills/ship-review`), session-log hook, and CI (`.github/workflows/ci.yml`) are
 materialized. Groundwork's deliberate divergences (biome, wrapper-shadcn) are noted in that file.
 
+**Repo:** <https://github.com/vinhnhq/groundwork>. CI runs the four gates plus the Playwright
+suite on every PR.
+
 **v2 + v3 shipped (2026-07-28, same day as the pivot).** Grounding: `renderBrain` (ADR-0004) served
 through three byte-identical doors — clipboard, `context.md`, and MCP over stdio (ADR-0006) or HTTP.
 Sync: a `BacklogWriter` seam (ADR-0002) with memory / filesystem / git-branch / GitHub-PR

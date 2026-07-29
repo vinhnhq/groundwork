@@ -1,5 +1,7 @@
 # Groundwork
 
+[![CI](https://github.com/vinhnhq/groundwork/actions/workflows/ci.yml/badge.svg)](https://github.com/vinhnhq/groundwork/actions/workflows/ci.yml)
+
 A git-backed **grounding layer for a mixed-agent team**. Every teammate's AI agent reasons from the
 same canonical docs, and the ones who cannot use git still keep the backlog in sync.
 
@@ -33,11 +35,17 @@ adapter does not), and v5 packaging (`@groundwork/engine`, CLI).
 ## Run
 
 ```bash
+git clone https://github.com/vinhnhq/groundwork.git
+cd groundwork
 bun install
 cp .env.example .env.local          # set PROJECT_ROOTS to your repo paths (comma-separated)
 PROJECT_ROOTS="/abs/path/to/repo-a,/abs/path/to/groundwork" bun run dev
 # open http://localhost:3000/ops
 ```
+
+Every project root needs a `__project__/project.yml`; without one it shows as *unconfigured*
+rather than failing. Groundwork's own repo is a valid root — point it at itself to see the
+dogfood view.
 
 Sign in with any demo account (the sign-in page lists them, one per role):
 
@@ -72,3 +80,6 @@ bun run test                 # unit + integration (never `bun test`)
 bun run lint && bun run typecheck && bun run build
 PROJECT_ROOTS="$PWD/src/tests/fixtures/repo-ok,$PWD/src/tests/fixtures/repo-bare" bun run test:e2e
 ```
+
+CI runs all of these on every PR — the four gates in one job, Playwright in another, so a
+browser failure is distinguishable at a glance from a type error.

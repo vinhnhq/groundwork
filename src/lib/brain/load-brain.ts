@@ -1,5 +1,5 @@
 import { renderBrain } from "@/lib/brain/render-brain";
-import type { Brain, BrainDoc } from "@/lib/brain/types";
+import type { Brain, BrainAudience, BrainDoc } from "@/lib/brain/types";
 import type { ContentSource } from "@/lib/content/source";
 import { parseBacklog } from "@/lib/tasks/parse-backlog";
 
@@ -14,6 +14,7 @@ export async function loadBrain(
   slug: string,
   source: ContentSource,
   budget?: number,
+  audience?: BrainAudience,
 ): Promise<Brain | null> {
   const project = await source.getProject(slug);
   if (!project) return null;
@@ -28,5 +29,5 @@ export async function loadBrain(
   const backlog = await source.readBacklog(slug);
   const tasks = backlog ? parseBacklog(backlog, slug) : [];
 
-  return renderBrain({ meta: project.meta, docs, tasks, budget });
+  return renderBrain({ meta: project.meta, docs, tasks, budget, audience });
 }

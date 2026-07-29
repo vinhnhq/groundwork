@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { CopyContext } from "@/components/copy-context";
+import { type Door, GroundingDoors } from "@/components/grounding-doors";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -29,39 +29,63 @@ export default async function ProjectGrounding({
     redirect("/ops?denied=grounding.read");
   }
 
-  const brain = await loadProjectBrain(slug);
-  if (!brain) notFound();
+  /**
+   * All three audiences, rendered together.
+   *
+   * Three passes over already-parsed docs — cheap, and it lets the page ship a
+   * complete digest per audience so switching is instant and the character
+   * counts are comparable side by side.
+   */
+  const [brain, tech, biz] = await Promise.all([
+    loadProjectBrain(slug),
+    loadProjectBrain(slug, undefined, "tech"),
+    loadProjectBrain(slug, undefined, "biz"),
+  ]);
+  if (!brain || !tech || !biz) notFound();
+
+  const doors: Door[] = [
+    {
+      audience: "both",
+      label: "Everything",
+      blurb: `The full digest — ${brain.decisions.length} locked decision(s) · ${brain.constraints.length} constraint(s) · ${brain.ready.length} ready task(s). What the MCP tool and context.md serve by default.`,
+      text: brain.text,
+    },
+    {
+      audience: "tech",
+      label: "Technical",
+      blurb:
+        "For an engineer's agent: the locked decisions, the standing constraints, and what is READY to build.",
+      text: tech.text,
+    },
+    {
+      audience: "biz",
+      label: "Delivery",
+      blurb:
+        "For a client's or PM's agent: state, progress and scope. The engineering rationale behind each decision is deliberately withheld.",
+      text: biz.text,
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-6" data-testid="grounding">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Grounding</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          One distilled digest of this project's current truth. Paste it into any agent — GPT or
-          Claude — so it reasons from the same decisions you did.
+          This project's current truth, distilled. Paste it into any agent — GPT or Claude — so it
+          reasons from the same decisions you did. Pick the audience: a client's agent should not be
+          handed the team's internal reasoning.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Copy context</CardTitle>
-          <CardDescription>
-            {brain.decisions.length} locked decision(s) · {brain.constraints.length} constraint(s) ·{" "}
-            {brain.ready.length} ready task(s)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <CopyContext text={brain.text} exportHref={`/ops/${slug}/context.md`} />
+      <GroundingDoors project={slug} doors={doors} />
 
-          {brain.omitted.length > 0 && (
-            <ul className="flex flex-col gap-0.5 text-xs text-amber-700 dark:text-amber-400">
-              {brain.omitted.map((note) => (
-                <li key={note}>⚠ {note}</li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      {brain.omitted.length > 0 && (
+        <ul className="flex flex-col gap-0.5 text-xs text-amber-700 dark:text-amber-400">
+          {brain.omitted.map((note) => (
+            <li key={note}>⚠ {note}</li>
+          ))}
+        </ul>
+      )}
 
       {brain.decisions.length > 0 && (
         <section className="flex flex-col gap-2">

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { loadBrain } from "@/lib/brain";
+import { type BrainAudience, isBrainAudience, loadBrain } from "@/lib/brain";
 import type { ContentSource } from "@/lib/content/source";
 import type { DocKind } from "@/lib/content/types";
 import { isStartable } from "@/lib/tasks/dor";
@@ -125,11 +125,20 @@ export function createGroundworkTools(source: ReadOnlySource): ToolDef[] {
           .positive()
           .optional()
           .describe("Max characters for the digest (default 8000)"),
+        audience: z
+          .enum(["tech", "biz", "both"])
+          .optional()
+          .describe(
+            "Who the digest is for. `both` (default) and `tech` include the locked decisions and each task's intent/oracle; `biz` is the delivery view — state, scope and progress, with the engineering rationale withheld.",
+          ),
       },
       async handler(args) {
         const project = String(args.project ?? "");
         const budget = typeof args.budget === "number" ? args.budget : undefined;
-        const brain = await loadBrain(project, source as ContentSource, budget);
+        const audience = isBrainAudience(String(args.audience ?? "both"))
+          ? (args.audience as BrainAudience | undefined)
+          : undefined;
+        const brain = await loadBrain(project, source as ContentSource, budget, audience);
 
         if (!brain) return `No project "${project}". Call list_projects for the available slugs.`;
         if (brain.omitted.length === 0) return brain.text;

@@ -42,3 +42,47 @@ test("context.md 404s for an unknown project", async ({ page }) => {
   const response = await page.request.get("/ops/does-not-exist/context.md");
   expect(response.status()).toBe(404);
 });
+
+/**
+ * One digest served an engineer's agent and a client's agent equally badly.
+ * The split is a disclosure control: `biz` must not carry the team's internal
+ * reasoning, and each door's copy button must agree byte-for-byte with its
+ * `context.md?audience=` response (ADR-0004's door-identity rule, per variant).
+ */
+test("the digest splits by audience, and each variant's doors agree", async ({ page }) => {
+  await page.goto("/ops/sample/grounding");
+
+  const preview = page.getByTestId("digest-preview");
+
+  await page.getByTestId("audience-both").click();
+  const both = (await preview.textContent()) ?? "";
+  expect(both).toContain("## Locked decisions");
+
+  await page.getByTestId("audience-biz").click();
+  const biz = (await preview.textContent()) ?? "";
+
+  // The section is gone, and so is the reasoning it carried.
+  expect(biz).not.toContain("## Locked decisions");
+  expect(biz).not.toContain("Oracle:");
+  expect(biz.length).toBeLessThan(both.length);
+  // What a delivery conversation still needs.
+  expect(biz).toContain("## Current state");
+  expect(biz).toContain("## Ready tasks");
+
+  // Each variant's file door serves exactly what its preview shows.
+  for (const [audience, shown] of [
+    ["both", both],
+    ["biz", biz],
+  ] as const) {
+    const res = await page.request.get(`/ops/sample/context.md?audience=${audience}`);
+    expect(res.status()).toBe(200);
+    expect((await res.text()).trim(), audience).toBe(shown.trim());
+  }
+});
+
+/** An unknown audience must fall back to the full digest, never to a partial one. */
+test("an unrecognised audience serves the full digest", async ({ page }) => {
+  const bogus = await page.request.get("/ops/sample/context.md?audience=nonsense");
+  const both = await page.request.get("/ops/sample/context.md?audience=both");
+  expect(await bogus.text()).toBe(await both.text());
+});

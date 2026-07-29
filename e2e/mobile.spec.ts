@@ -57,13 +57,19 @@ test("the project nav is reachable behind the sidebar trigger", async ({ page })
   // trigger, rather than eating the viewport. Matched by href and :visible —
   // streaming can leave a second, hidden copy of the tree in the DOM, which
   // makes .first() a coin flip.
-  const docsLink = page.locator('a[href$="/docs"]:visible');
-  // Polled, not asserted once: the sidebar only knows it is on a phone after
-  // hydration, so the desktop column is briefly painted first.
-  await expect.poll(() => docsLink.count(), { timeout: 5000 }).toBe(0);
+  // The sidebar only knows it is on a phone once `useIsMobile` resolves, so
+  // the desktop column is server-rendered and swapped out on hydration. Wait
+  // on that swap rather than polling a timeout: `sidebar-container` is the
+  // desktop-only wrapper, so its removal IS the signal mobile mode took over.
+  await page.locator('[data-slot="sidebar-container"]').waitFor({ state: "detached" });
+
+  // Scoped to the sidebar: the Overview page also links to Docs from a card,
+  // and an unscoped href match counts that as "the nav is showing".
+  const navDocsLink = page.locator('[data-slot="sidebar"] a[href$="/docs"]:visible');
+  await expect(navDocsLink).toHaveCount(0);
 
   await page.locator('[data-sidebar="trigger"]:visible').click();
-  await expect(docsLink.first()).toBeVisible();
+  await expect(navDocsLink.first()).toBeVisible();
 });
 
 test("capture opens a drawer with the form in it", async ({ page }) => {

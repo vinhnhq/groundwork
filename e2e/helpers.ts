@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import type { Role } from "../src/lib/auth/types";
 
 export const DEMO_PASSWORD = "groundwork";

@@ -1,7 +1,11 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, LogIn } from "lucide-react";
 import { useActionState, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { ROLE_BLURB, ROLE_LABEL } from "@/lib/auth/roles";
 import type { Role } from "@/lib/auth/types";
 import { signInAction } from "./actions";
@@ -18,9 +22,10 @@ export function SignInForm({ from, accounts }: { from: string; accounts: DemoAcc
       <form action={action} className="flex w-full flex-col gap-4">
         <input type="hidden" name="from" value={from} />
 
-        <label className="flex flex-col gap-1 text-sm">
-          Username
-          <input
+        <Field>
+          <FieldLabel htmlFor="username">Username</FieldLabel>
+          <Input
+            id="username"
             name="username"
             type="text"
             autoComplete="username"
@@ -30,41 +35,36 @@ export function SignInForm({ from, accounts }: { from: string; accounts: DemoAcc
             required
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="h-11 rounded-md border border-input px-3"
           />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1 text-sm">
-          Password
-          <input
+        <Field>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
+          <Input
+            id="password"
             name="password"
             type="password"
             autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-11 rounded-md border border-input px-3"
           />
-        </label>
+          {/* One message for both an unknown username and a wrong password —
+              naming which was wrong turns the form into an account enumerator. */}
+          {state.error && (
+            <FieldDescription role="alert" className="text-destructive">
+              {state.error}
+            </FieldDescription>
+          )}
+        </Field>
 
-        {state.error && (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-            {state.error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={pending}
-          aria-busy={pending}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground disabled:opacity-60"
-        >
-          {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-          <span>Sign in</span>
+        <Button type="submit" disabled={pending} aria-busy={pending}>
+          {pending ? <Loader2 className="animate-spin" aria-hidden /> : <LogIn aria-hidden />}
+          Sign in
           <span className="sr-only" aria-live="polite">
             {pending ? "Signing in" : ""}
           </span>
-        </button>
+        </Button>
       </form>
 
       {accounts.length > 0 && (
@@ -72,25 +72,33 @@ export function SignInForm({ from, accounts }: { from: string; accounts: DemoAcc
           <p className="text-xs font-medium text-muted-foreground">
             Seeded accounts — one per role, so every permission path is reachable by hand
           </p>
-          <div className="flex flex-col gap-1">
+          <ItemGroup>
             {accounts.map((account) => (
-              <button
+              <Item
                 key={account.username}
-                type="button"
-                data-testid={`demo-${account.role}`}
-                onClick={() => {
-                  setUsername(account.username);
-                  setPassword(account.password ?? "");
-                }}
-                className="flex flex-col items-start rounded-md px-2 py-1.5 text-left hover:bg-muted"
+                asChild
+                size="sm"
+                className="cursor-pointer hover:bg-muted"
               >
-                <span className="text-sm">
-                  {ROLE_LABEL[account.role]} · <code className="text-xs">{account.username}</code>
-                </span>
-                <span className="text-xs text-muted-foreground">{ROLE_BLURB[account.role]}</span>
-              </button>
+                <button
+                  type="button"
+                  data-testid={`demo-${account.role}`}
+                  onClick={() => {
+                    setUsername(account.username);
+                    setPassword(account.password ?? "");
+                  }}
+                >
+                  <ItemContent>
+                    <ItemTitle>
+                      {ROLE_LABEL[account.role]} ·{" "}
+                      <code className="text-xs">{account.username}</code>
+                    </ItemTitle>
+                    <ItemDescription>{ROLE_BLURB[account.role]}</ItemDescription>
+                  </ItemContent>
+                </button>
+              </Item>
             ))}
-          </div>
+          </ItemGroup>
         </div>
       )}
     </div>

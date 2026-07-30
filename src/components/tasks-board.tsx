@@ -4,6 +4,8 @@ import { DorGaps, TierBadge } from "@/components/badges";
 import { Reveal } from "@/components/reveal";
 import { staggerDelay } from "@/components/stagger";
 import { TaskStatusControl } from "@/components/task-status-control";
+import { Card, CardContent } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { readiness } from "@/lib/tasks/dor";
 import type { Task, TaskStatus } from "@/lib/tasks/types";
 
@@ -65,32 +67,39 @@ export function TasksBoard({
 
                 <div className="flex flex-col gap-2">
                   {inColumn.length === 0 ? (
-                    <p className="rounded-lg border border-dashed px-3 py-6 text-center text-xs text-muted-foreground">
-                      Nothing here
-                    </p>
+                    <Empty className="border border-dashed py-6">
+                      <EmptyHeader>
+                        <EmptyDescription>Nothing here</EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
                   ) : (
                     inColumn.map((task) => (
-                      <article
+                      <Card
                         key={task.id}
-                        className="flex flex-col gap-2 rounded-lg border bg-card p-3 transition-colors hover:border-foreground/20"
+                        size="sm"
+                        className="transition-shadow hover:ring-foreground/20"
                       >
-                        {/* No status badge: the column already says the status,
-                          and repeating it in every card is the noise the
-                          neutral-variant change removed from the table. */}
-                        <span className="font-mono text-xs text-muted-foreground">{task.id}</span>
-                        <p className="text-sm font-medium break-words">{task.title}</p>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <TierBadge tier={task.autonomy} />
-                          <Readiness task={task} />
-                        </div>
-                        {mayWrite && (
-                          <TaskStatusControl
-                            project={project}
-                            taskId={task.id}
-                            status={task.status}
-                          />
-                        )}
-                      </article>
+                        <CardContent className="flex flex-col gap-2">
+                          {/* No status badge: the column already says the status,
+                              and repeating it in every card is the noise the
+                              neutral-variant change removed from the table. */}
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {task.id}
+                          </span>
+                          <p className="text-sm font-medium break-words">{task.title}</p>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <TierBadge tier={task.autonomy} />
+                            <Readiness task={task} />
+                          </div>
+                          {mayWrite && (
+                            <TaskStatusControl
+                              project={project}
+                              taskId={task.id}
+                              status={task.status}
+                            />
+                          )}
+                        </CardContent>
+                      </Card>
                     ))
                   )}
                 </div>

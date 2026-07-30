@@ -1,3 +1,10 @@
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { RecordedWrite } from "@/lib/content/writers/memory";
 
 /**
@@ -13,23 +20,26 @@ export function ProposedChanges({ writes }: { writes: RecordedWrite[] }) {
   if (writes.length === 0) return null;
 
   return (
-    <section
-      className="rounded-lg border border-dashed border-amber-400/60 p-4"
+    <Card
+      className="border border-dashed border-amber-400/60 ring-0"
       data-testid="proposed-changes"
     >
-      <div className="flex flex-wrap items-baseline gap-2">
-        <h2 className="text-lg font-semibold">Proposed changes</h2>
-        <span className="text-xs text-muted-foreground">
-          {writes.length} this session · nothing was written to the repo
-        </span>
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        The write-back transport is a dry run. These are the exact file contents it would have
-        committed — set <code>WRITE_BACK</code> to a real transport to make them land. Cleared when
-        the server restarts.
-      </p>
+      <CardHeader>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <CardTitle className="text-lg">Proposed changes</CardTitle>
+          <span className="text-xs text-muted-foreground">
+            {writes.length} this session · nothing was written to the repo
+          </span>
+        </div>
+        <CardDescription>
+          The write-back transport is a dry run. These are the exact file contents it would have
+          committed — set <code>WRITE_BACK</code> to a real transport to make them land. Cleared
+          when the server restarts.
+        </CardDescription>
+      </CardHeader>
 
-      <ul className="mt-3 flex flex-col gap-2">
+      <CardContent>
+      <ul className="flex flex-col gap-2">
         {writes.map((write) => (
           <li key={`${write.at}-${write.message}`} className="rounded-md border border-border p-3">
             <div className="flex flex-wrap items-baseline gap-2">
@@ -49,6 +59,7 @@ export function ProposedChanges({ writes }: { writes: RecordedWrite[] }) {
           </li>
         ))}
       </ul>
-    </section>
+      </CardContent>
+    </Card>
   );
 }

@@ -3,9 +3,14 @@
 import { ChevronRight, FileText, Folder, FolderOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import type { DocNode } from "@/lib/content/doc-tree";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from "@/components/ui/sidebar";
+import type { DocFolder, DocNode } from "@/lib/content/doc-tree";
 import type { DocKind } from "@/lib/content/types";
 import { cn } from "@/lib/utils";
 
@@ -19,185 +24,137 @@ const KIND_LABEL: Record<DocKind, string> = {
 /**
  * The docs tree — the repo's `__project__/` folder structure, navigable.
  *
- * Two densities from one component, not two components: `sidebar` is the
- * persistent navigator beside the reading pane, `page` is the roomier standalone
- * list. Splitting them would be exactly the divergence ADR-0009 exists to stop —
- * the folder/leaf semantics and the open-state model have to stay identical.
+ * Built on shadcn's own sidebar tree primitives (`SidebarMenuSub*`) plus
+ * `Collapsible`, rather than hand-rolled rows: the row height, truncation,
+ * hover and active styling all come from the primitive, so a doc row looks like
+ * every other sidebar row by construction instead of by a matching class string.
+ * Those three components read no sidebar context — only inert CSS groups — so
+ * the same markup serves the page-level tree too, and there is one tree, not two.
  *
- * Folders are `<button>`s, not links: expanding is a view change, not a
- * destination. Leaves are real anchors, so middle-click and open-in-new-tab work.
+ * **Folders open one level at a time.** Each folder owns its own `Collapsible`,
+ * so expanding one reveals its immediate children *collapsed*; only the folders
+ * on the path to the document you are reading start open. A tree that opened
+ * everything buried the interesting row under thirty siblings.
  *
- * Open state is local and starts fully expanded. In the sidebar the component
- * lives in the project layout, so React keeps it mounted across doc navigations
- * — a folder you collapse stays collapsed while you read.
+ * Folders are `<button>`s — expanding is a view change, not a destination.
+ * Leaves are real anchors, so middle-click and open-in-new-tab work.
  */
-export function DocTree({
-  nodes,
-  openPaths,
-  variant = "page",
-}: {
-  nodes: DocNode[];
-  openPaths: string[];
-  variant?: "page" | "sidebar";
-}) {
+export function DocTree({ nodes, variant = "page" }: { nodes: DocNode[]; variant?: Density }) {
   return (
-    <ul className="flex flex-col" data-testid="doc-tree">
-      <DocTreeItems nodes={nodes} openPaths={openPaths} variant={variant} />
-    </ul>
+    // The root list drops the primitive's indent rail: at depth 0 there is no
+    // parent to connect to, and the border would float against nothing.
+    <SidebarMenuSub className="mx-0 border-l-0 px-0" data-testid="doc-tree">
+      <DocTreeItems nodes={nodes} variant={variant} />
+    </SidebarMenuSub>
   );
 }
 
 /**
- * The tree's `<li>` rows without a list wrapper.
+ * The tree's rows without a list wrapper.
  *
- * The sidebar nests the tree under the Docs menu row, inside the primitive's own
- * `SidebarMenuSub` (which *is* the `<ul>`). Rendering our own `<ul>` there would
- * nest one list directly inside another, which is invalid, so the wrapper is the
- * caller's choice.
+ * The sidebar nests the tree under the Docs menu row inside the shell's own
+ * `SidebarMenuSub`, which *is* the `<ul>` — rendering a second one there would
+ * nest a list directly inside a list.
  */
 export function DocTreeItems({
   nodes,
-  openPaths,
   variant = "page",
 }: {
   nodes: DocNode[];
-  openPaths: string[];
-  variant?: "page" | "sidebar";
+  variant?: Density;
 }) {
-  const [open, setOpen] = useState<Set<string>>(() => new Set(openPaths));
   const pathname = usePathname();
-
-  const toggle = (path: string) =>
-    setOpen((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(path)) next.add(path);
-      return next;
-    });
+  const active = decodeURIComponent(pathname);
 
   return (
     <>
       {nodes.map((node) => (
-        <TreeNode
-          key={nodeKey(node)}
-          node={node}
-          depth={0}
-          open={open}
-          onToggle={toggle}
-          variant={variant}
-          pathname={pathname}
-        />
+        <TreeNode key={nodeKey(node)} node={node} variant={variant} active={active} />
       ))}
     </>
   );
 }
 
-const nodeKey = (node: DocNode) => (node.type === "folder" ? `d:${node.path}` : `f:${node.href}`);
-
 type Density = "page" | "sidebar";
 
-const ROW = {
-  page: "py-1.5 pr-2 text-sm",
-  sidebar: "py-1 pr-1.5 text-[13px]",
-} satisfies Record<Density, string>;
+const nodeKey = (node: DocNode) => (node.type === "folder" ? `d:${node.path}` : `f:${node.href}`);
 
-/** Indent per level, in rem. Tighter in the sidebar, which is only 16rem wide. */
-const STEP = { page: 1.25, sidebar: 0.75 } satisfies Record<Density, number>;
+/**
+ * Does this folder hold the open document, at any depth?
+ *
+ * Drives `defaultOpen`, so the path to what you are reading is expanded and
+ * nothing else is — the difference between a tree that orients you and one you
+ * have to re-collapse on every visit.
+ */
+function containsActive(folder: DocFolder, active: string): boolean {
+  return folder.children.some((child) =>
+    child.type === "folder"
+      ? containsActive(child, active)
+      : decodeURIComponent(child.href) === active,
+  );
+}
 
 function TreeNode({
   node,
-  depth,
-  open,
-  onToggle,
   variant,
-  pathname,
+  active,
 }: {
   node: DocNode;
-  depth: number;
-  open: Set<string>;
-  onToggle: (path: string) => void;
   variant: Density;
-  pathname: string;
+  active: string;
 }) {
-  // Padding rather than nested margins: every row keeps the same full-width hit
-  // area, so the hover highlight spans the row at any depth.
-  const indent = { paddingLeft: `${depth * STEP[variant] + 0.5}rem` };
-  const base =
-    "group flex w-full items-center gap-2 rounded-md text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset";
-
   if (node.type === "doc") {
-    // Compare decoded, because the href percent-encodes each segment while the
-    // browser reports the pathname decoded — a doc with a space would never
-    // match otherwise.
-    const isActive = decodeURIComponent(pathname) === decodeURIComponent(node.href);
+    const isActive = decodeURIComponent(node.href) === active;
 
     return (
-      <li>
-        <Link
-          href={node.href}
-          style={indent}
-          aria-current={isActive ? "page" : undefined}
-          className={cn(
-            base,
-            ROW[variant],
-            isActive && "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
-          )}
+      <SidebarMenuSubItem>
+        <SidebarMenuSubButton
+          asChild
+          isActive={isActive}
+          size={variant === "sidebar" ? "sm" : "md"}
         >
-          <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className={cn("truncate", variant === "page" && "font-medium")}>{node.title}</span>
-          {variant === "page" && (
-            <Badge variant="outline" className="ml-auto shrink-0">
-              {KIND_LABEL[node.kind]}
-            </Badge>
-          )}
-        </Link>
-      </li>
+          <Link href={node.href} aria-current={isActive ? "page" : undefined}>
+            <FileText aria-hidden />
+            <span>{node.title}</span>
+            {variant === "page" && (
+              <Badge variant="outline" className="ml-auto shrink-0">
+                {KIND_LABEL[node.kind]}
+              </Badge>
+            )}
+          </Link>
+        </SidebarMenuSubButton>
+      </SidebarMenuSubItem>
     );
   }
 
-  const isOpen = open.has(node.path);
-
   return (
-    <li>
-      <button
-        type="button"
-        onClick={() => onToggle(node.path)}
-        aria-expanded={isOpen}
-        style={indent}
-        className={cn(base, ROW[variant])}
-      >
-        <ChevronRight
-          className={cn(
-            "size-3.5 shrink-0 text-muted-foreground transition-transform",
-            isOpen && "rotate-90",
-          )}
-          aria-hidden
-        />
-        {isOpen ? (
-          <FolderOpen className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        ) : (
-          <Folder className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        )}
-        <span className="truncate font-medium">{node.name}</span>
-        <span className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
-          {node.count}
-        </span>
-      </button>
+    <Collapsible asChild defaultOpen={containsActive(node, active)} className="group/folder">
+      <SidebarMenuSubItem>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuSubButton asChild size={variant === "sidebar" ? "sm" : "md"}>
+            <button type="button">
+              <ChevronRight
+                aria-hidden
+                className="transition-transform group-data-[state=open]/folder:rotate-90"
+              />
+              <Folder aria-hidden className="group-data-[state=open]/folder:hidden" />
+              <FolderOpen aria-hidden className="hidden group-data-[state=open]/folder:block" />
+              <span>{node.name}</span>
+              <span className="ml-auto shrink-0 text-xs text-muted-foreground tabular-nums">
+                {node.count}
+              </span>
+            </button>
+          </SidebarMenuSubButton>
+        </CollapsibleTrigger>
 
-      {isOpen && (
-        <ul className="flex flex-col">
-          {node.children.map((child) => (
-            <TreeNode
-              key={nodeKey(child)}
-              node={child}
-              depth={depth + 1}
-              open={open}
-              onToggle={onToggle}
-              variant={variant}
-              pathname={pathname}
-            />
-          ))}
-        </ul>
-      )}
-    </li>
+        <CollapsibleContent>
+          <SidebarMenuSub className={cn(variant === "sidebar" && "mx-2 px-1.5")}>
+            {node.children.map((child) => (
+              <TreeNode key={nodeKey(child)} node={child} variant={variant} active={active} />
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuSubItem>
+    </Collapsible>
   );
 }

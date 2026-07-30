@@ -48,10 +48,13 @@ test("open a doc from the sidebar tree and render its image", async ({ page }) =
 
   // At desktop width the tree lives in the SIDEBAR and the pane on the right is
   // where the document lands — the page-level tree is the phone fallback.
-  await page
-    .getByTestId("doc-tree-nav")
-    .getByRole("link", { name: /Sample decision/ })
-    .click();
+  //
+  // Folders start closed and open one level at a time, so the path has to be
+  // walked rather than assumed open.
+  const tree = page.getByTestId("doc-tree-nav");
+  await tree.getByRole("button", { name: /^docs/ }).click();
+  await tree.getByRole("button", { name: /decisions/ }).click();
+  await tree.getByRole("link", { name: /Sample decision/ }).click();
   await expect(page.getByRole("heading", { name: /Sample decision/ })).toBeVisible();
 
   // The relative image resolves through the asset route and actually loads.
@@ -75,19 +78,33 @@ test("the Docs tree mirrors __project__ and reaches files outside the legacy fol
   await page.goto("/ops/sample/docs");
   const tree = page.getByTestId("doc-tree-nav");
 
-  // Folders from the fixture repo, as folder rows rather than links.
-  await expect(tree.getByRole("button", { name: /decisions/ })).toBeVisible();
+  // Top-level folders from the fixture repo, as folder rows rather than links.
+  await expect(tree.getByRole("button", { name: /^docs/ })).toBeVisible();
   await expect(tree.getByRole("button", { name: /^specs/ })).toBeVisible();
+  await expect(tree.getByRole("button", { name: /^tasks/ })).toBeVisible();
+
+  // Closed by default: no documents on screen until a folder is opened.
+  expect(await tree.getByRole("link").count()).toBe(0);
+
+  // Opening one reveals its immediate children — and `decisions` stays CLOSED,
+  // which is the whole point: one level at a time, not the entire subtree.
+  await tree.getByRole("button", { name: /^docs/ }).click();
+  await expect(tree.getByRole("button", { name: /decisions/ })).toBeVisible();
+  await expect(tree.getByRole("link", { name: /Sample decision/ })).toBeHidden();
+
+  const afterDocs = await tree.getByRole("link").count();
+  await tree.getByRole("button", { name: /decisions/ }).click();
+  expect(await tree.getByRole("link").count()).toBeGreaterThan(afterDocs);
 
   // `tasks/backlog.md` sits outside adr/spec/retro and is reachable as a `doc`.
+  await tree.getByRole("button", { name: /^tasks/ }).click();
   const backlog = tree.getByRole("link", { name: /Backlog/i });
   await expect(backlog).toBeVisible();
   await expect(backlog).toHaveAttribute("href", /\/doc\/tasks\/backlog$/);
 
-  // Collapsing a folder hides its documents.
-  const before = await tree.getByRole("link").count();
-  await tree.getByRole("button", { name: /decisions/ }).click();
-  expect(await tree.getByRole("link").count()).toBeLessThan(before);
+  // Closing it hides them again.
+  await tree.getByRole("button", { name: /^tasks/ }).click();
+  await expect(backlog).toBeHidden();
 });
 
 /**
@@ -102,6 +119,8 @@ test("the sidebar tree persists across documents and marks the open one", async 
   // The index pane invites a choice rather than repeating the tree.
   await expect(page.getByText("Pick a document")).toBeVisible();
 
+  await tree.getByRole("button", { name: /^docs/ }).click();
+  await tree.getByRole("button", { name: /decisions/ }).click();
   await tree.getByRole("link", { name: /Sample decision/ }).click();
   await expect(page.getByRole("heading", { name: /Sample decision/ })).toBeVisible();
 
@@ -109,12 +128,15 @@ test("the sidebar tree persists across documents and marks the open one", async 
   await expect(tree).toBeVisible();
   await expect(tree.locator('[aria-current="page"]')).toContainText("Sample decision");
 
-  // A folder collapsed while reading stays collapsed after opening another doc.
-  await tree.getByRole("button", { name: /^specs/ }).click();
-  const collapsed = await tree.getByRole("link").count();
-  await tree.getByRole("link", { name: /Backlog/i }).click();
-  await expect(page).toHaveURL(/\/doc\/tasks\/backlog$/);
-  expect(await tree.getByRole("link").count()).toBe(collapsed);
+  /**
+   * The folders on the path to the open document are expanded for you — that is
+   * what makes the tree orient you rather than needing a re-walk on every visit.
+   */
+  await page.goto("/ops/sample/doc/tasks/backlog");
+  await expect(page.getByTestId("doc-tree-nav").getByRole("link", { name: /Backlog/i })).toBeVisible();
+  await expect(
+    page.getByTestId("doc-tree-nav").locator('[aria-current="page"]'),
+  ).toContainText("Backlog");
 });
 
 /** Every ADR/spec URL minted before the tree existed must still resolve. */
@@ -139,7 +161,7 @@ test("tasks switch between table and board, and the choice sticks", async ({ pag
   const board = page.getByTestId("task-board");
   await expect(board).toBeVisible();
   await expect(board.locator("section")).toHaveCount(5);
-  expect(await board.locator("article").count()).toBe(rows);
+  expect(await board.locator('[data-slot="card"]').count()).toBe(rows);
 
   // The board's column track is wider than the viewport; it must scroll inside
   // itself. Before `min-w-0` on the inset it grew the page instead.

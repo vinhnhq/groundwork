@@ -4,7 +4,7 @@ import { UserChrome } from "@/components/app-shell/user-chrome";
 import { getSession } from "@/lib/auth";
 import { can } from "@/lib/auth/roles";
 import { getContentSource } from "@/lib/content";
-import { allFolderPaths, buildDocTree } from "@/lib/content/doc-tree";
+import { buildDocTree } from "@/lib/content/doc-tree";
 import { isStartable } from "@/lib/tasks/dor";
 import { parseBacklog } from "@/lib/tasks/parse-backlog";
 
@@ -52,7 +52,6 @@ export default async function ProjectLayout({
         ready: tasks.filter(isStartable).length,
       }}
       docTree={docTree}
-      docFolders={allFolderPaths(docTree)}
       mayGround={can(role, "grounding.read")}
       mayAgent={can(role, "agent.run")}
       userChrome={<UserChrome />}

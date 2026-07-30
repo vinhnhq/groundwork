@@ -1,3 +1,5 @@
+import { ShieldAlert } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CAPABILITIES, type Capability, ROLE_LABEL } from "@/lib/auth/roles";
 import type { Role } from "@/lib/auth/types";
 
@@ -23,14 +25,17 @@ export function DeniedNotice({ denied, role }: { denied?: string; role: Role }) 
   if (!denied || !isCapability(denied)) return null;
 
   return (
-    <div
+    <Alert
       role="status"
       data-testid="denied-notice"
-      className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+      className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
     >
-      <span className="font-medium">Not available to you.</span> The{" "}
-      <span className="font-medium">{ROLE_LABEL[role]}</span> role does not cover {REASON[denied]}.
-      Ask the engineer if you need it.
-    </div>
+      <ShieldAlert aria-hidden />
+      <AlertTitle>Not available to you.</AlertTitle>
+      <AlertDescription className="text-amber-900/90 dark:text-amber-200/90">
+        The <span className="font-medium">{ROLE_LABEL[role]}</span> role does not cover{" "}
+        {REASON[denied]}. Ask the engineer if you need it.
+      </AlertDescription>
+    </Alert>
   );
 }

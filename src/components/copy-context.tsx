@@ -1,6 +1,10 @@
 "use client";
 
+import { Check, Copy, FileDown } from "lucide-react";
+import Link from "next/link";
 import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 type State = "idle" | "copied" | "manual";
 
@@ -30,20 +34,18 @@ export function CopyContext({ text, exportHref }: { text: string; exportHref: st
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={copy}
-          data-testid="copy-context"
-          className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          {state === "copied" ? "Copied ✓" : "Copy context"}
-        </button>
-        <a
-          href={exportHref}
-          className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"
-        >
-          context.md
-        </a>
+        <Button type="button" size="sm" onClick={copy} data-testid="copy-context">
+          {state === "copied" ? <Check aria-hidden /> : <Copy aria-hidden />}
+          {state === "copied" ? "Copied" : "Copy context"}
+        </Button>
+        {/* `asChild` so the export stays a real anchor — the button styling is
+            presentation, and is not a reason to lose middle-click or "save as". */}
+        <Button asChild size="sm" variant="outline">
+          <Link href={exportHref} prefetch={false}>
+            <FileDown aria-hidden />
+            context.md
+          </Link>
+        </Button>
         <span className="text-xs text-muted-foreground">
           {text.length.toLocaleString()} characters
         </span>
@@ -54,13 +56,13 @@ export function CopyContext({ text, exportHref }: { text: string; exportHref: st
           <p className="text-xs text-amber-700 dark:text-amber-400">
             Clipboard access was blocked — select the text below and copy it manually.
           </p>
-          <textarea
+          <Textarea
             ref={manualRef}
             readOnly
             value={text}
             rows={8}
             data-testid="copy-context-fallback"
-            className="w-full rounded-md border border-border bg-muted/40 p-2 font-mono text-xs"
+            className="font-mono text-xs"
           />
         </div>
       )}

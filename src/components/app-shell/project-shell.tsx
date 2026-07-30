@@ -29,7 +29,6 @@ export function ProjectShell({
   status,
   counts,
   docTree,
-  docFolders,
   mayGround,
   mayAgent,
   userChrome,
@@ -41,7 +40,6 @@ export function ProjectShell({
   counts: { docs: number; tasks: number; ready: number };
   /** The repo's `__project__/` tree, nested under the Docs row while in Docs. */
   docTree: DocNode[];
-  docFolders: string[];
   mayGround: boolean;
   mayAgent: boolean;
   /** Rendered on the right of the workspace header (server component). */
@@ -63,7 +61,7 @@ export function ProjectShell({
           alsoActive: (p) => IN_DOC.test(p),
           subtree:
             docTree.length > 0 ? (
-              <DocTreeItems nodes={docTree} openPaths={docFolders} variant="sidebar" />
+              <DocTreeItems nodes={docTree} variant="sidebar" />
             ) : undefined,
         },
         { label: "Tasks", href: `${base}/tasks`, icon: ListTodo, badge: counts.tasks },

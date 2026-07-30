@@ -1,7 +1,14 @@
 import { FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { DocTree } from "@/components/doc-tree";
-import { allFolderPaths, buildDocTree } from "@/lib/content/doc-tree";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { buildDocTree } from "@/lib/content/doc-tree";
 import { loadProject } from "@/lib/ops/load";
 
 export const dynamic = "force-dynamic";
@@ -33,23 +40,25 @@ export default async function ProjectDocs({ params }: { params: Promise<{ projec
           {/* Phone and tablet: no persistent sidebar to navigate from, so the
               tree is the page. */}
           <div className="md:hidden">
-            <DocTree nodes={tree} openPaths={allFolderPaths(tree)} />
+            <DocTree nodes={tree} />
           </div>
 
           {/* Desktop: the sidebar holds the tree, and this pane is where the
               document lands. An empty state rather than a second copy of the
               tree — two trees on one screen is a choice the reader has to make
               for no reason. */}
-          <div className="hidden flex-1 items-center justify-center rounded-lg border border-dashed py-16 md:flex">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <FileText className="size-6 text-muted-foreground" aria-hidden />
-              <p className="text-sm font-medium">Pick a document</p>
-              <p className="max-w-xs text-sm text-muted-foreground">
+          <Empty className="hidden flex-1 border border-dashed md:flex">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FileText aria-hidden />
+              </EmptyMedia>
+              <EmptyTitle>Pick a document</EmptyTitle>
+              <EmptyDescription>
                 The folder tree in the sidebar mirrors <code>__project__/</code>. Choose a file and
                 it opens here.
-              </p>
-            </div>
-          </div>
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         </>
       )}
     </div>

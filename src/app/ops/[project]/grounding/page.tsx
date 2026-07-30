@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { type Door, GroundingDoors } from "@/components/grounding-doors";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -93,9 +94,13 @@ export default async function ProjectGrounding({
               words. Stack them instead. */}
           <ul className="flex flex-col gap-2 md:hidden">
             {brain.decisions.map((decision) => (
-              <li key={decision.id} className="rounded-lg border p-3">
-                <p className="text-sm font-medium">{decision.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{decision.statement}</p>
+              <li key={decision.id}>
+                <Card size="sm">
+                  <CardContent>
+                    <p className="text-sm font-medium">{decision.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{decision.statement}</p>
+                  </CardContent>
+                </Card>
               </li>
             ))}
           </ul>
@@ -132,14 +137,15 @@ export default async function ProjectGrounding({
           <h2 className="text-lg font-semibold">Open constraints</h2>
           <ul className="flex flex-col gap-2 md:hidden">
             {brain.constraints.map((constraint) => (
-              <li
-                key={`${constraint.source}-${constraint.text}`}
-                className="flex flex-col gap-1.5 rounded-lg border p-3"
-              >
-                <span className="text-sm">{constraint.text}</span>
-                <Badge variant="outline" className="w-fit">
-                  {constraint.source}
-                </Badge>
+              <li key={`${constraint.source}-${constraint.text}`}>
+                <Card size="sm">
+                  <CardContent className="flex flex-col gap-1.5">
+                    <span className="text-sm">{constraint.text}</span>
+                    <Badge variant="outline" className="w-fit">
+                      {constraint.source}
+                    </Badge>
+                  </CardContent>
+                </Card>
               </li>
             ))}
           </ul>

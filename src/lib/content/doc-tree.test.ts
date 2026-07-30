@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allFolderPaths, buildDocTree, type DocFolder } from "./doc-tree";
+import { buildDocTree, type DocFolder } from "./doc-tree";
 import type { DocRef } from "./types";
 
 const ref = (relPath: string, kind: DocRef["kind"], id: string, title = "T"): DocRef => ({
@@ -68,15 +68,5 @@ describe("buildDocTree", () => {
 
   it("returns nothing for no docs", () => {
     expect(buildDocTree([], "gw")).toEqual([]);
-  });
-});
-
-describe("allFolderPaths", () => {
-  it("lists every folder, nested included", () => {
-    expect(allFolderPaths(buildDocTree(docs, "gw")).sort()).toEqual([
-      "docs",
-      "docs/decisions",
-      "specs",
-    ]);
   });
 });

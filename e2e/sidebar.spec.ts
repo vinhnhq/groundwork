@@ -45,6 +45,9 @@ test.describe("the project sidebar", () => {
     const docsRow = page.getByRole("link", { name: "Docs", exact: true });
     const tree = page.getByTestId("doc-tree-nav");
     await expect(tree).toBeVisible();
+    // Folders start closed, so open one to have a row to reach for.
+    await tree.getByRole("button", { name: /^docs/ }).click();
+    await tree.getByRole("button", { name: /decisions/ }).click();
 
     // Same list item: the tree is a descendant of the row's <li>, and Tasks
     // still follows it in the menu rather than being pushed below a panel.

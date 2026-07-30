@@ -1,14 +1,21 @@
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { requireCapability } from "@/app/ops/guard";
 import type { IntegrationState } from "@/lib/ops/integrations";
 import { listIntegrations } from "@/lib/ops/integrations";
 
 export const dynamic = "force-dynamic";
 
-const STATE_STYLE: Record<IntegrationState, string> = {
-  live: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+/** Live earns the filled variant; mock keeps its amber warning; off is neutral. */
+const STATE_VARIANT: Record<IntegrationState, "default" | "secondary" | "outline"> = {
+  live: "default",
+  mock: "secondary",
+  disabled: "outline",
+};
+
+const STATE_TINT: Partial<Record<IntegrationState, string>> = {
   mock: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  disabled: "bg-muted text-muted-foreground",
 };
 
 const STATE_LABEL: Record<IntegrationState, string> = {
@@ -41,14 +48,14 @@ export default async function IntegrationsPage() {
 
       <ul className="flex flex-col gap-3" data-testid="integrations">
         {integrations.map((integration) => (
-          <li key={integration.name} className="rounded-lg border border-border p-4">
+          <li key={integration.name}>
+            <Card size="sm">
+            <CardContent>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-medium">{integration.name}</h2>
-              <span
-                className={`rounded-md px-2 py-0.5 text-xs font-medium ${STATE_STYLE[integration.state]}`}
-              >
+              <Badge variant={STATE_VARIANT[integration.state]} className={STATE_TINT[integration.state]}>
                 {STATE_LABEL[integration.state]}
-              </span>
+              </Badge>
             </div>
 
             <p className="mt-1.5 text-sm">{integration.detail}</p>
@@ -62,14 +69,13 @@ export default async function IntegrationsPage() {
 
             <div className="mt-2 flex flex-wrap gap-1.5">
               {integration.env.map((name) => (
-                <code
-                  key={name}
-                  className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground"
-                >
+                <Badge key={name} variant="secondary" className="font-mono text-[11px]">
                   {name}
-                </code>
+                </Badge>
               ))}
             </div>
+            </CardContent>
+            </Card>
           </li>
         ))}
       </ul>

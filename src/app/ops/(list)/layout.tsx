@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 import { UserChrome } from "@/components/app-shell/user-chrome";
 import { getSession } from "@/lib/auth";
 import { can } from "@/lib/auth/roles";
@@ -15,7 +16,7 @@ export default async function OpsListLayout({ children }: { children: React.Reac
           <Link href="/ops" className="font-semibold tracking-tight">
             Groundwork
           </Link>
-          <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">ops</span>
+          <Badge variant="secondary">ops</Badge>
 
           {can(role, "integrations.view") && (
             <Link

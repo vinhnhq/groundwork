@@ -2,6 +2,7 @@
 
 import { DorGaps, StatusBadge, TierBadge } from "@/components/badges";
 import { TaskStatusControl } from "@/components/task-status-control";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -46,7 +47,9 @@ export function TasksTable({
           controls — neither is a backlog you would actually work from. */}
       <ul className="flex flex-col gap-2 md:hidden" data-testid="task-cards">
         {filtered.map((task) => (
-          <li key={task.id} className="flex flex-col gap-2 rounded-lg border p-3">
+          <li key={task.id}>
+            <Card size="sm">
+            <CardContent className="flex flex-col gap-2">
             <div className="flex items-start gap-2">
               <span className="font-mono text-xs text-muted-foreground">{task.id}</span>
               <span className="flex-1 text-sm">{task.title}</span>
@@ -59,6 +62,8 @@ export function TasksTable({
             {mayWrite && (
               <TaskStatusControl project={project} taskId={task.id} status={task.status} />
             )}
+            </CardContent>
+            </Card>
           </li>
         ))}
       </ul>

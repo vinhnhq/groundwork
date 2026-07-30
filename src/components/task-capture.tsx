@@ -4,6 +4,7 @@ import { Loader2, Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { type ActionResult, captureTask } from "@/app/ops/[project]/actions";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Drawer,
   DrawerClose,
@@ -153,8 +154,8 @@ export function TaskCapture({ project }: { project: string }) {
                 />
               </div>
 
-              <textarea
-                className="min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground"
+              <Textarea
+                className="min-h-16"
                 rows={2}
                 placeholder="Intent — what becomes true, and why now"
                 aria-label="Intent"

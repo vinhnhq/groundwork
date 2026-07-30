@@ -83,8 +83,3 @@ function countAndSort(folder: DocFolder): number {
 
   return total;
 }
-
-/** Every folder path in the tree — the Docs page opens them all by default. */
-export function allFolderPaths(nodes: readonly DocNode[]): string[] {
-  return nodes.flatMap((n) => (n.type === "folder" ? [n.path, ...allFolderPaths(n.children)] : []));
-}

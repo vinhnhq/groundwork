@@ -67,10 +67,15 @@ export function listIntegrations(): Integration[] {
 
     {
       name: "Auth",
-      state: "mock",
+      /**
+       * Derived, not hard-coded to `mock` any more — the adapter shipped (F5,
+       * ADR-0008). Without `DATABASE_URL` there is no store at all, so nobody
+       * can sign in: that is a *disabled* seam, not a mocked one, and calling it
+       * "mock" implied a working fallback that no longer exists.
+       */
+      state: auth.databaseConfigured ? "live" : "disabled",
       detail: auth.note,
-      activate:
-        "Implement the better-auth/Kysely adapter, then set DATABASE_URL + BETTER_AUTH_SECRET.",
+      activate: "Set DATABASE_URL, then run `bun run migrate && bun run seed` against it.",
       env: ["DATABASE_URL", "BETTER_AUTH_SECRET", "ADMIN_PASSWORD"],
     },
 

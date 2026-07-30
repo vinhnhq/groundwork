@@ -3,6 +3,7 @@
 import { Loader2, Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 import { acceptDraft, analyzeIdea } from "@/app/ops/[project]/triage/actions";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -19,8 +20,19 @@ import { readiness } from "@/lib/tasks/dor";
 import type { AutonomyTier, Task } from "@/lib/tasks/types";
 import type { DraftTicket, TriageKind, TriageResult } from "@/lib/triage/types";
 
-const KIND_STYLE: Record<TriageKind, string> = {
-  duplicate: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+/**
+ * The verdict's colour. `destructive` is the primitive's own; the other three
+ * carry a Tailwind palette tint over `secondary`, per tech-standards §13 (reach
+ * for a fixed palette colour rather than inventing a token).
+ */
+const KIND_VARIANT: Record<TriageKind, "secondary" | "destructive"> = {
+  duplicate: "destructive",
+  overlaps: "secondary",
+  "needs-spike": "secondary",
+  "new-task": "secondary",
+};
+
+const KIND_TINT: Partial<Record<TriageKind, string>> = {
   overlaps: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
   "needs-spike": "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
   "new-task": "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
@@ -123,11 +135,9 @@ export function TriageWorkbench({ project }: { project: string }) {
       {result && draft && (
         <div className="flex flex-col gap-5 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
           <div className="flex flex-col gap-2">
-            <span
-              className={`inline-flex w-fit items-center rounded-md px-2 py-0.5 text-xs font-medium ${KIND_STYLE[result.kind]}`}
-            >
+            <Badge variant={KIND_VARIANT[result.kind]} className={KIND_TINT[result.kind]}>
               {result.kind}
-            </span>
+            </Badge>
             <p className="text-sm">{result.message}</p>
             {result.citations.length > 0 && (
               <p className="text-xs text-muted-foreground">
@@ -227,13 +237,13 @@ export function TriageWorkbench({ project }: { project: string }) {
 
           <div className="flex flex-wrap items-center gap-3" data-testid="dor-status">
             {dor?.ready ? (
-              <span className="rounded-md bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                 READY
-              </span>
+              </Badge>
             ) : (
-              <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+              <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                 missing: {dor?.missing.join(", ")}
-              </span>
+              </Badge>
             )}
             <Button type="button" size="sm" onClick={accept} disabled={!dor?.ready || pending}>
               Accept → backlog

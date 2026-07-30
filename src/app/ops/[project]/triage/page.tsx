@@ -29,7 +29,19 @@ export default async function TriagePage({ params }: { params: Promise<{ project
      * No page heading: it moved into the composer's own description, since the
      * input is the surface rather than something a heading introduces.
      */
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+    <div
+      /**
+       * A definite height, not `flex-1`.
+       *
+       * The shell's column is `min-h-svh` — a *minimum*, so its flex children
+       * size to content and grow the page. That is right for Docs and Tasks,
+       * which should scroll the whole page, and wrong here: pinning the composer
+       * to the bottom needs a column whose height is known. So this one measures
+       * itself off the viewport, minus the sticky header (h-14) and the shell's
+       * own padding.
+       */
+      className="mx-auto flex h-[calc(100svh-3.5rem-2rem)] w-full max-w-3xl min-h-0 flex-col gap-4 md:h-[calc(100svh-3.5rem-3rem)]"
+    >
       <TriageWorkbench
         project={project}
         docs={docs.map((d) => ({ id: d.id, kind: d.kind, title: d.title, relPath: d.relPath }))}

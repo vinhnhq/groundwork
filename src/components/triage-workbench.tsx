@@ -9,7 +9,7 @@ import {
   DocMention,
   type MentionQuery,
   mentionAt,
-  useMentionOptions,
+  useMentionRows,
   wrapIndex,
 } from "@/components/doc-mention";
 import {
@@ -85,7 +85,8 @@ export function TriageWorkbench({
   const [mention, setMention] = useState<MentionQuery | null>(null);
   const [point, setPoint] = useState<CaretPoint | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const { options, activeIndex, setActiveIndex } = useMentionOptions(docs, mention);
+  const { rows, activeIndex, setActiveIndex, breadcrumb, enterFolder, leaveFolder, atRoot } =
+    useMentionRows({ docs, tree: docTree, mention });
   const [result, setResult] = useState<TriageResult | null>(null);
   const [draft, setDraft] = useState<DraftTicket | null>(null);
   const [accepted, setAccepted] = useState<{ block: string; count: number } | null>(null);
@@ -140,9 +141,20 @@ export function TriageWorkbench({
     setText(next);
     const found = caret === null ? null : mentionAt(next, caret);
     setMention(found);
-    setPoint(
-      found && inputRef.current ? caretCoordinates(inputRef.current, found.start) : null,
-    );
+
+    // Viewport coordinates, because the menu is `position: fixed` — `Card` is
+    // `overflow-hidden` and clipped an absolutely-positioned one mid-row.
+    if (found && inputRef.current) {
+      const local = caretCoordinates(inputRef.current, found.start);
+      const box = inputRef.current.getBoundingClientRect();
+      setPoint({
+        top: box.top + local.top,
+        left: box.left + local.left,
+        lineHeight: local.lineHeight,
+      });
+    } else {
+      setPoint(null);
+    }
   }
 
   /**
@@ -155,15 +167,24 @@ export function TriageWorkbench({
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (!mention) return;
 
+    const row = rows[activeIndex];
+
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((i) => wrapIndex(i + (e.key === "ArrowDown" ? 1 : -1), options.length));
+      setActiveIndex((i) => wrapIndex(i + (e.key === "ArrowDown" ? 1 : -1), rows.length));
     } else if (e.key === "Enter" || e.key === "Tab") {
-      const chosen = options[activeIndex];
-      if (chosen) {
-        e.preventDefault();
-        pickDoc(chosen);
-      }
+      if (!row) return;
+      e.preventDefault();
+      // Enter means "go in" on a folder and "take it" on a file — one key for
+      // both steps of parent-then-child.
+      if (row.type === "folder") enterFolder(row.name);
+      else pickDoc(row.doc);
+    } else if (e.key === "ArrowRight" && row?.type === "folder") {
+      e.preventDefault();
+      enterFolder(row.name);
+    } else if (e.key === "ArrowLeft" && !atRoot) {
+      e.preventDefault();
+      leaveFolder();
     } else if (e.key === "Escape") {
       e.preventDefault();
       setMention(null);
@@ -199,20 +220,23 @@ export function TriageWorkbench({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* The transcript. A scroller rather than a growing page: the draft form
-          below it is the thing you work in, and it must not be pushed off-screen
-          by the exchange that produced it. */}
+    /**
+     * A full-height column: the transcript takes what is left and scrolls, the
+     * composer sits at the bottom where your hands already are. That is the
+     * arrangement every chat surface uses, and it means a long exchange never
+     * pushes the input off-screen.
+     */
+    // `justify-end` so the composer sits at the bottom even before there is a
+    // transcript to fill the space above it. Once the thread exists it is
+    // `flex-1` and takes the slack, and this has no further effect.
+    <div className="flex min-h-0 flex-1 flex-col justify-end gap-4">
       {/* `MessageScroller` is `size-full` — it fills a *sized* container by
-          design. Given none, its 100% height resolves against an auto-height
-          parent and squeezes its siblings: the composer card below rendered
-          115px tall around 141px of content and clipped it. So the height lives
-          here, on a wrapper, not as a max-height on the viewport. */}
-      {/* Only once there is a transcript. An always-present scroller meant 320px
-          of void above the composer before you had sent anything — the composer
-          is the whole page until then. */}
+          design, so its height comes from this wrapper rather than a max-height
+          on the viewport. Only mounted once there is a transcript: an
+          always-present scroller put a void above the composer before you had
+          sent anything. */}
       {sent && (
-      <div className="h-80 shrink-0">
+      <div className="min-h-0 flex-1">
       <MessageScrollerProvider>
         <MessageScroller className="rounded-2xl bg-card ring-1 ring-foreground/10">
           <MessageScrollerViewport>
@@ -234,6 +258,132 @@ export function TriageWorkbench({
                   />
                 </MessageScrollerItem>
               )}
+
+            {result && draft && (
+              <div className="flex flex-col gap-5 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
+                <div className="grid gap-3">
+                  <Field>
+                    <FieldLabel htmlFor="draft-title">Title</FieldLabel>
+                    <Input
+                      id="draft-title"
+                      value={draft.title}
+                      onChange={(e) => set("title", e.target.value)}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel>Autonomy</FieldLabel>
+                    <Select
+                      value={draft.autonomy ?? NO_TIER}
+                      onValueChange={(v) =>
+                        set("autonomy", v === NO_TIER ? undefined : (v as AutonomyTier))
+                      }
+                    >
+                      <SelectTrigger aria-label="Autonomy">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Radix forbids an empty-string item value, so "no tier"
+                            carries a sentinel that maps back to `undefined`. */}
+                        <SelectItem value={NO_TIER}>— none —</SelectItem>
+                        {TIERS.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {t}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="draft-intent">Intent</FieldLabel>
+                    <Input
+                      id="draft-intent"
+                      value={draft.intent ?? ""}
+                      onChange={(e) => set("intent", e.target.value)}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="draft-touches">Touches (comma-separated)</FieldLabel>
+                    <Input
+                      id="draft-touches"
+                      value={csv(draft.touches)}
+                      onChange={(e) => set("touches", parseCsv(e.target.value))}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="draft-must-not">Must NOT (comma-separated)</FieldLabel>
+                    <Input
+                      id="draft-must-not"
+                      value={csv(draft.mustNot)}
+                      onChange={(e) => set("mustNot", parseCsv(e.target.value))}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="draft-oracle">
+                      Oracle (how &quot;done&quot; is verified)
+                    </FieldLabel>
+                    <Input
+                      id="draft-oracle"
+                      value={draft.oracle ?? ""}
+                      onChange={(e) => set("oracle", e.target.value)}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="draft-evidence">Evidence (comma-separated, ≥2)</FieldLabel>
+                    <Input
+                      id="draft-evidence"
+                      value={csv(draft.evidence.map((ev) => ev.ref))}
+                      onChange={(e) =>
+                        set(
+                          "evidence",
+                          parseCsv(e.target.value).map((ref) => ({ kind: "doc", ref })),
+                        )
+                      }
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="draft-escalate-if">Escalate if</FieldLabel>
+                    <Input
+                      id="draft-escalate-if"
+                      value={draft.escalateIf ?? ""}
+                      onChange={(e) => set("escalateIf", e.target.value)}
+                    />
+                  </Field>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3" data-testid="dor-status">
+                  {dor?.ready ? (
+                    <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      READY
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                      missing: {dor?.missing.join(", ")}
+                    </Badge>
+                  )}
+                  <Button type="button" size="sm" onClick={accept} disabled={!dor?.ready || pending}>
+                    Accept → backlog
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={dismiss}>
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {accepted && (
+              <div className="flex flex-col gap-2 rounded-lg border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                  Would append to {project}/__project__/tasks/backlog.md
+                </p>
+                <pre className="overflow-x-auto rounded bg-white/70 p-3 text-xs dark:bg-black/30">
+                  {accepted.block}
+                </pre>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                  Mock write-back (in-memory). Real version commits/opens a PR against the repo.
+                </p>
+              </div>
+            )}
+
             </MessageScrollerContent>
           </MessageScrollerViewport>
           <MessageScrollerButton />
@@ -242,10 +392,10 @@ export function TriageWorkbench({
       </div>
       )}
 
-      {/* The composer. Its description carries what used to be the page title
-          and blurb: the input *is* the surface, so the explanation belongs on it
-          rather than as a heading you read once and then scroll past. */}
-      <Card>
+      {/* The composer, last in the column so it lands at the bottom. Its
+          description carries what used to be the page title and blurb: the input
+          *is* the surface, not something a heading introduces. */}
+      <Card className="shrink-0">
         <CardContent className="flex flex-col gap-3">
           {tagged.length > 0 && (
             <AttachmentGroup>
@@ -288,11 +438,14 @@ export function TriageWorkbench({
 
               {mention && point && (
                 <DocMention
-                  docs={options}
+                  rows={rows}
                   taggedIds={taggedIds}
                   activeIndex={activeIndex}
-                  point={point}
+                  breadcrumb={breadcrumb}
+                  anchor={point}
                   onPick={pickDoc}
+                  onEnter={enterFolder}
+                  onUp={leaveFolder}
                 />
               )}
             </div>
@@ -350,130 +503,6 @@ export function TriageWorkbench({
         </CardContent>
       </Card>
 
-      {result && draft && (
-        <div className="flex flex-col gap-5 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
-          <div className="grid gap-3">
-            <Field>
-              <FieldLabel htmlFor="draft-title">Title</FieldLabel>
-              <Input
-                id="draft-title"
-                value={draft.title}
-                onChange={(e) => set("title", e.target.value)}
-              />
-            </Field>
-            <Field>
-              <FieldLabel>Autonomy</FieldLabel>
-              <Select
-                value={draft.autonomy ?? NO_TIER}
-                onValueChange={(v) =>
-                  set("autonomy", v === NO_TIER ? undefined : (v as AutonomyTier))
-                }
-              >
-                <SelectTrigger aria-label="Autonomy">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Radix forbids an empty-string item value, so "no tier"
-                      carries a sentinel that maps back to `undefined`. */}
-                  <SelectItem value={NO_TIER}>— none —</SelectItem>
-                  {TIERS.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="draft-intent">Intent</FieldLabel>
-              <Input
-                id="draft-intent"
-                value={draft.intent ?? ""}
-                onChange={(e) => set("intent", e.target.value)}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="draft-touches">Touches (comma-separated)</FieldLabel>
-              <Input
-                id="draft-touches"
-                value={csv(draft.touches)}
-                onChange={(e) => set("touches", parseCsv(e.target.value))}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="draft-must-not">Must NOT (comma-separated)</FieldLabel>
-              <Input
-                id="draft-must-not"
-                value={csv(draft.mustNot)}
-                onChange={(e) => set("mustNot", parseCsv(e.target.value))}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="draft-oracle">
-                Oracle (how &quot;done&quot; is verified)
-              </FieldLabel>
-              <Input
-                id="draft-oracle"
-                value={draft.oracle ?? ""}
-                onChange={(e) => set("oracle", e.target.value)}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="draft-evidence">Evidence (comma-separated, ≥2)</FieldLabel>
-              <Input
-                id="draft-evidence"
-                value={csv(draft.evidence.map((ev) => ev.ref))}
-                onChange={(e) =>
-                  set(
-                    "evidence",
-                    parseCsv(e.target.value).map((ref) => ({ kind: "doc", ref })),
-                  )
-                }
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="draft-escalate-if">Escalate if</FieldLabel>
-              <Input
-                id="draft-escalate-if"
-                value={draft.escalateIf ?? ""}
-                onChange={(e) => set("escalateIf", e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3" data-testid="dor-status">
-            {dor?.ready ? (
-              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                READY
-              </Badge>
-            ) : (
-              <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                missing: {dor?.missing.join(", ")}
-              </Badge>
-            )}
-            <Button type="button" size="sm" onClick={accept} disabled={!dor?.ready || pending}>
-              Accept → backlog
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={dismiss}>
-              Dismiss
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {accepted && (
-        <div className="flex flex-col gap-2 rounded-lg border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
-          <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
-            Would append to {project}/__project__/tasks/backlog.md
-          </p>
-          <pre className="overflow-x-auto rounded bg-white/70 p-3 text-xs dark:bg-black/30">
-            {accepted.block}
-          </pre>
-          <p className="text-xs text-emerald-700 dark:text-emerald-400">
-            Mock write-back (in-memory). Real version commits/opens a PR against the repo.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

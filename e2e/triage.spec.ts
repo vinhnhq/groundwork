@@ -130,3 +130,82 @@ test("Browse files opens the folder tree", async ({ page }) => {
   await picker.getByRole("button", { name: /Sample decision/ }).click();
   await expect(page.locator('[data-slot="attachment"]')).toHaveCount(1);
 });
+
+/**
+ * The @ menu is a folder tree you walk, not a flat dump: pick the parent, then
+ * the child. Typing switches it to a flat search across everything, because
+ * searching and browsing are different intents.
+ */
+test("the @ menu walks folders parent-then-child", async ({ page }) => {
+  await page.goto("/ops/sample/triage");
+
+  const input = page.getByLabel("Client idea");
+  await input.click();
+  await page.keyboard.type("@");
+
+  const menu = page.getByTestId("doc-mention");
+  await expect(menu).toBeVisible();
+
+  // The root level is folders, and no file is on screen yet.
+  const folders = menu.locator('[data-row-type="folder"]');
+  expect(await folders.count()).toBeGreaterThan(0);
+  await expect(menu.getByRole("option", { name: /Sample decision/ })).toHaveCount(0);
+
+  // Enter descends into the highlighted folder; a breadcrumb appears.
+  await page.keyboard.press("Enter");
+  await expect(menu.locator('[data-row-type="folder"]').first()).toBeVisible();
+
+  // ArrowRight descends again, into decisions, where the files live.
+  await page.keyboard.press("ArrowRight");
+  await expect(menu.getByRole("option", { name: /Sample decision/ })).toBeVisible();
+
+  // ArrowLeft climbs back out.
+  await page.keyboard.press("ArrowLeft");
+  await expect(menu.getByRole("option", { name: /Sample decision/ })).toHaveCount(0);
+
+  // Typing abandons the walk for a flat search.
+  await page.keyboard.type("sample");
+  await expect(menu.getByRole("option", { name: /Sample decision/ })).toBeVisible();
+  await expect(menu.locator('[data-row-type="folder"]')).toHaveCount(0);
+});
+
+/**
+ * Layout regressions this surface has already had once: the menu clipped by the
+ * card's `overflow-hidden`, and `scrollIntoView` dragging the composer around as
+ * the arrows walked the list.
+ */
+test("the composer stays at the bottom and the menu is never clipped", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await page.goto("/ops/sample/triage");
+
+  // Wait for the field before measuring: an unlaid-out card reports a zero rect,
+  // which reads as "pinned to the very top" and fails for the wrong reason.
+  const input = page.getByLabel("Client idea");
+  await expect(input).toBeVisible();
+
+  const composer = page.locator('[data-slot="card"]').first();
+  await expect
+    .poll(() => composer.evaluate((el) => window.innerHeight - el.getBoundingClientRect().bottom))
+    .toBeLessThan(80);
+
+  await input.click();
+  await page.keyboard.type("@");
+
+  const menu = page.getByTestId("doc-mention");
+  await expect(menu).toBeVisible();
+
+  // Full width — a clipped menu measured narrower than its own 20rem.
+  const shell = await menu.evaluate((el) => {
+    const r = (el.parentElement as HTMLElement).getBoundingClientRect();
+    return { width: Math.round(r.width), top: Math.round(r.top), bottom: Math.round(r.bottom) };
+  });
+  expect(shell.width).toBeGreaterThan(300);
+  expect(shell.top).toBeGreaterThanOrEqual(0);
+  expect(shell.bottom).toBeLessThanOrEqual(860);
+
+  // Arrows must not move the composer.
+  const before = await composer.evaluate((el) => Math.round(el.getBoundingClientRect().top));
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  expect(await composer.evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(before);
+});

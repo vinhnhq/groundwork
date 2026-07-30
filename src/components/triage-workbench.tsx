@@ -1,8 +1,15 @@
 "use client";
 
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Paperclip, Send } from "lucide-react";
 import { useState, useTransition } from "react";
 import { acceptDraft, analyzeIdea } from "@/app/ops/[project]/triage/actions";
+import {
+  DocAttachment,
+  IdeaMessage,
+  type TaggableDoc,
+  VerdictMessage,
+} from "@/components/triage-thread";
+import { AttachmentGroup } from "@/components/ui/attachment";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,28 +22,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Marker, MarkerContent } from "@/components/ui/marker";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
 import { Textarea } from "@/components/ui/textarea";
 import { readiness } from "@/lib/tasks/dor";
 import type { AutonomyTier, Task } from "@/lib/tasks/types";
-import type { DraftTicket, TriageKind, TriageResult } from "@/lib/triage/types";
-
-/**
- * The verdict's colour. `destructive` is the primitive's own; the other three
- * carry a Tailwind palette tint over `secondary`, per tech-standards §13 (reach
- * for a fixed palette colour rather than inventing a token).
- */
-const KIND_VARIANT: Record<TriageKind, "secondary" | "destructive"> = {
-  duplicate: "destructive",
-  overlaps: "secondary",
-  "needs-spike": "secondary",
-  "new-task": "secondary",
-};
-
-const KIND_TINT: Partial<Record<TriageKind, string>> = {
-  overlaps: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
-  "needs-spike": "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
-  "new-task": "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-};
+import type { DraftTicket, TriageResult } from "@/lib/triage/types";
 
 const TIERS: AutonomyTier[] = ["supervised", "plan-gated", "dark", "trivial"];
 
@@ -54,8 +60,18 @@ function toTask(project: string, d: DraftTicket): Task {
   return { ...d, project, status: "todo" };
 }
 
-export function TriageWorkbench({ project }: { project: string }) {
+export function TriageWorkbench({
+  project,
+  docs,
+}: {
+  project: string;
+  /** The project's documents, so an idea can be tagged to the files it concerns. */
+  docs: TaggableDoc[];
+}) {
   const [text, setText] = useState("");
+  const [tagged, setTagged] = useState<TaggableDoc[]>([]);
+  /** The idea as sent, frozen — the composer clears but the transcript keeps it. */
+  const [sent, setSent] = useState<{ text: string; tagged: TaggableDoc[] } | null>(null);
   const [result, setResult] = useState<TriageResult | null>(null);
   const [draft, setDraft] = useState<DraftTicket | null>(null);
   const [accepted, setAccepted] = useState<{ block: string; count: number } | null>(null);
@@ -68,8 +84,10 @@ export function TriageWorkbench({ project }: { project: string }) {
 
   function analyze() {
     if (!text.trim()) return;
+    const outgoing = { text, tagged };
     startTransition(async () => {
-      const r = await analyzeIdea(project, text);
+      const r = await analyzeIdea(project, outgoing.text, outgoing.tagged.map((d) => d.id));
+      setSent(outgoing);
       setResult(r);
       setDraft(r.draft);
       setAccepted(null);
@@ -85,47 +103,129 @@ export function TriageWorkbench({ project }: { project: string }) {
     setResult(null);
     setDraft(null);
     setAccepted(null);
+    setSent(null);
     setText("");
+    setTagged([]);
   }
+
+  const toggleTag = (doc: TaggableDoc) =>
+    setTagged((prev) =>
+      prev.some((d) => d.id === doc.id) ? prev.filter((d) => d.id !== doc.id) : [...prev, doc],
+    );
 
   return (
     <div className="flex flex-col gap-6">
+      {/* The transcript. A scroller rather than a growing page: the draft form
+          below it is the thing you work in, and it must not be pushed off-screen
+          by the exchange that produced it. */}
+      {/* `MessageScroller` is `size-full` — it fills a *sized* container by
+          design. Given none, its 100% height resolves against an auto-height
+          parent and squeezes its siblings: the composer card below rendered
+          115px tall around 141px of content and clipped it. So the height lives
+          here, on a wrapper, not as a max-height on the viewport. */}
+      {/* Only once there is a transcript. An always-present scroller meant 320px
+          of void above the composer before you had sent anything — the composer
+          is the whole page until then. */}
+      {sent && (
+      <div className="h-80 shrink-0">
+      <MessageScrollerProvider>
+        <MessageScroller className="rounded-2xl bg-card ring-1 ring-foreground/10">
+          <MessageScrollerViewport>
+            <MessageScrollerContent className="gap-4 p-4">
+              <Marker variant="separator">
+                <MarkerContent>checked against this project's docs</MarkerContent>
+              </Marker>
+
+              <MessageScrollerItem>
+                <IdeaMessage text={sent.text} tagged={sent.tagged} />
+              </MessageScrollerItem>
+
+              {result && (
+                <MessageScrollerItem>
+                  <VerdictMessage
+                    kind={result.kind}
+                    message={result.message}
+                    citations={result.citations}
+                  />
+                </MessageScrollerItem>
+              )}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+          <MessageScrollerButton />
+        </MessageScroller>
+      </MessageScrollerProvider>
+      </div>
+      )}
+
+      {/* The composer. */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">The idea</CardTitle>
-          <CardDescription>
-            In the client's words. The agent checks it against this project's locked decisions and
-            open constraints before drafting anything.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex flex-col gap-3">
+          {tagged.length > 0 && (
+            <AttachmentGroup>
+              {tagged.map((doc) => (
+                <DocAttachment key={doc.id} doc={doc} onRemove={() => toggleTag(doc)} />
+              ))}
+            </AttachmentGroup>
+          )}
+
           <Field>
-            <FieldLabel htmlFor="triage-idea">Client idea</FieldLabel>
+            <FieldLabel htmlFor="triage-idea" className="sr-only">
+              Client idea
+            </FieldLabel>
             <Textarea
               id="triage-idea"
               aria-label="Client idea"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              rows={4}
-              placeholder="e.g. The client wants a monthly revenue export as a spreadsheet…"
+              rows={3}
+              placeholder="In the client's words — e.g. they want a monthly revenue export as a spreadsheet…"
             />
             <FieldDescription>
-              Nothing is written to the backlog until you ground the draft and accept it.
+              Tag the files it concerns and the agent will treat them as relevant. Nothing is
+              written to the backlog until you ground the draft and accept it.
             </FieldDescription>
           </Field>
 
-          <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline" size="sm" disabled={docs.length === 0}>
+                  <Paperclip aria-hidden />
+                  Tag a file
+                  {tagged.length > 0 && <Badge variant="secondary">{tagged.length}</Badge>}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-h-72 w-80 overflow-y-auto">
+                <DropdownMenuLabel>Files in this project</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {docs.map((doc) => (
+                  <DropdownMenuItem
+                    key={doc.id}
+                    // Keep the menu open: tagging several files in a row is the
+                    // normal case, and a menu that closes per pick makes it four
+                    // round trips instead of one.
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      toggleTag(doc);
+                    }}
+                  >
+                    <span className="flex-1 truncate">{doc.title}</span>
+                    {tagged.some((d) => d.id === doc.id) && (
+                      <Badge variant="secondary">tagged</Badge>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button
               type="button"
+              size="sm"
               onClick={analyze}
               disabled={pending || !text.trim()}
               aria-busy={pending}
             >
-              {pending ? (
-                <Loader2 className="animate-spin" aria-hidden />
-              ) : (
-                <Sparkles aria-hidden />
-              )}
+              {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Send aria-hidden />}
               Analyze against docs
             </Button>
           </div>
@@ -134,18 +234,6 @@ export function TriageWorkbench({ project }: { project: string }) {
 
       {result && draft && (
         <div className="flex flex-col gap-5 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
-          <div className="flex flex-col gap-2">
-            <Badge variant={KIND_VARIANT[result.kind]} className={KIND_TINT[result.kind]}>
-              {result.kind}
-            </Badge>
-            <p className="text-sm">{result.message}</p>
-            {result.citations.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Grounded in: {result.citations.map((c) => c.label).join(" · ")}
-              </p>
-            )}
-          </div>
-
           <div className="grid gap-3">
             <Field>
               <FieldLabel htmlFor="draft-title">Title</FieldLabel>

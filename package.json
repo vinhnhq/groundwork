@@ -25,6 +25,7 @@
     "@better-auth/kysely-adapter": "^1.6.25",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@neondatabase/serverless": "^1.1.0",
+    "@shadcn/react": "^0.2.1",
     "better-auth": "^1.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

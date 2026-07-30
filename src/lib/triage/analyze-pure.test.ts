@@ -44,3 +44,46 @@ describe("analyzeIdeaPure", () => {
     expect(r.draft.autonomy).toBe("dark");
   });
 });
+
+/**
+ * Tagging a file is an assertion of relevance, not decoration.
+ *
+ * The token heuristic cannot know that "the export thing" means ADR-0004, but
+ * the person typing it can — so a tagged doc gets a score floor at the
+ * `overlaps` threshold and is always cited. Without that, tagging would be a
+ * chip that changed nothing.
+ */
+describe("tagged documents", () => {
+  const unrelated = [{ kind: "adr" as const, id: "0004-grounding", title: "The grounding digest" }];
+  const idea = "add a colour picker to the avatar editor";
+
+  it("changes nothing when untagged and irrelevant", () => {
+    const r = analyzeIdeaPure(idea, unrelated, []);
+    expect(r.kind).not.toBe("overlaps");
+    expect(r.citations.map((c) => c.ref)).not.toContain("0004-grounding");
+  });
+
+  it("flips the verdict to `overlaps` and cites the file when tagged", () => {
+    const r = analyzeIdeaPure(idea, unrelated, [], ["0004-grounding"]);
+    expect(r.kind).toBe("overlaps");
+    expect(r.citations.map((c) => c.ref)).toContain("0004-grounding");
+  });
+
+  it("cites every tagged file, not just the best-scoring one", () => {
+    const docs = [
+      { kind: "adr" as const, id: "a", title: "Alpha" },
+      { kind: "adr" as const, id: "b", title: "Beta" },
+      { kind: "adr" as const, id: "c", title: "Gamma" },
+    ];
+    const refs = analyzeIdeaPure(idea, docs, [], ["a", "c"]).citations.map((c) => c.ref);
+
+    expect(refs).toContain("a");
+    expect(refs).toContain("c");
+    expect(refs).not.toContain("b");
+  });
+
+  it("ignores a tag for a doc the project does not have", () => {
+    expect(() => analyzeIdeaPure(idea, unrelated, [], ["nope"])).not.toThrow();
+    expect(analyzeIdeaPure(idea, unrelated, [], ["nope"]).citations).toHaveLength(0);
+  });
+});

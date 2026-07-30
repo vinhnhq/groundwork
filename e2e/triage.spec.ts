@@ -32,3 +32,43 @@ test("triage: analyze an idea, ground it to READY, accept → backlog block", as
   await expect(page.getByText(/Would append to sample/)).toBeVisible();
   await expect(page.getByText(/\*\*NEW\*\* Export monthly revenue/)).toBeVisible();
 });
+
+/**
+ * The triage surface is a conversation: your idea and the agent's verdict as
+ * messages, the docs it read as attachments, and a file-tagger so you can point
+ * it at the files you know are relevant.
+ */
+test("triage renders as a message thread and tagging a file steers the verdict", async ({
+  page,
+}) => {
+  await page.goto("/ops/sample/triage");
+
+  // Nothing sent: the composer is the page, no empty transcript above it.
+  await expect(page.locator('[data-slot="message"]')).toHaveCount(0);
+
+  // Tag a project file — it appears as a removable attachment on the composer.
+  await page.getByRole("button", { name: /Tag a file/ }).click();
+  const first = page.getByRole("menuitem").first();
+  const tagged = (await first.textContent())?.trim() ?? "";
+  await first.click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator('[data-slot="attachment"]')).toHaveCount(1);
+
+  await page
+    .getByLabel("Client idea")
+    .fill("Add a colour picker to the avatar editor for the client");
+  await page.getByRole("button", { name: /Analyze against docs/i }).click();
+
+  // Two turns: the idea, then the verdict.
+  await expect(page.locator('[data-slot="message"]')).toHaveCount(2);
+  await expect(page.locator('[data-slot="bubble"]')).toHaveCount(2);
+
+  // A tagged file is asserted relevant, so it is cited even though the idea's
+  // wording does not overlap it — that is what makes tagging worth doing.
+  const thread = page.locator('[data-slot="message-scroller-content"]');
+  await expect(thread).toContainText("grounded in");
+  await expect(thread).toContainText(tagged.replace(/\s+/g, " ").slice(0, 24));
+
+  // And the draft form still follows, with the tag carried into Evidence.
+  await expect(page.getByTestId("dor-status")).toBeVisible();
+});

@@ -11,7 +11,8 @@ export default async function TriagePage({ params }: { params: Promise<{ project
   await requireCapability("agent.run");
 
   const { project } = await params;
-  const p = await getContentSource().getProject(project);
+  const source = getContentSource();
+  const [p, docs] = await Promise.all([source.getProject(project), source.listDocs(project)]);
   if (!p) notFound();
 
   return (
@@ -26,7 +27,10 @@ export default async function TriagePage({ params }: { params: Promise<{ project
           Definition-of-Ready ticket — you ground it and dispose.
         </p>
       </div>
-      <TriageWorkbench project={project} />
+      <TriageWorkbench
+        project={project}
+        docs={docs.map((d) => ({ id: d.id, kind: d.kind, title: d.title }))}
+      />
     </div>
   );
 }

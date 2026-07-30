@@ -25,6 +25,11 @@
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "overrides": [
     {
+      "comment": "The sidebar resizer is the WAI-ARIA window-splitter pattern: a FOCUSABLE role=separator carrying aria-valuenow/min/max plus arrow-key handling. useSemanticElements wants <hr>, which cannot take focus — following it here would delete the keyboard path for a drag-only control. Scoped to the one file, because a decorative separator elsewhere really should be an <hr>.",
+      "includes": ["src/components/app-shell/sidebar-resizer.tsx"],
+      "linter": { "rules": { "a11y": { "useSemanticElements": "off" } } }
+    },
+    {
       "includes": [
         "src/lib/**",
         "!src/lib/context.ts",

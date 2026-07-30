@@ -3,7 +3,7 @@ import type { GitHubReadClient, Repo } from "@/lib/content/github/client";
 import { repoLabel } from "@/lib/content/github/client";
 import { parseProjectMeta } from "@/lib/content/parse-project";
 import type { ContentSource, Project } from "@/lib/content/source";
-import type { DocKind, DocRef, ProjectEntry } from "@/lib/content/types";
+import type { DocRef, ProjectEntry } from "@/lib/content/types";
 
 /**
  * The same projection as the filesystem source, over repos instead of paths

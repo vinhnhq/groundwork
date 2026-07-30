@@ -40,6 +40,30 @@ export function DocTree({
   openPaths: string[];
   variant?: "page" | "sidebar";
 }) {
+  return (
+    <ul className="flex flex-col" data-testid="doc-tree">
+      <DocTreeItems nodes={nodes} openPaths={openPaths} variant={variant} />
+    </ul>
+  );
+}
+
+/**
+ * The tree's `<li>` rows without a list wrapper.
+ *
+ * The sidebar nests the tree under the Docs menu row, inside the primitive's own
+ * `SidebarMenuSub` (which *is* the `<ul>`). Rendering our own `<ul>` there would
+ * nest one list directly inside another, which is invalid, so the wrapper is the
+ * caller's choice.
+ */
+export function DocTreeItems({
+  nodes,
+  openPaths,
+  variant = "page",
+}: {
+  nodes: DocNode[];
+  openPaths: string[];
+  variant?: "page" | "sidebar";
+}) {
   const [open, setOpen] = useState<Set<string>>(() => new Set(openPaths));
   const pathname = usePathname();
 
@@ -51,7 +75,7 @@ export function DocTree({
     });
 
   return (
-    <ul className="flex flex-col" data-testid={variant === "sidebar" ? "doc-tree-nav" : "doc-tree"}>
+    <>
       {nodes.map((node) => (
         <TreeNode
           key={nodeKey(node)}
@@ -63,7 +87,7 @@ export function DocTree({
           pathname={pathname}
         />
       ))}
-    </ul>
+    </>
   );
 }
 

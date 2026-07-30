@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SidebarResizer, useSidebarWidth } from "@/components/app-shell/sidebar-resizer";
 import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
@@ -17,8 +18,8 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
   SidebarProvider,
-  SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -39,6 +40,20 @@ export type NavItem = {
   exact?: boolean;
   /** A count shown on the right of the row. */
   badge?: number;
+  /**
+   * Extra paths that also make this item the active section.
+   *
+   * Docs needs it: reading a document sits at `/ops/<slug>/doc/...`, which does
+   * not start with `/ops/<slug>/docs`, so a prefix match alone would drop the
+   * highlight (and the nested tree) the moment you opened a file.
+   */
+  alsoActive?: (pathname: string) => boolean;
+  /**
+   * A nested navigator, rendered as a sub-menu under this row when the section
+   * is active — the docs tree. Inside the primitive's `SidebarMenuSub`, so it
+   * reads as part of the same menu rather than a detached panel.
+   */
+  subtree?: React.ReactNode;
 };
 
 export type NavGroup = { label?: string; items: NavItem[] };
@@ -46,36 +61,29 @@ export type NavGroup = { label?: string; items: NavItem[] };
 export function SidebarShell({
   header,
   nav,
-  subnav,
   footer,
   breadcrumb,
   children,
 }: {
   header: React.ReactNode;
   nav: NavGroup[];
-  /**
-   * A section's own navigator, below the nav — the docs tree, today.
-   *
-   * Lives in the shell rather than in the page so it survives navigation
-   * between documents: React keeps the layout mounted, so the tree's scroll
-   * position and collapsed folders persist while you read.
-   */
-  subnav?: React.ReactNode;
   footer?: React.ReactNode;
   breadcrumb?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { width, commit } = useSidebarWidth();
 
   const isActive = (item: NavItem) =>
-    item.exact ? pathname === item.href : pathname.startsWith(item.href);
+    (item.exact ? pathname === item.href : pathname.startsWith(item.href)) ||
+    (item.alsoActive?.(pathname) ?? false);
 
   return (
     // Collapsed-to-icon nav rows show their label as a tooltip, and current
     // shadcn no longer bundles the provider inside SidebarProvider — so it
     // belongs here in the wrapper rather than as an edit to the pristine file.
     <TooltipProvider delayDuration={0}>
-      <SidebarProvider>
+      <SidebarProvider style={{ "--sidebar-width": `${width}px` } as React.CSSProperties}>
         <Sidebar collapsible="icon">
           <SidebarHeader>{header}</SidebarHeader>
 
@@ -96,24 +104,27 @@ export function SidebarShell({
                         {item.badge !== undefined && item.badge > 0 && (
                           <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
                         )}
+                        {/* The nested navigator belongs to its menu row, not to a
+                            group of its own — and it has no icon-only form, so it
+                            goes when the sidebar collapses. */}
+                        {item.subtree && isActive(item) && (
+                          <SidebarMenuSub
+                            className="mr-0 group-data-[collapsible=icon]:hidden"
+                            data-testid="doc-tree-nav"
+                          >
+                            {item.subtree}
+                          </SidebarMenuSub>
+                        )}
                       </SidebarMenuItem>
                     ))}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
             ))}
-
-            {/* Hidden when the sidebar is collapsed to icons — a tree has no
-                icon-only form, and squeezing one into 3rem reads as corruption. */}
-            {subnav && (
-              <SidebarGroup className="min-h-0 group-data-[collapsible=icon]:hidden">
-                <SidebarGroupContent className="overflow-y-auto">{subnav}</SidebarGroupContent>
-              </SidebarGroup>
-            )}
           </SidebarContent>
 
           {footer && <SidebarFooter>{footer}</SidebarFooter>}
-          <SidebarRail />
+          <SidebarResizer width={width} onCommit={commit} />
         </Sidebar>
 
         {/* `min-w-0` at the call site, not in `ui/sidebar.tsx` — that file stays

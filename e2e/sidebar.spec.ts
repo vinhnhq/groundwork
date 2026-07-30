@@ -1,0 +1,125 @@
+import { expect, test } from "@playwright/test";
+import { signInAs } from "./helpers";
+
+const widthOf = (page: import("@playwright/test").Page) =>
+  page.evaluate(() =>
+    Number(
+      getComputedStyle(document.querySelector('[data-slot="sidebar-wrapper"]') as Element)
+        .getPropertyValue("--sidebar-width")
+        .replace("px", ""),
+    ),
+  );
+
+test.describe("the project sidebar", () => {
+  /**
+   * Grouped by capability, so the headings explain why a client sees fewer rows
+   * than the engineer instead of leaving it to be inferred. A group whose items
+   * a role cannot use is absent, not disabled.
+   */
+  test("groups nav by ability, and a role only sees the groups it can use", async ({ page }) => {
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/docs");
+
+    const labels = page.locator('[data-slot="sidebar-group-label"]');
+    await expect(labels).toHaveText(["Workspace", "Grounding", "Agent"]);
+
+    // A client has neither grounding.read nor agent.run.
+    await signInAs(page, "client");
+    await page.goto("/ops/sample");
+    await expect(page.locator('[data-slot="sidebar-group-label"]')).toHaveText(["Workspace"]);
+
+    // PM grounds but does not drive the agent.
+    await signInAs(page, "pm");
+    await page.goto("/ops/sample");
+    await expect(page.locator('[data-slot="sidebar-group-label"]')).toHaveText([
+      "Workspace",
+      "Grounding",
+    ]);
+  });
+
+  /** The tree belongs to its menu row, not to a panel of its own. */
+  test("nests the docs tree inside the Docs menu row", async ({ page }) => {
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/docs");
+
+    const docsRow = page.getByRole("link", { name: "Docs", exact: true });
+    const tree = page.getByTestId("doc-tree-nav");
+    await expect(tree).toBeVisible();
+
+    // Same list item: the tree is a descendant of the row's <li>, and Tasks
+    // still follows it in the menu rather than being pushed below a panel.
+    const sameItem = await tree.evaluate(
+      (el, rowText) => el.closest("li")?.textContent?.includes(rowText) ?? false,
+      "Docs",
+    );
+    expect(sameItem, "the tree must live in the Docs menu item").toBe(true);
+    await expect(docsRow).toBeVisible();
+    await expect(page.getByRole("link", { name: "Tasks" })).toBeVisible();
+
+    // It follows you into a document rather than vanishing at the section root.
+    await tree.getByRole("link", { name: /Sample decision/ }).click();
+    await expect(page.getByTestId("doc-tree-nav")).toBeVisible();
+  });
+
+  test("resizes by drag and remembers the width", async ({ page }) => {
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/docs");
+
+    const handle = page.getByRole("separator", { name: "Resize sidebar" });
+    await expect(handle).toBeVisible();
+    const before = await widthOf(page);
+
+    const box = await handle.boundingBox();
+    if (!box) throw new Error("no handle");
+    await page.mouse.move(box.x + box.width / 2, box.y + 200);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 100, box.y + 200, { steps: 10 });
+    await page.mouse.up();
+
+    const after = await widthOf(page);
+    expect(after).toBeGreaterThan(before);
+
+    // Polled, not read once: the stored width is adopted in an effect after
+    // mount (reading localStorage during render would be a hydration mismatch),
+    // so there is one frame at the default before it settles.
+    await page.reload();
+    await expect.poll(() => widthOf(page)).toBe(after);
+  });
+
+  /** A drag-only control is unreachable without a pointer. */
+  test("resizes by keyboard and clamps at its bounds", async ({ page }) => {
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/docs");
+
+    const handle = page.getByRole("separator", { name: "Resize sidebar" });
+    await handle.focus();
+
+    await page.keyboard.press("Home");
+    const base = await widthOf(page);
+
+    await page.keyboard.press("ArrowRight");
+    expect(await widthOf(page)).toBe(base + 8);
+    await page.keyboard.press("Shift+ArrowRight");
+    expect(await widthOf(page)).toBe(base + 40);
+
+    // Well past the lower bound — it must stop, not invert the layout.
+    for (let i = 0; i < 20; i++) await page.keyboard.press("Shift+ArrowLeft");
+    const min = Number(await handle.getAttribute("aria-valuemin"));
+    expect(await widthOf(page)).toBe(min);
+
+    await page.keyboard.press("Home");
+    expect(await widthOf(page)).toBe(base);
+  });
+
+  test("collapsing to icons hides both the tree and the resizer", async ({ page }) => {
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/docs");
+    await expect(page.getByTestId("doc-tree-nav")).toBeVisible();
+
+    await page.getByRole("button", { name: /Toggle Sidebar/i }).click();
+
+    // Neither has an icon-only form; squeezing them into 3rem reads as breakage.
+    await expect(page.getByTestId("doc-tree-nav")).toBeHidden();
+    await expect(page.getByRole("separator", { name: "Resize sidebar" })).toBeHidden();
+  });
+});

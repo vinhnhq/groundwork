@@ -2,19 +2,26 @@
 
 import { ArrowLeft, Brain, FileText, LayoutDashboard, ListTodo, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { type NavGroup, SidebarShell } from "@/components/app-shell/sidebar-shell";
-import { DocTree } from "@/components/doc-tree";
+import { DocTreeItems } from "@/components/doc-tree";
 import { Badge } from "@/components/ui/badge";
 import type { DocNode } from "@/lib/content/doc-tree";
 
+/** Reading a document lives under a doc-kind segment, not under `/docs`. */
+const IN_DOC = /^\/ops\/[^/]+\/(adr|spec|retro|doc)(\/|$)/;
+
 /**
- * The per-project workspace chrome: one nav item per section, each its own
- * sub-route (mirroring the infinite-oneness WorkspaceShell shape).
+ * The per-project workspace chrome.
  *
- * Sections a role cannot use are absent rather than disabled — a disabled row
- * invites the question "how do I enable this?", which for a PM has no useful
- * answer. The routes are gated in the proxy regardless.
+ * Nav is grouped by **capability** rather than in one undifferentiated list:
+ * Workspace is what every signed-in role can read, Grounding needs
+ * `grounding.read`, and the Agent needs `agent.run`. A group whose items a role
+ * cannot use is absent rather than empty or disabled — a disabled row invites
+ * "how do I enable this?", which for a PM has no useful answer. The routes are
+ * gated in the proxy and re-checked against the database regardless (ADR-0008).
+ *
+ * Grouping this way also makes the labels explain *why* a client sees three rows
+ * where the engineer sees five, instead of leaving it to be inferred.
  */
 export function ProjectShell({
   slug,
@@ -32,7 +39,7 @@ export function ProjectShell({
   name: string;
   status: string;
   counts: { docs: number; tasks: number; ready: number };
-  /** The repo's `__project__/` tree, shown in the sidebar while reading docs. */
+  /** The repo's `__project__/` tree, nested under the Docs row while in Docs. */
   docTree: DocNode[];
   docFolders: string[];
   mayGround: boolean;
@@ -42,39 +49,44 @@ export function ProjectShell({
   children: React.ReactNode;
 }) {
   const base = `/ops/${slug}`;
-  const pathname = usePathname();
-
-  /**
-   * The tree accompanies every docs surface — the index *and* each document, so
-   * it stays put while you read. Matching on the doc-kind segments rather than
-   * just `/docs` is what keeps it visible on `/ops/<slug>/adr/0008-…`.
-   */
-  const inDocs =
-    pathname.startsWith(`${base}/docs`) ||
-    /^\/ops\/[^/]+\/(adr|spec|retro|doc)(\/|$)/.test(pathname);
 
   const nav: NavGroup[] = [
     {
+      label: "Workspace",
       items: [
         { label: "Overview", href: base, icon: LayoutDashboard, exact: true },
-        { label: "Docs", href: `${base}/docs`, icon: FileText, badge: counts.docs },
+        {
+          label: "Docs",
+          href: `${base}/docs`,
+          icon: FileText,
+          badge: counts.docs,
+          alsoActive: (p) => IN_DOC.test(p),
+          subtree:
+            docTree.length > 0 ? (
+              <DocTreeItems nodes={docTree} openPaths={docFolders} variant="sidebar" />
+            ) : undefined,
+        },
         { label: "Tasks", href: `${base}/tasks`, icon: ListTodo, badge: counts.tasks },
-        ...(mayGround
-          ? [{ label: "Grounding", href: `${base}/grounding`, icon: Brain } as const]
-          : []),
-        ...(mayAgent ? [{ label: "Triage", href: `${base}/triage`, icon: Sparkles } as const] : []),
       ],
     },
+    // Grounding and the agent are distinct abilities, so they are distinct
+    // groups — the heading is the explanation.
+    ...(mayGround
+      ? [
+          {
+            label: "Grounding",
+            items: [{ label: "Digest", href: `${base}/grounding`, icon: Brain }],
+          },
+        ]
+      : []),
+    ...(mayAgent
+      ? [{ label: "Agent", items: [{ label: "Triage", href: `${base}/triage`, icon: Sparkles }] }]
+      : []),
   ];
 
   return (
     <SidebarShell
       nav={nav}
-      subnav={
-        inDocs && docTree.length > 0 ? (
-          <DocTree nodes={docTree} openPaths={docFolders} variant="sidebar" />
-        ) : undefined
-      }
       header={
         <div className="flex flex-col gap-1 px-2 py-1.5 group-data-[collapsible=icon]:hidden">
           <Link

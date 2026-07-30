@@ -32,7 +32,7 @@ export default async function TriagePage({ params }: { params: Promise<{ project
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <TriageWorkbench
         project={project}
-        docs={docs.map((d) => ({ id: d.id, kind: d.kind, title: d.title }))}
+        docs={docs.map((d) => ({ id: d.id, kind: d.kind, title: d.title, relPath: d.relPath }))}
         docTree={buildDocTree(docs, project)}
       />
     </div>

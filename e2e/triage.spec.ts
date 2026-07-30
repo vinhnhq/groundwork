@@ -47,23 +47,28 @@ test("triage renders as a message thread and tagging a file steers the verdict",
   await expect(page.locator('[data-slot="message"]')).toHaveCount(0);
 
   /**
-   * `@` opens the file picker — the same folder tree the sidebar uses, so the
-   * structure is how you find a file rather than a flat list of titles.
+   * `@` opens a menu at the caret, navigable from the keyboard with the caret
+   * still in the field — the point of an inline mention is that you never stop
+   * typing.
    */
-  await page.getByLabel("Client idea").click();
-  await page.keyboard.type("Add a colour picker to the avatar editor @");
+  const input = page.getByLabel("Client idea");
+  await input.click();
+  await page.keyboard.type("Add a colour picker to the avatar editor @sample");
 
-  const picker = page.getByTestId("doc-picker");
-  await expect(picker).toBeVisible();
-  await expect(picker.getByRole("button", { name: /decisions/ })).toBeVisible();
+  const menu = page.getByTestId("doc-mention");
+  await expect(menu).toBeVisible();
+  // Typing after the @ filters.
+  expect(await menu.getByRole("option").count()).toBeGreaterThan(0);
+  // And focus never left the textarea.
+  expect(await page.evaluate(() => document.activeElement?.id)).toBe("triage-idea");
 
-  const leaf = picker.getByRole("button", { name: /Sample decision/ });
-  const tagged = (await leaf.textContent())?.trim() ?? "";
-  await leaf.click();
+  const tagged =
+    (await menu.locator('[aria-selected="true"]').first().textContent())?.trim() ?? "";
 
-  // The `@` was a command, not content — it is replaced by the file's title.
-  await expect(picker).toBeHidden();
-  await expect(page.getByLabel("Client idea")).not.toHaveValue(/@$/);
+  // Enter takes the highlighted option; the whole `@query` becomes its title.
+  await page.keyboard.press("Enter");
+  await expect(menu).toBeHidden();
+  await expect(input).not.toHaveValue(/@sample/);
   await expect(page.locator('[data-slot="attachment"]')).toHaveCount(1);
   await page.getByRole("button", { name: /Analyze against docs/i }).click();
 
@@ -79,4 +84,49 @@ test("triage renders as a message thread and tagging a file steers the verdict",
 
   // And the draft form still follows, with the tag carried into Evidence.
   await expect(page.getByTestId("dor-status")).toBeVisible();
+});
+
+/** The @ menu is a keyboard surface first — a mouse is optional. */
+test("the @ menu navigates and closes from the keyboard", async ({ page }) => {
+  await page.goto("/ops/sample/triage");
+
+  const input = page.getByLabel("Client idea");
+  await input.click();
+  await page.keyboard.type("@");
+
+  const menu = page.getByTestId("doc-mention");
+  await expect(menu).toBeVisible();
+
+  const active = () => menu.locator('[aria-selected="true"]').first();
+  const first = (await active().textContent())?.trim();
+
+  // Arrows move the highlight and wrap rather than dead-ending.
+  await page.keyboard.press("ArrowDown");
+  expect((await active().textContent())?.trim()).not.toBe(first);
+  await page.keyboard.press("ArrowUp");
+  expect((await active().textContent())?.trim()).toBe(first);
+  await page.keyboard.press("ArrowUp");
+  expect((await active().textContent())?.trim()).not.toBe(first);
+
+  // Escape closes it and leaves the text alone.
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(input).toHaveValue("@");
+
+  // Backspacing the @ away must not reopen it.
+  await page.keyboard.press("Backspace");
+  await expect(menu).toBeHidden();
+});
+
+/** Browsing by folder is still there for when you do not know the file's name. */
+test("Browse files opens the folder tree", async ({ page }) => {
+  await page.goto("/ops/sample/triage");
+
+  await page.getByRole("button", { name: /Browse files/ }).click();
+  const picker = page.getByTestId("doc-picker");
+  await expect(picker).toBeVisible();
+  await expect(picker.getByRole("button", { name: /decisions/ })).toBeVisible();
+
+  await picker.getByRole("button", { name: /Sample decision/ }).click();
+  await expect(page.locator('[data-slot="attachment"]')).toHaveCount(1);
 });

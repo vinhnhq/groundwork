@@ -18,7 +18,13 @@ import { Message, MessageAvatar, MessageContent } from "@/components/ui/message"
 import type { Citation, TriageKind } from "@/lib/triage/types";
 
 /** A project document, as the tagger offers it. */
-export type TaggableDoc = { id: string; kind: string; title: string };
+export type TaggableDoc = {
+  id: string;
+  kind: string;
+  title: string;
+  /** `__project__`-relative path — the mention menu's secondary line. */
+  relPath?: string;
+};
 
 /**
  * The bubble a verdict earns.

@@ -3,7 +3,15 @@
 import { Loader2, Paperclip, Send } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { acceptDraft, analyzeIdea } from "@/app/ops/[project]/triage/actions";
+import { type CaretPoint, caretCoordinates } from "@/components/caret-coordinates";
 import { DocTree } from "@/components/doc-tree";
+import {
+  DocMention,
+  type MentionQuery,
+  mentionAt,
+  useMentionOptions,
+  wrapIndex,
+} from "@/components/doc-mention";
 import {
   DocAttachment,
   IdeaMessage,
@@ -23,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import {
   MessageScroller,
@@ -40,6 +48,9 @@ import type { DocNode } from "@/lib/content/doc-tree";
 import type { DraftTicket, TriageResult } from "@/lib/triage/types";
 
 const TIERS: AutonomyTier[] = ["supervised", "plan-gated", "dark", "trivial"];
+
+/** Caret keys that move it without changing the text. */
+const NAV_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"]);
 
 /** Radix Select rejects `value=""`, so absence needs a sentinel. */
 const NO_TIER = "__none__";
@@ -70,8 +81,11 @@ export function TriageWorkbench({
   const [tagged, setTagged] = useState<TaggableDoc[]>([]);
   /** The idea as sent, frozen — the composer clears but the transcript keeps it. */
   const [sent, setSent] = useState<{ text: string; tagged: TaggableDoc[] } | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [browseOpen, setBrowseOpen] = useState(false);
+  const [mention, setMention] = useState<MentionQuery | null>(null);
+  const [point, setPoint] = useState<CaretPoint | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { options, activeIndex, setActiveIndex } = useMentionOptions(docs, mention);
   const [result, setResult] = useState<TriageResult | null>(null);
   const [draft, setDraft] = useState<DraftTicket | null>(null);
   const [accepted, setAccepted] = useState<{ block: string; count: number } | null>(null);
@@ -116,29 +130,72 @@ export function TriageWorkbench({
   const taggedIds = new Set(tagged.map((d) => d.id));
 
   /**
-   * `@` opens the picker.
+   * Recompute the `@…` token under the caret, and where to draw its menu.
    *
-   * Triggered on the *typed* text rather than on keydown, so a paste containing
-   * an `@` behaves the same as typing one. Only a trailing `@` counts: an email
-   * address mid-sentence should not keep reopening a file tree.
+   * Derived from (text, caret) on every edit and caret move rather than latched
+   * on keypress: that way a paste, an arrow key and a click into the middle of an
+   * existing mention all behave the same, and backspacing past the `@` closes it.
    */
-  function onType(next: string) {
+  function syncMention(next: string, caret: number | null) {
     setText(next);
-    if (next.endsWith("@")) setPickerOpen(true);
-    else if (pickerOpen && !next.includes("@")) setPickerOpen(false);
+    const found = caret === null ? null : mentionAt(next, caret);
+    setMention(found);
+    setPoint(
+      found && inputRef.current ? caretCoordinates(inputRef.current, found.start) : null,
+    );
   }
 
   /**
-   * Tag the file and swap the trailing `@` for its title.
+   * Arrows move, Enter takes, Escape closes — while the caret stays in the field.
    *
-   * The `@` was a command, not content — leaving it in the idea would ship a
-   * stray character to the analyzer and read as a typo in the transcript.
+   * Intercepted here rather than inside the menu because the textarea keeps
+   * focus: a menu that grabbed focus to be navigable would stop you typing
+   * mid-sentence, which is the whole point of an inline mention.
+   */
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (!mention) return;
+
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => wrapIndex(i + (e.key === "ArrowDown" ? 1 : -1), options.length));
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      const chosen = options[activeIndex];
+      if (chosen) {
+        e.preventDefault();
+        pickDoc(chosen);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setMention(null);
+    }
+  }
+
+  /**
+   * Tag the file and replace the whole `@query` with its title.
+   *
+   * The mention was a command, not content: leaving `@arch` in the idea would
+   * ship a half-typed token to the analyzer and read as a typo in the transcript.
    */
   function pickDoc(doc: TaggableDoc) {
     toggleTag(doc);
-    setText((prev) => (prev.endsWith("@") ? `${prev.slice(0, -1)}${doc.title} ` : prev));
-    setPickerOpen(false);
-    inputRef.current?.focus();
+
+    const token = mention;
+    setMention(null);
+    setPoint(null);
+
+    if (token) {
+      const after = text.slice(token.start + 1 + token.query.length);
+      const next = `${text.slice(0, token.start)}${doc.title} ${after}`;
+      setText(next);
+      // Put the caret after the inserted title, not at the end of the field.
+      const caret = token.start + doc.title.length + 1;
+      window.requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        inputRef.current?.setSelectionRange(caret, caret);
+      });
+    } else {
+      inputRef.current?.focus();
+    }
   }
 
   return (
@@ -203,47 +260,42 @@ export function TriageWorkbench({
               Client idea
             </FieldLabel>
 
-            {/* Anchored to the input, so the tree opens where the `@` was typed. */}
-            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-              <PopoverAnchor asChild>
-                <Textarea
-                  ref={inputRef}
-                  id="triage-idea"
-                  aria-label="Client idea"
-                  value={text}
-                  onChange={(e) => onType(e.target.value)}
-                  onKeyDown={(e) => {
-                    // Escape closes the picker before the browser does anything
-                    // else with it; Enter must not submit while it is open.
-                    if (pickerOpen && (e.key === "Escape" || e.key === "Enter")) {
-                      e.preventDefault();
-                      setPickerOpen(false);
-                    }
-                  }}
-                  rows={3}
-                  placeholder="In the client's words — type @ to tag a file…"
+            {/* `relative` so the mention menu can be absolutely placed at the
+                caret inside it. */}
+            <div className="relative">
+              <Textarea
+                ref={inputRef}
+                id="triage-idea"
+                aria-label="Client idea"
+                value={text}
+                onChange={(e) => syncMention(e.target.value, e.target.selectionStart)}
+                onClick={(e) => syncMention(text, e.currentTarget.selectionStart)}
+                onKeyUp={(e) => {
+                  // Caret moves that `onChange` does not see (arrows, Home/End)
+                  // still change which token is under it.
+                  if (!NAV_KEYS.has(e.key)) return;
+                  syncMention(text, e.currentTarget.selectionStart);
+                }}
+                onKeyDown={onKeyDown}
+                onBlur={() => setMention(null)}
+                rows={3}
+                aria-autocomplete="list"
+                aria-expanded={mention !== null}
+                aria-controls={mention ? "doc-mention" : undefined}
+                aria-activedescendant={mention ? `mention-${activeIndex}` : undefined}
+                placeholder="In the client's words — type @ to tag a file…"
+              />
+
+              {mention && point && (
+                <DocMention
+                  docs={options}
+                  taggedIds={taggedIds}
+                  activeIndex={activeIndex}
+                  point={point}
+                  onPick={pickDoc}
                 />
-              </PopoverAnchor>
-              <PopoverContent
-                align="start"
-                side="bottom"
-                // Focus stays in the textarea: you are mid-sentence, and stealing
-                // it would make tagging cost a click back into the input.
-                onOpenAutoFocus={(e) => e.preventDefault()}
-                className="max-h-72 w-(--radix-popover-trigger-width) overflow-y-auto p-2"
-                data-testid="doc-picker"
-              >
-                <p className="px-1 pb-1 text-xs text-muted-foreground">
-                  Tag a file from <code>__project__/</code>
-                </p>
-                <DocTree
-                  nodes={docTree}
-                  variant="sidebar"
-                  selected={taggedIds}
-                  onSelectDoc={pickDoc}
-                />
-              </PopoverContent>
-            </Popover>
+              )}
+            </div>
 
             <FieldDescription>
               Paste a client idea. The agent checks it against this project's locked decisions and
@@ -254,17 +306,35 @@ export function TriageWorkbench({
           </Field>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={docs.length === 0}
-              onClick={() => setPickerOpen(true)}
-            >
-              <Paperclip aria-hidden />
-              Tag a file
-              {tagged.length > 0 && <Badge variant="secondary">{tagged.length}</Badge>}
-            </Button>
+            {/* `@` is the fast path; this is the browse path — the full folder
+                tree, for when you do not know the file's name. */}
+            <Popover open={browseOpen} onOpenChange={setBrowseOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="sm" disabled={docs.length === 0}>
+                  <Paperclip aria-hidden />
+                  Browse files
+                  {tagged.length > 0 && <Badge variant="secondary">{tagged.length}</Badge>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="max-h-72 w-80 overflow-y-auto p-2"
+                data-testid="doc-picker"
+              >
+                <p className="px-1 pb-1 text-xs text-muted-foreground">
+                  Files in <code>__project__/</code>
+                </p>
+                <DocTree
+                  nodes={docTree}
+                  variant="sidebar"
+                  selected={taggedIds}
+                  onSelectDoc={(d) => {
+                    toggleTag(d);
+                    setBrowseOpen(false);
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
 
             <Button
               type="button"

@@ -126,3 +126,60 @@ test.describe("the project sidebar", () => {
     await expect(page.getByRole("separator", { name: "Resize sidebar" })).toBeHidden();
   });
 });
+
+/**
+ * Chrome placement: the header carries where-you-are plus the two global
+ * actions, and the sidebar's foot carries who-you-are plus the way out. Identity
+ * is ambient context rather than an action, and "All projects" at the top made
+ * the first thing you read a way *out* of the project you had just opened.
+ */
+test.describe("chrome placement", () => {
+  test("the header is only breadcrumb, theme and sign out", async ({ page }) => {
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/docs");
+
+    const header = page.locator("header").first();
+    await expect(header.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(header).toContainText("Sample Project");
+
+    // The profile and the way out are NOT up here any more.
+    await expect(header.getByTestId("whoami")).toHaveCount(0);
+    await expect(header.getByRole("link", { name: "All projects" })).toHaveCount(0);
+  });
+
+  test("the sidebar shows the project name at the top, identity and exit at the foot", async ({
+    page,
+  }) => {
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/docs");
+
+    // Top: the project name and nothing else.
+    await expect(page.locator('[data-slot="sidebar-header"]')).toHaveText("Sample Project");
+
+    const footer = page.locator('[data-slot="sidebar-footer"]');
+    await expect(footer.getByTestId("whoami")).toContainText("Engineer");
+    await expect(footer.getByRole("link", { name: "All projects" })).toBeVisible();
+
+    // And it goes where it says.
+    await footer.getByRole("link", { name: "All projects" }).click();
+    await expect(page).toHaveURL(/\/ops$/);
+  });
+
+  /** The resize affordance is visible at rest, not only on hover. */
+  test("the resizer shows a grab handle without hovering", async ({ page }) => {
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/docs");
+
+    const pill = await page
+      .getByRole("separator", { name: "Resize sidebar" })
+      .evaluate((el) => {
+        const cs = getComputedStyle(el, "::after");
+        return { height: cs.height, width: cs.width, alpha: cs.backgroundColor };
+      });
+
+    // A short centred pill, painted before any pointer arrives.
+    expect(Number.parseFloat(pill.height)).toBeGreaterThan(16);
+    expect(Number.parseFloat(pill.width)).toBeLessThanOrEqual(6);
+    expect(pill.alpha).not.toBe("rgba(0, 0, 0, 0)");
+  });
+});

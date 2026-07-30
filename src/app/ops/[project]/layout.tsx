@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { ProjectShell } from "@/components/app-shell/project-shell";
-import { UserChrome } from "@/components/app-shell/user-chrome";
+import { HeaderActions, SidebarProfile } from "@/components/app-shell/user-chrome";
 import { getSession } from "@/lib/auth";
 import { can } from "@/lib/auth/roles";
 import { getContentSource } from "@/lib/content";
@@ -45,7 +45,6 @@ export default async function ProjectLayout({
     <ProjectShell
       slug={slug}
       name={project.meta.name}
-      status={project.meta.status}
       counts={{
         docs: docs.length,
         tasks: tasks.length,
@@ -54,7 +53,8 @@ export default async function ProjectLayout({
       docTree={docTree}
       mayGround={can(role, "grounding.read")}
       mayAgent={can(role, "agent.run")}
-      userChrome={<UserChrome />}
+      headerActions={<HeaderActions />}
+      profile={<SidebarProfile />}
     >
       {children}
     </ProjectShell>

@@ -121,11 +121,18 @@ export function SidebarResizer({
       }}
       title="Drag to resize · double-click to reset"
       className={cn(
-        "absolute inset-y-0 right-0 z-20 hidden w-1 cursor-col-resize transition-colors md:block",
+        // A wide, invisible hit area straddling the edge — a 1px target is a
+        // pointer-accuracy test, not a control.
+        "absolute inset-y-0 -right-1.5 z-20 hidden w-3 cursor-col-resize md:block",
         "group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:hidden",
-        "after:absolute after:inset-y-0 after:-left-1 after:w-3 after:content-['']",
-        "hover:bg-sidebar-border focus-visible:bg-ring focus-visible:outline-none",
-        dragging && "bg-ring",
+        "focus-visible:outline-none",
+        // The visible affordance is a short centred pill, present at rest rather
+        // than only on hover: a handle you have to discover by sweeping the mouse
+        // along the edge is a handle most people never find.
+        "after:absolute after:top-1/2 after:left-1/2 after:h-8 after:w-1 after:-translate-x-1/2",
+        "after:-translate-y-1/2 after:rounded-full after:bg-sidebar-border after:transition-colors",
+        "after:content-[''] hover:after:bg-muted-foreground focus-visible:after:bg-ring",
+        dragging && "after:bg-ring",
         className,
       )}
     />

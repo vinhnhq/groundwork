@@ -4,7 +4,7 @@ import { ArrowLeft, Brain, FileText, LayoutDashboard, ListTodo, Sparkles } from 
 import Link from "next/link";
 import { type NavGroup, SidebarShell } from "@/components/app-shell/sidebar-shell";
 import { DocTreeItems } from "@/components/doc-tree";
-import { Badge } from "@/components/ui/badge";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import type { DocNode } from "@/lib/content/doc-tree";
 
 /** Reading a document lives under a doc-kind segment, not under `/docs`. */
@@ -26,24 +26,25 @@ const IN_DOC = /^\/ops\/[^/]+\/(adr|spec|retro|doc)(\/|$)/;
 export function ProjectShell({
   slug,
   name,
-  status,
   counts,
   docTree,
   mayGround,
   mayAgent,
-  userChrome,
+  headerActions,
+  profile,
   children,
 }: {
   slug: string;
   name: string;
-  status: string;
   counts: { docs: number; tasks: number; ready: number };
   /** The repo's `__project__/` tree, nested under the Docs row while in Docs. */
   docTree: DocNode[];
   mayGround: boolean;
   mayAgent: boolean;
-  /** Rendered on the right of the workspace header (server component). */
-  userChrome?: React.ReactNode;
+  /** Theme + sign out, on the right of the workspace header. */
+  headerActions?: React.ReactNode;
+  /** Who you are, at the foot of the sidebar (server component). */
+  profile?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const base = `/ops/${slug}`;
@@ -86,18 +87,27 @@ export function ProjectShell({
     <SidebarShell
       nav={nav}
       header={
-        <div className="flex flex-col gap-1 px-2 py-1.5 group-data-[collapsible=icon]:hidden">
-          <Link
-            href="/ops"
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="size-3" />
-            All projects
-          </Link>
+        // The project name alone. "All projects" moved to the footer — leaving
+        // it up here made the first thing you read a way *out* of the project
+        // you just opened. The status badge is on the Overview, where there is
+        // room to mean something.
+        <div className="px-2 py-1.5 group-data-[collapsible=icon]:hidden">
           <span className="truncate font-semibold">{name}</span>
-          <Badge variant="secondary" className="w-fit">
-            {status}
-          </Badge>
+        </div>
+      }
+      footer={
+        <div className="flex flex-col gap-1 group-data-[collapsible=icon]:hidden">
+          {profile}
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="All projects">
+                <Link href="/ops">
+                  <ArrowLeft aria-hidden />
+                  <span>All projects</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </div>
       }
       breadcrumb={
@@ -109,7 +119,7 @@ export function ProjectShell({
             <span className="mx-1.5 text-muted-foreground">/</span>
             <span className="font-medium">{name}</span>
           </nav>
-          {userChrome && <div className="ml-auto">{userChrome}</div>}
+          {headerActions && <div className="ml-auto">{headerActions}</div>}
         </>
       }
     >

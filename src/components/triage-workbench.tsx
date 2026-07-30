@@ -1,8 +1,9 @@
 "use client";
 
 import { Loader2, Paperclip, Send } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { acceptDraft, analyzeIdea } from "@/app/ops/[project]/triage/actions";
+import { DocTree } from "@/components/doc-tree";
 import {
   DocAttachment,
   IdeaMessage,
@@ -22,14 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import {
   MessageScroller,
@@ -42,6 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { readiness } from "@/lib/tasks/dor";
 import type { AutonomyTier, Task } from "@/lib/tasks/types";
+import type { DocNode } from "@/lib/content/doc-tree";
 import type { DraftTicket, TriageResult } from "@/lib/triage/types";
 
 const TIERS: AutonomyTier[] = ["supervised", "plan-gated", "dark", "trivial"];
@@ -63,15 +58,20 @@ function toTask(project: string, d: DraftTicket): Task {
 export function TriageWorkbench({
   project,
   docs,
+  docTree,
 }: {
   project: string;
   /** The project's documents, so an idea can be tagged to the files it concerns. */
   docs: TaggableDoc[];
+  /** The same folder tree the sidebar shows — the picker reuses it. */
+  docTree: DocNode[];
 }) {
   const [text, setText] = useState("");
   const [tagged, setTagged] = useState<TaggableDoc[]>([]);
   /** The idea as sent, frozen — the composer clears but the transcript keeps it. */
   const [sent, setSent] = useState<{ text: string; tagged: TaggableDoc[] } | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [result, setResult] = useState<TriageResult | null>(null);
   const [draft, setDraft] = useState<DraftTicket | null>(null);
   const [accepted, setAccepted] = useState<{ block: string; count: number } | null>(null);
@@ -112,6 +112,34 @@ export function TriageWorkbench({
     setTagged((prev) =>
       prev.some((d) => d.id === doc.id) ? prev.filter((d) => d.id !== doc.id) : [...prev, doc],
     );
+
+  const taggedIds = new Set(tagged.map((d) => d.id));
+
+  /**
+   * `@` opens the picker.
+   *
+   * Triggered on the *typed* text rather than on keydown, so a paste containing
+   * an `@` behaves the same as typing one. Only a trailing `@` counts: an email
+   * address mid-sentence should not keep reopening a file tree.
+   */
+  function onType(next: string) {
+    setText(next);
+    if (next.endsWith("@")) setPickerOpen(true);
+    else if (pickerOpen && !next.includes("@")) setPickerOpen(false);
+  }
+
+  /**
+   * Tag the file and swap the trailing `@` for its title.
+   *
+   * The `@` was a command, not content — leaving it in the idea would ship a
+   * stray character to the analyzer and read as a typo in the transcript.
+   */
+  function pickDoc(doc: TaggableDoc) {
+    toggleTag(doc);
+    setText((prev) => (prev.endsWith("@") ? `${prev.slice(0, -1)}${doc.title} ` : prev));
+    setPickerOpen(false);
+    inputRef.current?.focus();
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -157,7 +185,9 @@ export function TriageWorkbench({
       </div>
       )}
 
-      {/* The composer. */}
+      {/* The composer. Its description carries what used to be the page title
+          and blurb: the input *is* the surface, so the explanation belongs on it
+          rather than as a heading you read once and then scroll past. */}
       <Card>
         <CardContent className="flex flex-col gap-3">
           {tagged.length > 0 && (
@@ -172,51 +202,69 @@ export function TriageWorkbench({
             <FieldLabel htmlFor="triage-idea" className="sr-only">
               Client idea
             </FieldLabel>
-            <Textarea
-              id="triage-idea"
-              aria-label="Client idea"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={3}
-              placeholder="In the client's words — e.g. they want a monthly revenue export as a spreadsheet…"
-            />
+
+            {/* Anchored to the input, so the tree opens where the `@` was typed. */}
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverAnchor asChild>
+                <Textarea
+                  ref={inputRef}
+                  id="triage-idea"
+                  aria-label="Client idea"
+                  value={text}
+                  onChange={(e) => onType(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Escape closes the picker before the browser does anything
+                    // else with it; Enter must not submit while it is open.
+                    if (pickerOpen && (e.key === "Escape" || e.key === "Enter")) {
+                      e.preventDefault();
+                      setPickerOpen(false);
+                    }
+                  }}
+                  rows={3}
+                  placeholder="In the client's words — type @ to tag a file…"
+                />
+              </PopoverAnchor>
+              <PopoverContent
+                align="start"
+                side="bottom"
+                // Focus stays in the textarea: you are mid-sentence, and stealing
+                // it would make tagging cost a click back into the input.
+                onOpenAutoFocus={(e) => e.preventDefault()}
+                className="max-h-72 w-(--radix-popover-trigger-width) overflow-y-auto p-2"
+                data-testid="doc-picker"
+              >
+                <p className="px-1 pb-1 text-xs text-muted-foreground">
+                  Tag a file from <code>__project__/</code>
+                </p>
+                <DocTree
+                  nodes={docTree}
+                  variant="sidebar"
+                  selected={taggedIds}
+                  onSelectDoc={pickDoc}
+                />
+              </PopoverContent>
+            </Popover>
+
             <FieldDescription>
-              Tag the files it concerns and the agent will treat them as relevant. Nothing is
-              written to the backlog until you ground the draft and accept it.
+              Paste a client idea. The agent checks it against this project's locked decisions and
+              open constraints, then drafts a Definition-of-Ready ticket — you ground it and
+              dispose. A file you tag with <code>@</code> is treated as relevant. Nothing is written
+              to the backlog until you accept.
             </FieldDescription>
           </Field>
 
           <div className="flex flex-wrap items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" size="sm" disabled={docs.length === 0}>
-                  <Paperclip aria-hidden />
-                  Tag a file
-                  {tagged.length > 0 && <Badge variant="secondary">{tagged.length}</Badge>}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="max-h-72 w-80 overflow-y-auto">
-                <DropdownMenuLabel>Files in this project</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {docs.map((doc) => (
-                  <DropdownMenuItem
-                    key={doc.id}
-                    // Keep the menu open: tagging several files in a row is the
-                    // normal case, and a menu that closes per pick makes it four
-                    // round trips instead of one.
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      toggleTag(doc);
-                    }}
-                  >
-                    <span className="flex-1 truncate">{doc.title}</span>
-                    {tagged.some((d) => d.id === doc.id) && (
-                      <Badge variant="secondary">tagged</Badge>
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={docs.length === 0}
+              onClick={() => setPickerOpen(true)}
+            >
+              <Paperclip aria-hidden />
+              Tag a file
+              {tagged.length > 0 && <Badge variant="secondary">{tagged.length}</Badge>}
+            </Button>
 
             <Button
               type="button"

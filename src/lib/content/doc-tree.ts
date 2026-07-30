@@ -5,6 +5,8 @@ export type DocLeaf = {
   name: string;
   title: string;
   kind: DocKind;
+  /** The `DocRef` id — what the triage tagger and the analyzer key on. */
+  id: string;
   /** `/ops/<project>/<kind>/<id>` — the id may itself contain slashes. */
   href: string;
 };
@@ -58,6 +60,7 @@ export function buildDocTree(docs: readonly DocRef[], projectSlug: string): DocN
       name: fileName,
       title: doc.title,
       kind: doc.kind,
+      id: doc.id,
       // The id can contain slashes; each segment is encoded separately so a
       // literal `/` stays a path separator and everything else stays escaped.
       href: `/ops/${projectSlug}/${doc.kind}/${doc.id.split("/").map(encodeURIComponent).join("/")}`,

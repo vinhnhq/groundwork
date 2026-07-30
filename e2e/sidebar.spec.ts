@@ -183,3 +183,40 @@ test.describe("chrome placement", () => {
     expect(pill.alpha).not.toBe("rgba(0, 0, 0, 0)");
   });
 });
+
+/**
+ * The sidebar overlays below 1024 rather than shadcn's default 768.
+ *
+ * A portrait tablet (768–834) was the case that mattered: the sidebar held its
+ * full 256px there, leaving the triage composer ~470px of an ~800px screen — a
+ * cramped column beside a nav you were not using.
+ */
+test.describe("tablet chrome", () => {
+  test("a portrait tablet gets the conversation, not a cramped column", async ({ page }) => {
+    await page.setViewportSize({ width: 820, height: 1180 });
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/triage");
+
+    // No persistent sidebar column at this width.
+    await expect(page.locator('[data-slot="sidebar-container"]')).toHaveCount(0);
+
+    // The composer gets the full reading column instead of what is left over.
+    const width = await page
+      .locator('[data-slot="card"]')
+      .first()
+      .evaluate((el) => Math.round(el.getBoundingClientRect().width));
+    expect(width).toBeGreaterThan(700);
+
+    // And the nav is still reachable.
+    await page.getByRole("button", { name: /Toggle Sidebar/i }).click();
+    await expect(page.getByRole("link", { name: "All projects" })).toBeVisible();
+  });
+
+  test("a landscape tablet keeps the persistent sidebar", async ({ page }) => {
+    await page.setViewportSize({ width: 1194, height: 834 });
+    await signInAs(page, "engineer");
+    await page.goto("/ops/sample/triage");
+
+    await expect(page.locator('[data-slot="sidebar-container"]')).toBeVisible();
+  });
+});

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireCapability } from "@/app/ops/guard";
 import { TriageWorkbench } from "@/components/triage-workbench";
 import { getContentSource } from "@/lib/content";
+import { buildDocTree } from "@/lib/content/doc-tree";
 
 export const dynamic = "force-dynamic";
 
@@ -16,20 +17,23 @@ export default async function TriagePage({ params }: { params: Promise<{ project
   if (!p) notFound();
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        {/* No back link: the sidebar already says which project you are in and
-            the header carries the breadcrumb, so this was a third copy of the
-            same fact costing a row of vertical space above the fold. */}
-        <h1 className="text-2xl font-semibold tracking-tight">Triage an idea</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Paste a client idea. The agent checks it against this project's docs, then drafts a
-          Definition-of-Ready ticket — you ground it and dispose.
-        </p>
-      </div>
+    /**
+     * A centred reading column, not the full width.
+     *
+     * A conversation is a column of prose; stretched across a wide monitor the
+     * eye has to travel the whole way back for each line, and the composer's
+     * controls end up a hand-span apart. `max-w-3xl` (48rem ≈ 768px) is about a
+     * tablet's width, so on a tablet this fills the viewport and the surface is
+     * just the thread and its input.
+     *
+     * No page heading: it moved into the composer's own description, since the
+     * input is the surface rather than something a heading introduces.
+     */
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <TriageWorkbench
         project={project}
         docs={docs.map((d) => ({ id: d.id, kind: d.kind, title: d.title }))}
+        docTree={buildDocTree(docs, project)}
       />
     </div>
   );

@@ -46,17 +46,25 @@ test("triage renders as a message thread and tagging a file steers the verdict",
   // Nothing sent: the composer is the page, no empty transcript above it.
   await expect(page.locator('[data-slot="message"]')).toHaveCount(0);
 
-  // Tag a project file — it appears as a removable attachment on the composer.
-  await page.getByRole("button", { name: /Tag a file/ }).click();
-  const first = page.getByRole("menuitem").first();
-  const tagged = (await first.textContent())?.trim() ?? "";
-  await first.click();
-  await page.keyboard.press("Escape");
-  await expect(page.locator('[data-slot="attachment"]')).toHaveCount(1);
+  /**
+   * `@` opens the file picker — the same folder tree the sidebar uses, so the
+   * structure is how you find a file rather than a flat list of titles.
+   */
+  await page.getByLabel("Client idea").click();
+  await page.keyboard.type("Add a colour picker to the avatar editor @");
 
-  await page
-    .getByLabel("Client idea")
-    .fill("Add a colour picker to the avatar editor for the client");
+  const picker = page.getByTestId("doc-picker");
+  await expect(picker).toBeVisible();
+  await expect(picker.getByRole("button", { name: /decisions/ })).toBeVisible();
+
+  const leaf = picker.getByRole("button", { name: /Sample decision/ });
+  const tagged = (await leaf.textContent())?.trim() ?? "";
+  await leaf.click();
+
+  // The `@` was a command, not content — it is replaced by the file's title.
+  await expect(picker).toBeHidden();
+  await expect(page.getByLabel("Client idea")).not.toHaveValue(/@$/);
+  await expect(page.locator('[data-slot="attachment"]')).toHaveCount(1);
   await page.getByRole("button", { name: /Analyze against docs/i }).click();
 
   // Two turns: the idea, then the verdict.

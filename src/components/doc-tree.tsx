@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, FileText, Folder, FolderOpen } from "lucide-react";
+import { Check, ChevronRight, FileText, Folder, FolderOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -39,15 +39,33 @@ const KIND_LABEL: Record<DocKind, string> = {
  * Folders are `<button>`s — expanding is a view change, not a destination.
  * Leaves are real anchors, so middle-click and open-in-new-tab work.
  */
-export function DocTree({ nodes, variant = "page" }: { nodes: DocNode[]; variant?: Density }) {
+export function DocTree({
+  nodes,
+  variant = "page",
+  onSelectDoc,
+  selected,
+}: {
+  nodes: DocNode[];
+  variant?: Density;
+  onSelectDoc?: (doc: SelectedDoc) => void;
+  selected?: ReadonlySet<string>;
+}) {
   return (
     // The root list drops the primitive's indent rail: at depth 0 there is no
     // parent to connect to, and the border would float against nothing.
     <SidebarMenuSub className="mx-0 border-l-0 px-0" data-testid="doc-tree">
-      <DocTreeItems nodes={nodes} variant={variant} />
+      <DocTreeItems
+        nodes={nodes}
+        variant={variant}
+        onSelectDoc={onSelectDoc}
+        selected={selected}
+      />
     </SidebarMenuSub>
   );
 }
+
+/** What a leaf hands back in select mode. */
+export type SelectedDoc = { id: string; kind: DocKind; title: string };
 
 /**
  * The tree's rows without a list wrapper.
@@ -59,9 +77,21 @@ export function DocTree({ nodes, variant = "page" }: { nodes: DocNode[]; variant
 export function DocTreeItems({
   nodes,
   variant = "page",
+  onSelectDoc,
+  selected,
 }: {
   nodes: DocNode[];
   variant?: Density;
+  /**
+   * Picking a leaf calls this instead of navigating.
+   *
+   * The triage composer reuses the tree as a file picker: the folder structure is
+   * how you find "the architecture one", and a flat list of thirteen titles is
+   * not. Same component, so the picker cannot drift from the navigator.
+   */
+  onSelectDoc?: (doc: SelectedDoc) => void;
+  /** Ids to mark as already chosen, in select mode. */
+  selected?: ReadonlySet<string>;
 }) {
   const pathname = usePathname();
   const active = decodeURIComponent(pathname);
@@ -69,7 +99,14 @@ export function DocTreeItems({
   return (
     <>
       {nodes.map((node) => (
-        <TreeNode key={nodeKey(node)} node={node} variant={variant} active={active} />
+        <TreeNode
+          key={nodeKey(node)}
+          node={node}
+          variant={variant}
+          active={active}
+          onSelectDoc={onSelectDoc}
+          selected={selected}
+        />
       ))}
     </>
   );
@@ -98,12 +135,39 @@ function TreeNode({
   node,
   variant,
   active,
+  onSelectDoc,
+  selected,
 }: {
   node: DocNode;
   variant: Density;
   active: string;
+  onSelectDoc?: (doc: SelectedDoc) => void;
+  selected?: ReadonlySet<string>;
 }) {
   if (node.type === "doc") {
+    // Select mode: a leaf is a choice, so it is a button. Navigation mode: a
+    // leaf is a destination, so it stays an anchor and keeps middle-click.
+    if (onSelectDoc) {
+      const isChosen = selected?.has(node.id) ?? false;
+
+      return (
+        <SidebarMenuSubItem>
+          <SidebarMenuSubButton asChild isActive={isChosen} size="sm">
+            <button
+              type="button"
+              onClick={() => onSelectDoc({ id: node.id, kind: node.kind, title: node.title })}
+            >
+              <FileText aria-hidden />
+              <span>{node.title}</span>
+              {isChosen && (
+                <Check className="ml-auto size-3.5 shrink-0" aria-label="tagged" />
+              )}
+            </button>
+          </SidebarMenuSubButton>
+        </SidebarMenuSubItem>
+      );
+    }
+
     const isActive = decodeURIComponent(node.href) === active;
 
     return (
@@ -128,7 +192,13 @@ function TreeNode({
   }
 
   return (
-    <Collapsible asChild defaultOpen={containsActive(node, active)} className="group/folder">
+    <Collapsible
+      asChild
+      // Searching, not orienting: in select mode the whole tree starts open so
+      // the file you want is one glance away rather than three clicks.
+      defaultOpen={onSelectDoc !== undefined || containsActive(node, active)}
+      className="group/folder"
+    >
       <SidebarMenuSubItem>
         <CollapsibleTrigger asChild>
           <SidebarMenuSubButton asChild size={variant === "sidebar" ? "sm" : "md"}>
@@ -150,7 +220,14 @@ function TreeNode({
         <CollapsibleContent>
           <SidebarMenuSub className={cn(variant === "sidebar" && "mx-2 px-1.5")}>
             {node.children.map((child) => (
-              <TreeNode key={nodeKey(child)} node={child} variant={variant} active={active} />
+              <TreeNode
+                key={nodeKey(child)}
+                node={child}
+                variant={variant}
+                active={active}
+                onSelectDoc={onSelectDoc}
+                selected={selected}
+              />
             ))}
           </SidebarMenuSub>
         </CollapsibleContent>

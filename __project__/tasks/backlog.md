@@ -19,22 +19,41 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 
 ## RV · Reversal cleanup — ADR-0010 fallout _(2026-08-06)_ → **[P]**
 
-> ADR-0010 removed write-back **after it shipped**, so ~690 lines of tested, working code now have
-> no caller. Dead code that still passes its tests is the worst kind: it looks maintained. Clear it
-> before building anything on top, or the next reader assumes write-back is a supported path.
+> ADR-0010 removed write-back **after it shipped** — and the surface is larger than the seam: the
+> full reach is ~1,300 lines with a **live route still serving it** (`/ops/[project]/tasks` renders
+> `task-capture` + `task-status-control` + `proposed-changes`, and `actions.ts` still calls the
+> writer factory). Dead code that still passes its tests is the worst kind: it looks maintained.
+> Clear it before building anything on top, or the next reader assumes write-back is a supported path.
+>
+> **Sequencing note (2026-08-06):** RV1's original single-ticket form tripped its own escalate-if
+> before starting — the writer factory has live callers the ADR did not enumerate. Split into the
+> UI half (RV1a, where the product question lives) and the lib half (RV1b, mechanical once RV1a lands).
 
-- · **RV1** Delete the write-back seam and its writers. → **[P]**
-  - **Intent:** ADR-0010 deletes write-back as a feature; the code is now unreachable and its tests
-    still pass, which reads as "supported" to anyone browsing.
+- ✎ **RV1a** Retire the capture/status-flip UI — decide the gap first. → **[P]**
+  - **Intent:** deleting the surface removes a **shipped** capability (S5: PM/QA capture a task with
+    no git) and T2 does not restore it until the ticket DB exists. Whether capture goes dark in the
+    interim, or the reversal's UI half waits on T2, is a product decision — DRAFT until it is made.
+  - **Touches:** `src/app/ops/[project]/actions.ts` · `src/app/ops/[project]/tasks/page.tsx` (the
+    write affordances) · `src/components/{task-capture,task-status-control,proposed-changes}.tsx` ·
+    `src/lib/ops/write.ts` · `src/lib/ops/integrations.ts` (writer reporting) · `e2e/write-back.spec.ts`
+    **Must NOT:** the tasks *read* view — the table/board stay.
+  - **Oracle:** `/ops/[project]/tasks` renders with no capture form and no status control;
+    `bun run test:e2e` green with `write-back.spec.ts` gone.
+  - **Evidence:** [ADR-0010](../docs/decisions/0010-ticket-storage-ownership.md) §Decision ·
+    `src/app/ops/[project]/actions.ts:8` (live `getWriter` call) · S5 in this file (the shipped capability)
+  - **Escalate if:** anyone is actually using capture today — then the gap needs a date, not a delete.
+- · **RV1b** Delete the write-back seam and its writers. → **[P]** _(after RV1a)_
+  - **Intent:** ADR-0010 deletes write-back as a feature; once RV1a removes the callers the code is
+    unreachable and its passing tests read as "supported" to anyone browsing.
   - **Touches:** `src/lib/content/write.ts` · `src/lib/content/writers/**` · `src/lib/tasks/write-back.ts`
     and their tests **Must NOT:** touch `parseBacklog`/`serialize` — the grammar survives as the
-    **import** path for R3.
+    **import** path for T2.
   - **Oracle:** `bun run test` green with the files gone; `grep -rn "BacklogWriter\|writers/" src` returns
     nothing outside history.
-  - **Evidence:** [ADR-0010](../docs/decisions/0010-ticket-storage-ownership.md) §Decision · `src/lib/content/writers/` (690 lines)
-  - **Escalate if:** something still imports the writer factory — that is a caller ADR-0010 did not
-    anticipate, and the ADR needs an amendment before the delete.
-- · **RV2** Drop the GitHub write scope; document the token as read-only. → **[T]**
+  - **Evidence:** [ADR-0010](../docs/decisions/0010-ticket-storage-ownership.md) §Decision · `src/lib/content/writers/` + callers (~1,300 lines total)
+  - **Escalate if:** something outside RV1a's list still imports the writer factory — that is a
+    caller ADR-0010 did not anticipate, and the ADR needs an amendment before the delete.
+- ✓ **RV2** Drop the GitHub write scope; document the token as read-only. → **[T]** _(2026-08-06 — harness.json and README already said contents:read; .env.example now agrees and marks WRITE_BACK removed-by-decision)_
   - **Intent:** the token can create branches and PRs today. After R1 nothing uses that, and a
     credential with more power than its purpose is a standing risk.
   - **Touches:** `.env.example` · README deploy section · `harness.json` (the `GITHUB_TOKEN` entry)
@@ -89,7 +108,11 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Oracle:** someone who has never deployed this can follow it end to end.
   - **Evidence:** README §Deploy · `.claude/harness.json`
   - **Escalate if:** —
-- · **H4** Fix `biome.json` — lint is dead. → **[T]**
+- ✓ **H4** Fix `biome.json` — lint is dead. → **[T]** _(2026-08-06 — became `biome.jsonc` (comments
+  are legal there; in strict `biome.json` they silently fall back to a DEFAULT config, which is
+  worse than the original error). The revived gate surfaced 21 errors — format drift, three
+  deliberate trigger-deps kept under per-line `biome-ignore` rationale, one `!` in an e2e poll,
+  dead imports — all fixed in the same commit; oracle verified both ways with a seeded violation.)_
   - **Intent:** `bun run lint` fails on a clean tree (`unknown key 'comment'`), so the gate has been
     passing nothing for some time.
   - **Touches:** `biome.json` **Must NOT:** silence rules to make it pass.
@@ -99,6 +122,17 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 - · **H5** Turn on `dev-workflow check --strict` in CI. → **[T]** _(blocked by H1–H3)_
   - **Intent:** a gate that only reports is a convention, and conventions decay. Strict is what makes it physics.
   - **Oracle:** CI fails on a doc with missing frontmatter; passes on `main`.
+- · **H7** Wire the guard hook — rules exist, enforcement does not. → **[T]**
+  - **Intent:** `dev-workflow doctor` reports 2 command rules + 1 protected branch configured in
+    `harness.json` but no `PreToolUse` hook in `.claude/settings.json` — so the guard is
+    documentation, exactly the convention-vs-physics gap H5 exists to close.
+  - **Touches:** `.claude/settings.json` (the hook block doctor prints verbatim) **Must NOT:**
+    change the rules themselves.
+  - **Oracle:** `dev-workflow doctor` stops reporting "guard hook NOT wired"; an agent session
+    hitting a guarded command is actually blocked.
+  - **Evidence:** doctor output 2026-08-06 · `package.json` already carries the `guard` script.
+  - **Escalate if:** the hook's per-call latency is noticeable — then the guard needs a fast path
+    before it rides every tool call.
 - ↷ **H6** Decide Biome vs oxc for this repo.
   - **Intent:** infinite-oneness and the dev-workflow package are both on oxc; groundwork is on Biome.
     Not urgent, but it decides what a shipped `dev-style.md` looks like — and doing it during H4 is
@@ -116,6 +150,13 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 - · **T1** Observed-event ingest — append-only, no aggregate, no UI. → **[P]**
   - **Intent:** the only item here with a deadline. Every day without it is a day of lifecycle history
     that cannot be recovered later. Deliberately dumb: a table and a webhook handler.
+  - **Deadline defusal (2026-08-06):** `ticket-events.yml` already ships the capture half inert —
+    `gh variable set TICKET_EVENTS_ENABLED --body true` starts appending event files to
+    `tasks/events/` with no code, and T1's DB ingest can import them later. Two catches: events key
+    off `wip/<id>` branches and `[ID]` PR-title prefixes, so the naming discipline has to start with
+    the flip; and the template types a **closed-unmerged** PR as `released`, which contradicts
+    ADR-0011's `merged ≠ released` — an upstream bug in `@vinhnnn/dev-workflow` (the file is
+    managed; fix it there, not here).
   - **Touches:** a migration + a webhook route **Must NOT:** add a Decider, a projection, or a UI —
     those are T3, and building them now guesses at a schema no data has tested.
   - **Oracle:** a PR opened, reviewed and merged in a watched repo produces three rows with correct

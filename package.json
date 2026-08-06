@@ -68,7 +68,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
-    "@vinhnnn/dev-workflow": "^3.0.0",
+    "@vinhnnn/dev-workflow": "^3.0.1",
     "@vitest/coverage-v8": "^4.1.10",
     "babel-plugin-react-compiler": "^1.0.0",
     "tailwindcss": "^4",

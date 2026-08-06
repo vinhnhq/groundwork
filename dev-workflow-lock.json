@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "packageVersion": "3.0.0",
+  "packageVersion": "3.0.1",
   "packageFingerprint": "sha256:39588b9a88429a695cbbf233a8890bc064a436a0b578bed4fef129ae022040b7",
   "managed": {
     ".claude/templates/README.md": {

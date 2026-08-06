@@ -1,3 +1,4 @@
+import type { DocKind } from "@/lib/content/types";
 import type { AutonomyTier } from "@/lib/tasks/types";
 import type { Citation, DraftTicket, TriageKind, TriageResult } from "@/lib/triage/types";
 
@@ -6,7 +7,7 @@ import type { Citation, DraftTicket, TriageKind, TriageResult } from "@/lib/tria
  * "AI proposes, human disposes" shape: cite real docs, draft a DoR ticket, leave
  * boundaries/oracle for the human to ground. */
 
-export type DocLite = { kind: "adr" | "spec" | "retro"; id: string; title: string };
+export type DocLite = { kind: DocKind; id: string; title: string };
 export type TaskLite = { id: string; title: string; intent?: string };
 
 const STOP = new Set([
@@ -62,14 +63,34 @@ function guessTier(text: string): AutonomyTier {
   return "plan-gated";
 }
 
-export function analyzeIdeaPure(text: string, docs: DocLite[], tasks: TaskLite[]): TriageResult {
+/**
+ * A tagged doc's minimum score.
+ *
+ * 3 is the `overlaps` threshold below, so tagging a file says "this is relevant"
+ * loudly enough to change the verdict — which is the point of tagging rather
+ * than hoping the token overlap notices.
+ */
+const TAGGED_FLOOR = 3;
+
+export function analyzeIdeaPure(
+  text: string,
+  docs: DocLite[],
+  tasks: TaskLite[],
+  tagged: readonly string[] = [],
+): TriageResult {
   const idea = tokens(text);
+  const isTagged = new Set(tagged);
 
   const scoredTasks = tasks
     .map((t) => ({ t, score: overlap(idea, tokens(`${t.title} ${t.intent ?? ""}`)) }))
     .sort((a, b) => b.score - a.score);
   const scoredDocs = docs
-    .map((d) => ({ d, score: overlap(idea, tokens(d.title)) }))
+    .map((d) => ({
+      d,
+      score: isTagged.has(d.id)
+        ? Math.max(TAGGED_FLOOR, overlap(idea, tokens(d.title)))
+        : overlap(idea, tokens(d.title)),
+    }))
     .sort((a, b) => b.score - a.score);
 
   const bestTask = scoredTasks[0];
@@ -82,8 +103,12 @@ export function analyzeIdeaPure(text: string, docs: DocLite[], tasks: TaskLite[]
       ref: bestTask.t.id,
       label: `${bestTask.t.id} — ${bestTask.t.title}`,
     });
-  if (bestDoc && bestDoc.score >= 1)
-    citations.push({ kind: "adr", ref: bestDoc.d.id, label: bestDoc.d.title });
+  // Every tagged doc is cited; an untagged one only if it scored.
+  for (const { d, score } of scoredDocs) {
+    if (isTagged.has(d.id) || (d === bestDoc?.d && score >= 1)) {
+      citations.push({ kind: "adr", ref: d.id, label: d.title });
+    }
+  }
 
   const vague = VAGUE.test(text) || idea.size < 3;
 

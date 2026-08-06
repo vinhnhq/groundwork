@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { loadBrain } from "@/lib/brain";
+
+import { type BrainAudience, isBrainAudience, loadBrain } from "@/lib/brain";
 import type { ContentSource } from "@/lib/content/source";
 import type { DocKind } from "@/lib/content/types";
 import { isStartable } from "@/lib/tasks/dor";
@@ -28,7 +29,13 @@ export type ToolDef = {
   handler: (args: Record<string, unknown>) => Promise<string>;
 };
 
-const DOC_KINDS = ["adr", "spec", "retro"] as const;
+/**
+ * Mirrors `DOC_KINDS` in content/types. `doc` covers every Markdown file
+ * outside the three recognised folders — including `architecture.md` and
+ * `tech-standards.md`, which an agent asking "what did this team decide"
+ * previously could not reach through this tool at all.
+ */
+const DOC_KINDS = ["adr", "spec", "retro", "doc"] as const;
 
 function taskLine(t: Task): string {
   const facts = [t.autonomy ? `tier: ${t.autonomy}` : null, t.oracle ? `oracle: ${t.oracle}` : null]
@@ -119,11 +126,20 @@ export function createGroundworkTools(source: ReadOnlySource): ToolDef[] {
           .positive()
           .optional()
           .describe("Max characters for the digest (default 8000)"),
+        audience: z
+          .enum(["tech", "biz", "both"])
+          .optional()
+          .describe(
+            "Who the digest is for. `both` (default) and `tech` include the locked decisions and each task's intent/oracle; `biz` is the delivery view — state, scope and progress, with the engineering rationale withheld.",
+          ),
       },
       async handler(args) {
         const project = String(args.project ?? "");
         const budget = typeof args.budget === "number" ? args.budget : undefined;
-        const brain = await loadBrain(project, source as ContentSource, budget);
+        const audience = isBrainAudience(String(args.audience ?? "both"))
+          ? (args.audience as BrainAudience | undefined)
+          : undefined;
+        const brain = await loadBrain(project, source as ContentSource, budget, audience);
 
         if (!brain) return `No project "${project}". Call list_projects for the available slugs.`;
         if (brain.omitted.length === 0) return brain.text;
@@ -135,7 +151,7 @@ export function createGroundworkTools(source: ReadOnlySource): ToolDef[] {
       name: "get_doc",
       title: "Get a document",
       description:
-        "Read one full document (ADR, spec or retro) when the digest is not enough detail. Call with no `id` to list what exists.",
+        "Read one full document when the digest is not enough detail. `kind` is adr, spec, retro, or doc for anything else under __project__/ (a doc's id is its path, e.g. `docs/architecture`). Call with no `id` to list what exists.",
       inputSchema: {
         project: z.string().describe("Project slug"),
         kind: z.enum(DOC_KINDS).describe("Document kind"),

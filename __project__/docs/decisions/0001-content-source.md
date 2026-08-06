@@ -1,11 +1,20 @@
+---
+id: gw-adr-0001
+kind: adr
+title: ContentSource — filesystem first
+description: Read project docs from sibling repos on disk; add the GitHub adapter only when the console is actually deployed.
+status: accepted
+updated: 2026-08-06
+---
+
 # ADR-0001 — ContentSource: filesystem-local first
 
-Status: Accepted (2026-07-25)
+Decided: 2026-07-25
 
 ## Context
 
 Groundwork is a read-only projection over the canonical Markdown in each project
-repo (`__project__/**`). It needs to *read* those repos. Options: (a) filesystem —
+repo (`__project__/**`). It needs to _read_ those repos. Options: (a) filesystem —
 read sibling repos on disk; (b) GitHub contents API; (c) a build-time clone.
 
 ## Decision

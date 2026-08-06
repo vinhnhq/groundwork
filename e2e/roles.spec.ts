@@ -1,45 +1,95 @@
 import { expect, test } from "@playwright/test";
-import { DEV_SESSION_SECRET, signInAs, signWith, visible } from "./helpers";
+
+import { SESSION_DATA_COOKIE, SESSION_TOKEN_COOKIE, signInAs, visible } from "./helpers";
+
+const ORIGIN = "http://localhost:3100";
 
 test("an unsigned-in visitor is sent to sign-in", async ({ page }) => {
   await page.goto("/ops");
   await expect(page).toHaveURL(/\/sign-in/);
 });
 
-test("a garbage session cookie is rejected", async ({ page, context }) => {
-  await context.addCookies([
-    { name: "gw_session", value: "totally.forged", url: "http://localhost:3100" },
-  ]);
+/**
+ * The proxy runs on the edge and cannot reach the `session` table, so
+ * `getSessionCookie` only tells it that *a* cookie is present — it performs no
+ * validation whatsoever. A garbage token therefore walks past the proxy, and
+ * what stops it is `ops/layout.tsx` re-reading the session from the database.
+ * This pins that second layer: delete it and this test goes red.
+ */
+test("a garbage session token is rejected by the database check behind the proxy", async ({
+  page,
+  context,
+}) => {
+  await context.addCookies([{ name: SESSION_TOKEN_COOKIE, value: "totally.forged", url: ORIGIN }]);
 
   await page.goto("/ops");
   await expect(page).toHaveURL(/\/sign-in/);
 });
 
 /**
- * The threat the signature actually defends against: a *validly signed* token
- * minted with the published dev secret, claiming the engineer role.
+ * The threat the layering actually defends against: a forged *cookie cache*.
  *
- * The previous version of this test passed a garbage string, which the parser
- * rejects before any signature check — so it never exercised the secret at all
- * and would have stayed green while a real forgery worked.
+ * The proxy reads the role out of `<prefix>.session_data` to decide role gates
+ * without a database round-trip. If that cookie were trusted on its own, anyone
+ * could paste one claiming `role: "engineer"`. It is signed, so a forgery fails
+ * its HMAC — and even if it did not, the session token behind it is still
+ * checked against the database before any page renders.
  */
-test("a cookie signed with the published dev secret is rejected", async ({ page, context }) => {
-  const forged = await signWith(DEV_SESSION_SECRET, {
-    sub: "attacker",
-    email: "attacker@example.com",
-    name: "Attacker",
-    role: "engineer",
-    exp: Math.floor(Date.now() / 1000) + 3600,
-  });
+test("a forged cookie cache claiming the engineer role opens nothing", async ({
+  page,
+  context,
+}) => {
+  const claim = Buffer.from(
+    JSON.stringify({
+      session: { expiresAt: new Date(Date.now() + 3_600_000).toISOString() },
+      user: { role: "engineer" },
+      updatedAt: Date.now(),
+    }),
+  ).toString("base64url");
 
-  await context.addCookies([{ name: "gw_session", value: forged, url: "http://localhost:3100" }]);
+  await context.addCookies([
+    { name: SESSION_TOKEN_COOKIE, value: "forged", url: ORIGIN },
+    { name: SESSION_DATA_COOKIE, value: `${claim}.not-a-valid-signature`, url: ORIGIN },
+  ]);
 
   await page.goto("/ops");
   await expect(page).toHaveURL(/\/sign-in/);
 
   // And it must not open the doors the engineer role would.
   const digest = await page.request.get("/ops/sample/context.md", { maxRedirects: 0 });
-  expect([302, 303, 307, 308, 403]).toContain(digest.status());
+  expect([302, 303, 307, 308, 401, 403]).toContain(digest.status());
+
+  const integrations = await page.request.get("/ops/integrations");
+  expect(await integrations.text()).not.toContain("MCP_TOKEN");
+});
+
+/**
+ * The cookie cache expires after five minutes while the session token stays
+ * valid for seven days. In that window the proxy cannot see the role at all and
+ * waves the request through — `requireCapability` on the page is what refuses.
+ *
+ * This was a live gap: `/ops/integrations` and `/ops/<project>/triage` had no
+ * server-side check, so an expired cache was enough for a client to reach both.
+ */
+test("a client with an expired cookie cache still cannot reach engineer-only pages", async ({
+  page,
+  context,
+}) => {
+  await signInAs(page, "client");
+
+  // Drop only the cache cookie, exactly as its max-age would.
+  const kept = (await context.cookies()).filter((c) => c.name !== SESSION_DATA_COOKIE);
+  await context.clearCookies();
+  await context.addCookies(kept);
+
+  const integrations = await page.request.get("/ops/integrations");
+  expect(await integrations.text()).not.toContain("MCP_TOKEN");
+
+  const triage = await page.request.get("/ops/sample/triage");
+  expect(await triage.text()).not.toContain("Paste a client idea");
+
+  const digest = await page.request.get("/ops/sample/context.md", { maxRedirects: 0 });
+  expect([302, 303, 307, 308, 401, 403]).toContain(digest.status());
 });
 
 test("the engineer sees every section", async ({ page }) => {

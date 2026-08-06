@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { chain, err, isErr, isOk, map, mapError, match, ok } from "@/lib/result";
 
 describe("result", () => {

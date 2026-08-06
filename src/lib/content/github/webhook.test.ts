@@ -1,5 +1,7 @@
 import { createHmac } from "node:crypto";
+
 import { describe, expect, it } from "vitest";
+
 import { pushedRepo, touchesProjectDocs, verifySignature } from "@/lib/content/github/webhook";
 
 const SECRET = "shhh";

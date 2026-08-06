@@ -1,8 +1,9 @@
+import { classifyDoc, isDocFile, titleOfMarkdown } from "@/lib/content/classify-doc";
 import type { GitHubReadClient, Repo } from "@/lib/content/github/client";
 import { repoLabel } from "@/lib/content/github/client";
 import { parseProjectMeta } from "@/lib/content/parse-project";
 import type { ContentSource, Project } from "@/lib/content/source";
-import type { DocKind, DocRef, ProjectEntry } from "@/lib/content/types";
+import type { DocRef, ProjectEntry } from "@/lib/content/types";
 
 /**
  * The same projection as the filesystem source, over repos instead of paths
@@ -10,18 +11,9 @@ import type { DocKind, DocRef, ProjectEntry } from "@/lib/content/types";
  * ops UI, the digest and the MCP tools cannot tell which one they are holding.
  */
 
+const PROJECT_DIR = "__project__";
 const PROJECT_YML = "__project__/project.yml";
-const DECISIONS = "__project__/docs/decisions";
-const SPECS = "__project__/specs";
-const RETRO = "__project__/docs/retro.md";
 const BACKLOG = "__project__/tasks/backlog.md";
-
-/** First `# ` heading, else a humanized filename — matches the filesystem source. */
-function titleOf(markdown: string, fallbackFile: string): string {
-  const heading = markdown.split("\n").find((l) => l.startsWith("# "));
-  if (heading) return heading.slice(2).trim();
-  return fallbackFile.replace(/\.md$/, "").replace(/[-_]/g, " ");
-}
 
 async function readEntry(client: GitHubReadClient, repo: Repo): Promise<ProjectEntry> {
   const root = repoLabel(repo);
@@ -40,34 +32,54 @@ async function readEntry(client: GitHubReadClient, repo: Repo): Promise<ProjectE
   return { status: "ok", root, meta: parsed.value };
 }
 
-async function docsFor(client: GitHubReadClient, repo: Repo): Promise<DocRef[]> {
-  const docs: DocRef[] = [];
+/** Mirror of the filesystem walk's guard — see MAX_DEPTH there. */
+const MAX_DEPTH = 6;
 
-  const collect = async (dir: string, kind: DocKind) => {
-    for (const entry of await client.listDir(repo, dir)) {
-      if (entry.type !== "file" || !entry.name.endsWith(".md")) continue;
-      if (entry.name.toLowerCase() === "readme.md") continue;
+/**
+ * Every Markdown path under `__project__/`, repo-relative.
+ *
+ * One `listDir` per directory, which is why the depth guard matters more here
+ * than on a local disk: each level is a network round trip against someone
+ * else's repo layout.
+ */
+async function walkMarkdown(
+  client: GitHubReadClient,
+  repo: Repo,
+  dir: string,
+  depth = 0,
+): Promise<string[]> {
+  if (depth > MAX_DEPTH) return [];
 
-      const path = `${dir}/${entry.name}`;
-      const body = (await client.getFile(repo, path)) ?? "";
-      docs.push({
-        kind,
-        id: entry.name.replace(/\.md$/, ""),
-        title: titleOf(body, entry.name),
-        path,
-      });
+  const found: string[] = [];
+  for (const entry of await client.listDir(repo, dir)) {
+    if (entry.name.startsWith(".")) continue;
+    const path = `${dir}/${entry.name}`;
+
+    if (entry.type === "dir") {
+      found.push(...(await walkMarkdown(client, repo, path, depth + 1)));
+    } else if (entry.type === "file" && isDocFile(entry.name)) {
+      found.push(path);
     }
-  };
-
-  await collect(DECISIONS, "adr");
-  await collect(SPECS, "spec");
-
-  const retro = await client.getFile(repo, RETRO);
-  if (retro !== null) {
-    docs.push({ kind: "retro", id: "retro", title: titleOf(retro, "retro.md"), path: RETRO });
   }
+  return found.sort();
+}
 
-  return docs;
+/**
+ * Every document in the repo's `__project__/`, classified — the GitHub twin of
+ * the filesystem walk. Both route through `classifyDoc`, so a doc's kind, id
+ * and URL cannot change with the transport.
+ */
+async function docsFor(client: GitHubReadClient, repo: Repo): Promise<DocRef[]> {
+  const paths = await walkMarkdown(client, repo, PROJECT_DIR);
+
+  return Promise.all(
+    paths.map(async (path): Promise<DocRef> => {
+      const relPath = path.slice(PROJECT_DIR.length + 1);
+      const body = (await client.getFile(repo, path)) ?? "";
+      const { kind, id } = classifyDoc(relPath);
+      return { kind, id, title: titleOfMarkdown(body, relPath), path, relPath };
+    }),
+  );
 }
 
 export function createGitHubSource(client: GitHubReadClient, repos: Repo[]): ContentSource {

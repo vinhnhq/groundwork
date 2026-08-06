@@ -1,0 +1,64 @@
+{
+  "$comment": [
+    "Harness config for @vinhnnn/dev-workflow — `bun run doctor` reads `environment`,",
+    "the PreToolUse hook reads `guards`.",
+    "",
+    "Every entry below traces to a real failure mode documented in the README or an ADR.",
+    "The `why` on an optional variable is the whole point: without it a newcomer cannot",
+    "tell 'this feature is broken' from 'this feature is unconfigured'."
+  ],
+
+  "environment": {
+    "required": [
+      {
+        "name": "DATABASE_URL",
+        "why": "there is NO fallback store — without it nobody can sign in at all",
+        "where": "docker compose up -d → postgres on 55432, or a Neon branch"
+      }
+    ],
+    "optional": [
+      {
+        "name": "PROJECT_ROOTS",
+        "why": "the filesystem content source finds no repos, so every project reads empty",
+        "where": ".env.local — comma-separated sibling repo paths"
+      },
+      {
+        "name": "ANTHROPIC_API_KEY",
+        "why": "the triage analyzer no-ops; ideas can be captured but never analysed",
+        "where": "console.anthropic.com → API keys"
+      },
+      {
+        "name": "ADMIN_PASSWORD",
+        "why": "`bun run seed` REFUSES to run — it will not put the dev password on a public URL",
+        "where": "any strong value; set it before seeding a deployed instance"
+      },
+      {
+        "name": "GITHUB_TOKEN",
+        "why": "a deployed instance reads the built-in fixture instead of real repos",
+        "where": "a fine-grained token with contents:read — read-only since ADR-0010"
+      },
+      {
+        "name": "GITHUB_REPOS",
+        "why": "paired with GITHUB_TOKEN; without it there is nothing to read remotely",
+        "where": "comma-separated owner/repo list"
+      }
+    ],
+    "commands": ["bun", "node", "git", "docker"],
+    "files": [".env.local"]
+  },
+
+  "guards": {
+    "blockedCommands": [
+      {
+        "pattern": "^\\s*bun test(\\s|$)",
+        "message": "Use `bun run test`. Bare `bun test` invokes Bun's own runner, finds ZERO vitest files, and exits 0 — a green result that tested nothing."
+      },
+      {
+        "pattern": "\\bseed\\b[^|;&]*(prod|production)",
+        "message": "Seeding a production database. The seeder refuses without ADMIN_PASSWORD for a reason — stop and confirm with the owner. See __project__/docs/runbook.md."
+      }
+    ],
+    "readOnlyPaths": [],
+    "protectedBranches": ["main"]
+  }
+}

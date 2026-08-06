@@ -1,10 +1,21 @@
 import { readdir, readFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { join } from "node:path";
+
+import { classifyDoc, isDocFile, titleOfMarkdown } from "@/lib/content/classify-doc";
 import { parseProjectMeta } from "@/lib/content/parse-project";
 import type { ContentSource, Project } from "@/lib/content/source";
 import type { DocKind, DocRef, ProjectEntry } from "@/lib/content/types";
 
 const PROJECT_FILE = join("__project__", "project.yml");
+
+/**
+ * How deep the walk goes under `__project__/`.
+ *
+ * A guard, not a preference: the walk follows whatever a project repo happens
+ * to contain, and an unbounded recursion over someone else's directory is a
+ * denial-of-service on the render. Six levels is far past any real docs tree.
+ */
+const MAX_DEPTH = 6;
 
 async function tryRead(path: string): Promise<string | null> {
   try {
@@ -14,19 +25,29 @@ async function tryRead(path: string): Promise<string | null> {
   }
 }
 
-async function tryList(dir: string): Promise<string[]> {
-  try {
-    return (await readdir(dir)).filter((f) => f.endsWith(".md")).sort();
-  } catch {
-    return [];
-  }
-}
+/**
+ * Every Markdown file under `dir`, as `__project__`-relative forward-slash
+ * paths. Unreadable directories yield nothing rather than throwing — one
+ * bad-permission folder in someone else's repo must not blank the whole tree.
+ */
+async function walkMarkdown(dir: string, prefix = "", depth = 0): Promise<string[]> {
+  if (depth > MAX_DEPTH) return [];
 
-/** First `# ` heading, else a humanized filename. */
-function titleOf(markdown: string, fallbackFile: string): string {
-  const heading = markdown.split("\n").find((l) => l.startsWith("# "));
-  if (heading) return heading.slice(2).trim();
-  return basename(fallbackFile, ".md").replace(/[-_]/g, " ");
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+
+  const found: string[] = [];
+  for (const entry of entries) {
+    // Dotfiles are tooling, not documents.
+    if (entry.name.startsWith(".")) continue;
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+
+    if (entry.isDirectory()) {
+      found.push(...(await walkMarkdown(join(dir, entry.name), rel, depth + 1)));
+    } else if (entry.isFile() && isDocFile(entry.name)) {
+      found.push(rel);
+    }
+  }
+  return found.sort();
 }
 
 async function readEntry(root: string): Promise<ProjectEntry> {
@@ -45,30 +66,27 @@ async function readEntry(root: string): Promise<ProjectEntry> {
   return { status: "ok", root, meta: parsed.value };
 }
 
+/**
+ * Every document in the repo's `__project__/`, classified.
+ *
+ * Was three hard-coded directories, which meant `docs/architecture.md` and
+ * `docs/tech-standards.md` — the two files CLAUDE.md calls the authoritative
+ * sources — were never ingested at all. The console could not display the docs
+ * it tells agents to read. Walking the tree fixes the omission; `classifyDoc`
+ * keeps the recognised kinds (and their URLs) exactly as they were.
+ */
 async function docsForRoot(root: string): Promise<DocRef[]> {
-  const docs: DocRef[] = [];
+  const base = join(root, "__project__");
+  const rels = await walkMarkdown(base);
 
-  const decisionsDir = join(root, "__project__", "docs", "decisions");
-  for (const file of await tryList(decisionsDir)) {
-    if (file.toLowerCase() === "readme.md") continue;
-    const path = join(decisionsDir, file);
-    const body = (await tryRead(path)) ?? "";
-    const id = file.replace(/\.md$/, "");
-    docs.push({ kind: "adr", id, title: titleOf(body, file), path });
-  }
-
-  const specsDir = join(root, "__project__", "specs");
-  for (const file of await tryList(specsDir)) {
-    const path = join(specsDir, file);
-    const body = (await tryRead(path)) ?? "";
-    docs.push({ kind: "spec", id: file.replace(/\.md$/, ""), title: titleOf(body, file), path });
-  }
-
-  const retroPath = join(root, "__project__", "docs", "retro.md");
-  const retro = await tryRead(retroPath);
-  if (retro !== null) {
-    docs.push({ kind: "retro", id: "retro", title: titleOf(retro, "retro.md"), path: retroPath });
-  }
+  const docs = await Promise.all(
+    rels.map(async (relPath): Promise<DocRef> => {
+      const path = join(base, relPath);
+      const body = (await tryRead(path)) ?? "";
+      const { kind, id } = classifyDoc(relPath);
+      return { kind, id, title: titleOfMarkdown(body, relPath), path, relPath };
+    }),
+  );
 
   return docs;
 }

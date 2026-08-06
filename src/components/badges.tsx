@@ -39,20 +39,26 @@ export function TierBadge({ tier }: { tier?: AutonomyTier }) {
   );
 }
 
-const STATUS_STYLE: Record<TaskStatus, string> = {
-  todo: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
-  "in-progress": "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
-  done: "bg-muted text-muted-foreground",
-  blocked: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
-  stretch: "bg-muted text-muted-foreground",
+/**
+ * Status earns a variant, not a bespoke colour.
+ *
+ * The previous version painted every status its own hue — blue todo, purple
+ * in-progress, red blocked — which made a backlog read as a paint chart and
+ * spent the reader's attention on the column that varies least. This is the
+ * mapping the infinite-oneness tables use: the terminal-good state is filled,
+ * the genuinely bad one is destructive, and everything mid-flight is neutral.
+ * `blocked` keeps red because it is the one status that asks for action.
+ */
+const STATUS_VARIANT: Record<TaskStatus, "default" | "secondary" | "destructive"> = {
+  done: "default",
+  blocked: "destructive",
+  todo: "secondary",
+  "in-progress": "secondary",
+  stretch: "secondary",
 };
 
 export function StatusBadge({ status }: { status: TaskStatus }) {
-  return (
-    <Badge variant="secondary" className={cn("border-transparent", STATUS_STYLE[status])}>
-      {status}
-    </Badge>
-  );
+  return <Badge variant={STATUS_VARIANT[status]}>{status}</Badge>;
 }
 
 const FIELD_LABEL: Record<DorField, string> = {

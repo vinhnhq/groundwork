@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import type { ContentSource } from "@/lib/content/source";
 import type { ProjectEntry, ProjectMeta } from "@/lib/content/types";
 import { loadOverview, loadPortfolio, loadProject } from "@/lib/ops/load";
@@ -47,7 +48,15 @@ function makeSource(entries: ProjectEntry[], backlog: string | null = BACKLOG): 
       return found ? { root: found.root, meta: found.meta } : null;
     },
     async listDocs() {
-      return [{ kind: "adr" as const, id: "0001", title: "ADR-0001", path: "/x" }];
+      return [
+        {
+          kind: "adr" as const,
+          id: "0001",
+          title: "ADR-0001",
+          path: "/x",
+          relPath: "docs/decisions/0001.md",
+        },
+      ];
     },
     async readDoc() {
       return "# ADR-0001";

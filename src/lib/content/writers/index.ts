@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { promisify } from "node:util";
+
 import { systemClock } from "@/lib/clock";
 import { createMockGitHubClient, DEMO_GITHUB_FILES } from "@/lib/content/github/mock-client";
 import { createRestGitHubClient } from "@/lib/content/github/rest-client";
@@ -45,7 +46,7 @@ function memoryWriter() {
 
 /** Everything the dry run has recorded this process, newest first. */
 export function recordedWrites(): RecordedWrite[] {
-  return [...(sharedMemoryWriter?.writes ?? [])].reverse();
+  return (sharedMemoryWriter?.writes ?? []).toReversed();
 }
 
 export const WRITE_MODES = ["memory", "filesystem", "git-branch", "github-pr"] as const;

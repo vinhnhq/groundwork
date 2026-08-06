@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { makeFixedClock, systemClock } from "@/lib/clock";
 
 describe("clock", () => {

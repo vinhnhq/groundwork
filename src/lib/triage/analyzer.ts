@@ -10,7 +10,7 @@ export interface TriageAnalyzer {
 /** Mock analyzer — reads the project's real docs, runs the pure heuristic. */
 export function createMockAnalyzer(source: ContentSource): TriageAnalyzer {
   return {
-    async analyze({ project, text }) {
+    async analyze({ project, text, tagged }) {
       const docs = await source.listDocs(project);
       const md = await source.readBacklog(project);
       const tasks = md
@@ -20,6 +20,7 @@ export function createMockAnalyzer(source: ContentSource): TriageAnalyzer {
         text,
         docs.map((d) => ({ kind: d.kind, id: d.id, title: d.title })),
         tasks,
+        tagged ?? [],
       );
     },
   };

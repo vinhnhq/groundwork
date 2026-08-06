@@ -1,8 +1,8 @@
 import { createFilesystemSource } from "@/lib/content/filesystem-source";
+import { createGitHubSource } from "@/lib/content/github-source";
 import { parseRepo } from "@/lib/content/github/client";
 import { createMockGitHubClient, DEMO_GITHUB_FILES } from "@/lib/content/github/mock-client";
 import { createRestGitHubClient } from "@/lib/content/github/rest-client";
-import { createGitHubSource } from "@/lib/content/github-source";
 import type { ContentSource } from "@/lib/content/source";
 import { serverEnv } from "@/lib/env-server";
 

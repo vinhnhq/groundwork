@@ -5,8 +5,12 @@ import { getAnalyzer } from "@/lib/triage/analyzer";
 import { listAccepted, recordAccepted, renderBacklogBlock } from "@/lib/triage/store";
 import type { DraftTicket, TriageResult } from "@/lib/triage/types";
 
-export async function analyzeIdea(project: string, text: string): Promise<TriageResult> {
-  return getAnalyzer(getContentSource()).analyze({ project, text });
+export async function analyzeIdea(
+  project: string,
+  text: string,
+  tagged: readonly string[] = [],
+): Promise<TriageResult> {
+  return getAnalyzer(getContentSource()).analyze({ project, text, tagged });
 }
 
 export async function acceptDraft(

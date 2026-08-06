@@ -12,24 +12,33 @@
       "!public",
       "!src/app/globals.css",
       "!src/components/ui",
-      "!.claude/worktrees"
-    ]
+      "!.claude/worktrees",
+    ],
   },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
   "linter": {
     "enabled": true,
-    "rules": { "preset": "recommended" }
+    "rules": { "preset": "recommended" },
   },
   "javascript": { "formatter": { "quoteStyle": "double" } },
   "css": { "parser": { "cssModules": true }, "formatter": { "enabled": true } },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "overrides": [
     {
+      // The sidebar resizer is the WAI-ARIA window-splitter pattern: a FOCUSABLE role=separator
+      // carrying aria-valuenow/min/max plus arrow-key handling. useSemanticElements wants <hr>,
+      // which cannot take focus — following it here would delete the keyboard path for a
+      // drag-only control. Scoped to the one file, because a decorative separator elsewhere
+      // really should be an <hr>.
+      "includes": ["src/components/app-shell/sidebar-resizer.tsx"],
+      "linter": { "rules": { "a11y": { "useSemanticElements": "off" } } },
+    },
+    {
       "includes": [
         "src/lib/**",
         "!src/lib/context.ts",
         "!src/lib/auth/index.ts",
-        "!src/lib/now.ts"
+        "!src/lib/now.ts",
       ],
       "linter": {
         "rules": {
@@ -43,13 +52,13 @@
                   "next": "src/lib is the pure core — no Next.",
                   "next/headers": "Request context belongs in the ADR-0012 seam (excluded edge files), not the pure core.",
                   "next/server": "src/lib is the pure core — no Next server APIs.",
-                  "next/navigation": "src/lib is the pure core — no Next navigation."
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  ]
+                  "next/navigation": "src/lib is the pure core — no Next navigation.",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ],
 }

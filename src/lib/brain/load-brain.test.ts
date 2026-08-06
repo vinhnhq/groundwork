@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { loadBrain } from "@/lib/brain/load-brain";
 import type { ContentSource } from "@/lib/content/source";
 import type { DocRef, ProjectMeta } from "@/lib/content/types";
@@ -15,8 +16,14 @@ const meta: ProjectMeta = {
 };
 
 const docs: DocRef[] = [
-  { kind: "adr", id: "0001-x", title: "ADR-0001 — X", path: "/x" },
-  { kind: "spec", id: "v1", title: "v1 — Spec", path: "/s" },
+  {
+    kind: "adr",
+    id: "0001-x",
+    title: "ADR-0001 — X",
+    path: "/x",
+    relPath: "docs/decisions/0001-x.md",
+  },
+  { kind: "spec", id: "v1", title: "v1 — Spec", path: "/s", relPath: "specs/v1.md" },
 ];
 
 const bodies: Record<string, string> = {

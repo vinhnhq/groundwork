@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
+
 import { ProjectShell } from "@/components/app-shell/project-shell";
-import { UserChrome } from "@/components/app-shell/user-chrome";
+import { HeaderActions, SidebarProfile } from "@/components/app-shell/user-chrome";
 import { getSession } from "@/lib/auth";
 import { can } from "@/lib/auth/roles";
 import { getContentSource } from "@/lib/content";
+import { buildDocTree } from "@/lib/content/doc-tree";
 import { isStartable } from "@/lib/tasks/dor";
 import { parseBacklog } from "@/lib/tasks/parse-backlog";
 
@@ -35,19 +37,25 @@ export default async function ProjectLayout({
   const tasks = backlog ? parseBacklog(backlog, slug) : [];
   const role = session?.user.role ?? "client";
 
+  // Built here, in the layout, so the sidebar tree survives navigation between
+  // documents — React keeps the layout mounted, so collapsed folders and the
+  // tree's scroll position persist while you read.
+  const docTree = buildDocTree(docs, slug);
+
   return (
     <ProjectShell
       slug={slug}
       name={project.meta.name}
-      status={project.meta.status}
       counts={{
         docs: docs.length,
         tasks: tasks.length,
         ready: tasks.filter(isStartable).length,
       }}
+      docTree={docTree}
       mayGround={can(role, "grounding.read")}
       mayAgent={can(role, "agent.run")}
-      userChrome={<UserChrome />}
+      headerActions={<HeaderActions />}
+      profile={<SidebarProfile />}
     >
       {children}
     </ProjectShell>

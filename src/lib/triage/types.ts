@@ -1,6 +1,17 @@
 import type { AutonomyTier, Evidence } from "@/lib/tasks/types";
 
-export type IdeaInput = { project: string; text: string };
+export type IdeaInput = {
+  project: string;
+  text: string;
+  /**
+   * Doc ids the human tagged onto the idea.
+   *
+   * Not decoration: a tagged doc is *asserted* relevant, so it is always cited
+   * and its overlap score is floored — the analyzer's token heuristic cannot see
+   * that "the export thing" means ADR-0004, but the person typing it can.
+   */
+  tagged?: readonly string[];
+};
 
 export type TriageKind = "duplicate" | "overlaps" | "needs-spike" | "new-task";
 

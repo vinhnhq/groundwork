@@ -13,6 +13,11 @@ const API = "https://api.github.com";
 
 type ContentsEntry = { name: string; type: string; content?: string; encoding?: string };
 
+const repoPath = (repo: Repo) => `/repos/${repo.owner}/${repo.name}`;
+
+const contentsUrl = (repo: Repo, path: string) =>
+  `/repos/${repo.owner}/${repo.name}/contents/${encodeURI(path)}?ref=${encodeURIComponent(repo.branch)}`;
+
 export function createRestGitHubClient(token: string): GitHubClient {
   const request = async (path: string, init?: RequestInit): Promise<Response> =>
     fetch(`${API}${path}`, {
@@ -27,11 +32,6 @@ export function createRestGitHubClient(token: string): GitHubClient {
       // Grounding must reflect the current docs (spec v2 §5).
       cache: "no-store",
     });
-
-  const repoPath = (repo: Repo) => `/repos/${repo.owner}/${repo.name}`;
-
-  const contentsUrl = (repo: Repo, path: string) =>
-    `/repos/${repo.owner}/${repo.name}/contents/${encodeURI(path)}?ref=${encodeURIComponent(repo.branch)}`;
 
   return {
     kind: "rest",
@@ -55,9 +55,10 @@ export function createRestGitHubClient(token: string): GitHubClient {
       const body = await response.json();
       if (!Array.isArray(body)) return [];
 
-      return (body as ContentsEntry[]).map(
-        (entry): DirEntry => ({ name: entry.name, type: entry.type === "dir" ? "dir" : "file" }),
-      );
+      return (body as ContentsEntry[]).map((entry): DirEntry => ({
+        name: entry.name,
+        type: entry.type === "dir" ? "dir" : "file",
+      }));
     },
 
     async headSha(repo) {

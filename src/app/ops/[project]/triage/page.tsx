@@ -1,28 +1,53 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+
+import { requireCapability } from "@/app/ops/guard";
 import { TriageWorkbench } from "@/components/triage-workbench";
 import { getContentSource } from "@/lib/content";
+import { buildDocTree } from "@/lib/content/doc-tree";
 
 export const dynamic = "force-dynamic";
 
 export default async function TriagePage({ params }: { params: Promise<{ project: string }> }) {
+  // The triage agent spends tokens and proposes work — engineer-only. Same
+  // reason as /ops/integrations: the proxy's cookie cache expires, this does not.
+  await requireCapability("agent.run");
+
   const { project } = await params;
-  const p = await getContentSource().getProject(project);
+  const source = getContentSource();
+  const [p, docs] = await Promise.all([source.getProject(project), source.listDocs(project)]);
   if (!p) notFound();
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <Link href={`/ops/${project}`} className="text-sm text-muted-foreground hover:underline">
-          ← {p.meta.name}
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Triage an idea</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Paste a client idea. The agent checks it against this project's docs, then drafts a
-          Definition-of-Ready ticket — you ground it and dispose.
-        </p>
-      </div>
-      <TriageWorkbench project={project} />
+    /**
+     * A centred reading column, not the full width.
+     *
+     * A conversation is a column of prose; stretched across a wide monitor the
+     * eye has to travel the whole way back for each line, and the composer's
+     * controls end up a hand-span apart. `max-w-3xl` (48rem ≈ 768px) is about a
+     * tablet's width, so on a tablet this fills the viewport and the surface is
+     * just the thread and its input.
+     *
+     * No page heading: it moved into the composer's own description, since the
+     * input is the surface rather than something a heading introduces.
+     */
+    <div
+      /**
+       * A definite height, not `flex-1`.
+       *
+       * The shell's column is `min-h-svh` — a *minimum*, so its flex children
+       * size to content and grow the page. That is right for Docs and Tasks,
+       * which should scroll the whole page, and wrong here: pinning the composer
+       * to the bottom needs a column whose height is known. So this one measures
+       * itself off the viewport, minus the sticky header (h-14) and the shell's
+       * own padding.
+       */
+      className="mx-auto flex h-[calc(100svh-3.5rem-2rem)] w-full max-w-3xl min-h-0 flex-col gap-4 md:h-[calc(100svh-3.5rem-3rem)]"
+    >
+      <TriageWorkbench
+        project={project}
+        docs={docs.map((d) => ({ id: d.id, kind: d.kind, title: d.title, relPath: d.relPath }))}
+        docTree={buildDocTree(docs, project)}
+      />
     </div>
   );
 }

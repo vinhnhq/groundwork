@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "packageVersion": "3.0.1",
+  "packageFingerprint": "sha256:39588b9a88429a695cbbf233a8890bc064a436a0b578bed4fef129ae022040b7",
+  "managed": {
+    ".claude/templates/README.md": {
+      "hash": "sha256:8e6375647091f4b8e231280dc501d042d101e63e05eb0cb81818dd772044b15d"
+    },
+    ".claude/templates/adr.md": {
+      "hash": "sha256:492d1741726d145c532d20484a031807c1038c0bcdeac0c4d56ad7fc70d31e56"
+    },
+    ".claude/templates/spec.md": {
+      "hash": "sha256:0628f77835c78ecba19fc784170c9cea35807ead2cb20c31a0a6f443721753e1"
+    },
+    ".claude/templates/task.md": {
+      "hash": "sha256:db5d93b225a3b9d409d8888c0178c61c80465dd8cdd1c5443ce89ed908d49835"
+    },
+    ".claude/templates/done-entry.md": {
+      "hash": "sha256:a9e6c3765bf3105d46c090b849dba39a416c30bc6ce65147afa78b4558f7844e"
+    },
+    ".claude/templates/ticket-event.json": {
+      "hash": "sha256:b12dedc66eedcb09464d8cfa3f44b1ca2bddb0798ad44e80198f375828945b28"
+    },
+    ".claude/skills/testing-principles/SKILL.md": {
+      "hash": "sha256:d2e73cdbaa0fd3f05789bba33580b4c94f799fe3a65c9e3f1b1fa48c2b9dd594"
+    },
+    ".github/workflows/ticket-events.yml": {
+      "hash": "sha256:df97698a40b4e12b7222d877799ef3d25e869928d423da8a01259b55a1bbe83c"
+    }
+  },
+  "seeded": {
+    "CLAUDE.md": {
+      "sourceHash": "sha256:ade3664a248fd50143d8bd64be6aa631f52c9f2a956d666455b0ef4c4902f6e0",
+      "packageVersion": "3.0.0",
+      "assumed": true
+    },
+    "__project__/project.yml": {
+      "sourceHash": "sha256:563fd7b23e9d8ecea0d167fa8f12c146d494297ccdd89b409215b4c08a8595f8",
+      "packageVersion": "3.0.0",
+      "assumed": true
+    },
+    ".claude/harness.json": {
+      "sourceHash": "sha256:fdeca9e30ee2ae34aea1b860c486f864a89b34e003fc7c66fd909ccea762dd1e",
+      "packageVersion": "3.0.0"
+    },
+    "__project__/docs/architecture.md": {
+      "sourceHash": "sha256:dd907d6f11573be67745b2271b3c4612515d82d2a7b1ab5914a3ed8098aef68a",
+      "packageVersion": "3.0.0",
+      "assumed": true
+    },
+    "__project__/docs/glossary.md": {
+      "sourceHash": "sha256:51c32e17ff6782bcf5a411a7ee63589650f72f389dbcf4de7c88966547ad21c3",
+      "packageVersion": "3.0.0"
+    },
+    "__project__/docs/security-and-data.md": {
+      "sourceHash": "sha256:307bf220b1cd4ff24b7dfff1ad1ad55019fee91665c4be3263c0fee53eaebdb9",
+      "packageVersion": "3.0.0"
+    },
+    "__project__/docs/runbook.md": {
+      "sourceHash": "sha256:1b3d2766d4311b83976399d25ed98af9bbafd16df97f1e0be6e5e081279e7dd6",
+      "packageVersion": "3.0.0"
+    }
+  },
+  "retired": {}
+}

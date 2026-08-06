@@ -2,6 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
 import { Mermaid } from "@/components/mermaid";
 
 /** Resolve a relative asset src against the doc's dir → the project asset route. */
@@ -43,7 +44,7 @@ export function Markdown({
           },
           img({ src, alt }) {
             const resolved = typeof src === "string" ? resolveSrc(src, slug, docDir) : "";
-            // biome-ignore lint/performance/noImgElement: doc images have arbitrary dims; next/image is unsuitable
+            // oxlint-disable-next-line nextjs/no-img-element -- doc images have arbitrary dims; next/image is unsuitable
             return <img src={resolved} alt={alt ?? ""} className="max-w-full rounded-md" />;
           },
           a({ href, children }) {

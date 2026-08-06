@@ -1,4 +1,9 @@
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { loadPortfolio } from "@/lib/ops/load";
 
 export const dynamic = "force-dynamic";
@@ -14,12 +19,12 @@ export default async function Home() {
           Keeps a whole team's AI agents grounded in the same docs, and lets the people who don't
           use git keep the backlog in sync. Your project Markdown stays the single source of truth.
         </p>
-        <Link
-          href="/ops"
-          className="inline-flex w-fit items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 "
-        >
-          Open ops console →
-        </Link>
+        <Button asChild className="w-fit">
+          <Link href="/ops">
+            Open ops console
+            <ArrowRight aria-hidden />
+          </Link>
+        </Button>
       </header>
 
       <section className="flex flex-col gap-4">
@@ -31,31 +36,32 @@ export default async function Home() {
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2">
             {projects.map((p) => (
-              <li key={p.slug} className="flex flex-col gap-3 rounded-lg border bg-card p-5">
-                <div>
-                  <h3 className="font-medium">{p.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground ">{p.tagline}</p>
-                </div>
-                {p.highlights.length > 0 && (
-                  <ul className="flex flex-col gap-1 text-sm text-muted-foreground ">
-                    {p.highlights.map((h) => (
-                      <li key={h} className="flex gap-2">
-                        <span className="text-muted-foreground">·</span>
-                        {h}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="mt-auto flex flex-wrap gap-1.5">
-                  {p.stack.map((s) => (
-                    <span
-                      key={s}
-                      className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground "
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
+              <li key={p.slug}>
+                <Card className="h-full">
+                  <CardContent className="flex flex-col gap-3">
+                    <div>
+                      <h3 className="font-medium">{p.name}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground ">{p.tagline}</p>
+                    </div>
+                    {p.highlights.length > 0 && (
+                      <ul className="flex flex-col gap-1 text-sm text-muted-foreground ">
+                        {p.highlights.map((h) => (
+                          <li key={h} className="flex gap-2">
+                            <span className="text-muted-foreground">·</span>
+                            {h}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="mt-auto flex flex-wrap gap-1.5">
+                      {p.stack.map((s) => (
+                        <Badge key={s} variant="secondary">
+                          {s}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </li>
             ))}
           </ul>

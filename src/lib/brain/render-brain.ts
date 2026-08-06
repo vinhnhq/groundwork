@@ -286,6 +286,9 @@ type Composition = {
 
 function compose(c: Composition): string {
   const { meta, docs, tasks } = c.input;
+  const audience = c.input.audience ?? "both";
+  // `tech` and `both` carry the team's internal reasoning; `biz` never does.
+  const showsInternals = audience !== "biz";
   const adrs = docs.filter((d) => d.kind === "adr").length;
   const specs = docs.filter((d) => d.kind === "spec").length;
   const drafts = tasks.filter(
@@ -299,27 +302,40 @@ function compose(c: Composition): string {
     "",
     meta.tagline,
     "",
-    "> Distilled from the project's own Markdown docs, which remain the single source of",
-    "> truth. Treat the decisions below as settled: propose work that fits them, and say so",
-    "> explicitly if you think one should change.",
+    ...(showsInternals
+      ? [
+          "> Distilled from the project's own Markdown docs, which remain the single source of",
+          "> truth. Treat the decisions below as settled: propose work that fits them, and say so",
+          "> explicitly if you think one should change.",
+        ]
+      : [
+          "> Distilled from the project's own Markdown docs. This is the delivery view: what the",
+          "> project is, where it stands, and what is moving. The engineering rationale behind",
+          "> each decision is deliberately not included.",
+        ]),
     "",
     "## Current state",
     "",
     `- Status: **${meta.status}**${meta.stack.length ? ` · Stack: ${meta.stack.join(", ")}` : ""}`,
     `- Tasks: ${c.ready.length} ready · ${drafts} draft · ${inProgress} in progress · ${done} done`,
-    `- Docs: ${adrs} ADR(s) · ${specs} spec(s) · ${c.decisions.length} locked decision(s)`,
-    "",
-    "## Locked decisions",
+    ...(showsInternals
+      ? [`- Docs: ${adrs} ADR(s) · ${specs} spec(s) · ${c.decisions.length} locked decision(s)`]
+      : [
+          `- Progress: ${done} shipped · ${inProgress} in progress · ${c.ready.length} ready to start`,
+        ]),
     "",
   ];
 
-  if (c.decisions.length === 0) {
-    out.push("_No locked decisions yet._", "");
-  } else {
-    for (const d of c.decisions) {
-      out.push(`- **${d.title}** — ${clamp(d.statement, c.terse ? TERSE_CAP : STATEMENT_CAP)}`);
+  if (showsInternals) {
+    out.push("## Locked decisions", "");
+    if (c.decisions.length === 0) {
+      out.push("_No locked decisions yet._", "");
+    } else {
+      for (const d of c.decisions) {
+        out.push(`- **${d.title}** — ${clamp(d.statement, c.terse ? TERSE_CAP : STATEMENT_CAP)}`);
+      }
+      out.push("");
     }
-    out.push("");
   }
 
   out.push("## Open constraints", "");
@@ -350,6 +366,23 @@ function compose(c: Composition): string {
     );
   } else {
     for (const t of shownTasks) {
+      /**
+       * `biz` gets the headline only.
+       *
+       * Dropping `## Locked decisions` was not enough on its own: a task's
+       * `intent` and `oracle` are where the team writes *why* and *how we will
+       * know*, and this project's own backlog proved it — the W6 ticket's
+       * rationale was being quoted verbatim into the delivery digest. Title and
+       * id still say what is moving, which is what a delivery conversation needs.
+       *
+       * Residual risk, stated rather than hidden: a title can itself be
+       * indiscreet ("rip out the Adyen integration"). Fully solving that needs a
+       * per-task visibility field, not a section filter — see backlog W6.
+       */
+      if (!showsInternals) {
+        out.push(`- **${t.id}** ${t.title}`);
+        continue;
+      }
       out.push(`- **${t.id}** ${t.title}${t.intent ? ` — ${t.intent}` : ""}`);
       const facts = [
         t.oracle ? `Oracle: ${t.oracle}` : null,

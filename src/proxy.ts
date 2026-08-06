@@ -1,34 +1,32 @@
+import { getCookieCache, getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
-import { type Capability, can } from "@/lib/auth/roles";
-import { verifyToken } from "@/lib/auth/session-token";
-import { SESSION_COOKIE, sessionSecretFrom } from "@/lib/auth-constants";
+
+import { COOKIE_PREFIX, sessionSecretFrom } from "@/lib/auth-constants";
+import { can } from "@/lib/auth/roles";
+import { capabilityFor } from "@/lib/auth/route-capability";
+import { isRole } from "@/lib/auth/types";
 
 /**
- * Gate `/ops/**` behind a signed session, and route-gate by role (R1).
+ * Gate `/ops/**` behind a session, and route-gate by role (R1).
  *
- * v1 treated any cookie value as a valid admin. With roles that is no longer
- * survivable — an unsigned cookie would let a client type themselves into the
- * engineer role — so the token's HMAC is verified on every request. Web Crypto,
- * because this runs on the edge runtime where `node:crypto` does not exist.
+ * This runs on the edge runtime, where there is no database handle — so it
+ * cannot validate a session token against the `session` table. It does two
+ * cheaper things instead:
  *
- * Server actions repeat these checks: the proxy guards navigation, but an
- * action is a callable endpoint and must not trust that someone arrived
- * through a page.
+ *   1. **No session cookie at all ⇒ redirect.** Fails closed, and covers the
+ *      common case (an unauthenticated visitor) without touching the database.
+ *   2. **Signed cookie cache present ⇒ enforce the role.** better-auth signs a
+ *      short-lived copy of the session into `<prefix>.session_data`; a forged
+ *      or tampered one fails its HMAC and is treated as absent.
+ *
+ * What it deliberately does *not* do is treat the presence of a session token
+ * as proof of a role. When the cookie cache has expired (five minutes) the
+ * request falls through to the page — which calls `requireCapability` and
+ * checks against the database. The proxy is the fast path; that is the
+ * authority. Route handlers and server actions repeat the check too, because
+ * each is a callable endpoint and must not trust that someone arrived through
+ * a page.
  */
-const ROUTE_CAPABILITY: { prefix: string; capability: Capability }[] = [
-  { prefix: "/ops/integrations", capability: "integrations.view" },
-];
-
-/** `/ops/<project>/triage` — agent surfaces are engineer-only. */
-const TRIAGE = /^\/ops\/[^/]+\/triage/;
-
-/**
- * `/ops/<project>/context.md` — the digest export. Hiding the Copy-context
- * button from a client is courtesy; this is the control. Found by walking every
- * route as every role: the client could fetch the digest by URL.
- */
-const CONTEXT_EXPORT = /^\/ops\/[^/]+\/(context\.md|grounding)$/;
-
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   // Read the one field explicitly: `process.env` is an index-signature type,
@@ -40,35 +38,49 @@ export async function proxy(req: NextRequest) {
 
   // Production with no BETTER_AUTH_SECRET: accept nobody rather than trust a
   // secret that is published in the repo.
-  const payload = secret ? await verifyToken(req.cookies.get(SESSION_COOKIE)?.value, secret) : null;
+  if (!secret) return signInRedirect(req, pathname);
 
-  if (!payload) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/sign-in";
-    url.searchParams.set("from", pathname);
+  const token = getSessionCookie(req, { cookiePrefix: COOKIE_PREFIX });
+  if (!token) return signInRedirect(req, pathname);
 
-    const response = NextResponse.redirect(url);
-    // Clear a stale or tampered cookie so the next request is a clean sign-in.
-    if (req.cookies.get(SESSION_COOKIE)) response.cookies.delete(SESSION_COOKIE);
-    return response;
+  const required = capabilityFor(pathname);
+  if (!required) return NextResponse.next();
+
+  // The generic only narrows `user`; `getCookieCache` constrains the rest to
+  // better-auth's own Session/User shape, so it is inferred rather than restated.
+  const cached = await getCookieCache(req, { cookiePrefix: COOKIE_PREFIX, secret });
+
+  // A cache miss or expiry is not a denial — the page re-checks against the
+  // database. Denying here would bounce a legitimate signed-in user to
+  // /sign-in every five minutes.
+  if (!cached) return NextResponse.next();
+
+  const role =
+    typeof cached.user.role === "string" && isRole(cached.user.role) ? cached.user.role : "client";
+
+  return can(role, required) ? NextResponse.next() : deniedRedirect(req, required);
+}
+
+function signInRedirect(req: NextRequest, pathname: string) {
+  const url = req.nextUrl.clone();
+  url.pathname = "/sign-in";
+  url.search = "";
+  url.searchParams.set("from", pathname);
+
+  const response = NextResponse.redirect(url);
+  // Clear stale or tampered cookies so the next request is a clean sign-in.
+  for (const { name } of req.cookies.getAll()) {
+    if (name.includes(`${COOKIE_PREFIX}.session`)) response.cookies.delete(name);
   }
+  return response;
+}
 
-  const required =
-    ROUTE_CAPABILITY.find((r) => pathname.startsWith(r.prefix))?.capability ??
-    (TRIAGE.test(pathname)
-      ? ("agent.run" as const)
-      : CONTEXT_EXPORT.test(pathname)
-        ? ("grounding.read" as const)
-        : undefined);
-
-  if (required && !can(payload.role, required)) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/ops";
-    url.searchParams.set("denied", required);
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
+function deniedRedirect(req: NextRequest, capability: string) {
+  const url = req.nextUrl.clone();
+  url.pathname = "/ops";
+  url.search = "";
+  url.searchParams.set("denied", capability);
+  return NextResponse.redirect(url);
 }
 
 export const config = { matcher: ["/ops/:path*"] };

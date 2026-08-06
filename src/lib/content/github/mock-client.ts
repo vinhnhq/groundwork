@@ -17,9 +17,10 @@ export type MockGitHub = GitHubClient & {
  * nothing else. Writes mutate the in-memory file map, so a read after a write
  * sees the change exactly as it would against GitHub.
  */
+const key = (repo: Repo, path: string) => `${repoLabel(repo)}:${path}`;
+
 export function createMockGitHubClient(seed: Record<string, string>): MockGitHub {
   const files = { ...seed };
-  const key = (repo: Repo, path: string) => `${repoLabel(repo)}:${path}`;
   const branches: MockGitHub["branches"] = [];
   const pullRequests: MockGitHub["pullRequests"] = [];
 

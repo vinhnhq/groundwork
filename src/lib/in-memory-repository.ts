@@ -1,5 +1,8 @@
 import type { Repository } from "@/lib/repository";
 
+/** Ids of any shape become `Map` keys via `String()`. */
+const key = <Id>(id: Id): string => String(id);
+
 /**
  * Map-backed generic repository for unit tests. `nextId` mints ids inside
  * `create()`; `parse` (optional) validates at the boundary like a real repo.
@@ -10,7 +13,6 @@ export function createInMemoryRepository<T extends Record<string, unknown>, Id>(
   parse?: (item: T) => T;
 }): Repository<T, Id> {
   const store = new Map<string, T>();
-  const key = (id: Id) => String(id);
 
   const put = (item: T): T => {
     const value = opts.parse ? opts.parse(item) : item;

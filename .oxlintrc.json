@@ -8,6 +8,7 @@
   "env": { "browser": true, "node": true, "es2024": true },
   "rules": {
     "react/react-in-jsx-scope": "off",
+    "react/no-unstable-nested-components": ["warn", { "allowAsProps": true }],
     "no-underscore-dangle": ["warn", { "allow": ["_tag"] }],
     "import/no-unassigned-import": ["warn", { "allow": ["**/*.css", "server-only"] }],
     "unicorn/no-array-sort": "off",
@@ -61,6 +62,12 @@
       "files": ["src/lib/context.ts", "src/lib/now.ts", "src/lib/auth/index.ts"],
       "rules": {
         "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "e2e/**"],
+      "rules": {
+        "unicorn/consistent-function-scoping": "off"
       }
     }
   ],

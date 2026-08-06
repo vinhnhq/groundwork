@@ -46,7 +46,7 @@ function memoryWriter() {
 
 /** Everything the dry run has recorded this process, newest first. */
 export function recordedWrites(): RecordedWrite[] {
-  return [...(sharedMemoryWriter?.writes ?? [])].reverse();
+  return (sharedMemoryWriter?.writes ?? []).toReversed();
 }
 
 export const WRITE_MODES = ["memory", "filesystem", "git-branch", "github-pr"] as const;

@@ -71,12 +71,12 @@ describe("tagged documents", () => {
   });
 
   it("cites every tagged file, not just the best-scoring one", () => {
-    const docs = [
+    const threeAdrs = [
       { kind: "adr" as const, id: "a", title: "Alpha" },
       { kind: "adr" as const, id: "b", title: "Beta" },
       { kind: "adr" as const, id: "c", title: "Gamma" },
     ];
-    const refs = analyzeIdeaPure(idea, docs, [], ["a", "c"]).citations.map((c) => c.ref);
+    const refs = analyzeIdeaPure(idea, threeAdrs, [], ["a", "c"]).citations.map((c) => c.ref);
 
     expect(refs).toContain("a");
     expect(refs).toContain("c");

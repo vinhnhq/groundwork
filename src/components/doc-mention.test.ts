@@ -68,16 +68,16 @@ describe("filterDocs", () => {
   });
 
   it("matches on title, case-insensitively", () => {
-    expect(filterDocs(docs, "ARCH").map((d) => d.id)).toEqual(["docs/architecture"]);
+    expect(filterDocs(docs, "ARCH").map((doc) => doc.id)).toEqual(["docs/architecture"]);
   });
 
   it("matches on the path, so a folder name finds its files", () => {
-    expect(filterDocs(docs, "decisions").map((d) => d.id)).toEqual(["0008-auth"]);
-    expect(filterDocs(docs, "specs/").map((d) => d.id)).toEqual(["v1"]);
+    expect(filterDocs(docs, "decisions").map((doc) => doc.id)).toEqual(["0008-auth"]);
+    expect(filterDocs(docs, "specs/").map((doc) => doc.id)).toEqual(["v1"]);
   });
 
   it("matches on the id", () => {
-    expect(filterDocs(docs, "0008").map((d) => d.id)).toEqual(["0008-auth"]);
+    expect(filterDocs(docs, "0008").map((doc) => doc.id)).toEqual(["0008-auth"]);
   });
 
   it("returns nothing when nothing matches", () => {

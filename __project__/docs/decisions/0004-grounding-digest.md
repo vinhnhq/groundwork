@@ -9,7 +9,7 @@ updated: 2026-08-06
 
 # ADR-0004 — The grounding digest: what `renderBrain` includes, and its size budget
 
-Decided: 2026-07-28 · Amended (2026-07-28, see *Amendment* below)
+Decided: 2026-07-28 · Amended (2026-07-28, see _Amendment_ below)
 
 ## Context
 
@@ -20,7 +20,7 @@ GPT about a feature, GPT has no idea ADR-0001 settled the content source, and th
 
 The obvious fix — dump the docs into the chat — does not work. `__project__/**` for a real
 project is tens of thousands of tokens: it blows a chat context, costs real money per paste, and
-*buries* the decision it was supposed to surface. Relevance, not volume, is what grounds an
+_buries_ the decision it was supposed to surface. Relevance, not volume, is what grounds an
 agent. So the question is not "how do we ship the docs" but **what is the minimum an agent must
 know to avoid contradicting the team**, and what happens when even that does not fit.
 
@@ -36,7 +36,7 @@ know to avoid contradicting the team**, and what happens when even that does not
   section. This is the load-bearing content: it is precisely what the drifting agent contradicts.
 - **Open constraints** — the out-of-scope / non-goal bullets from each spec. Stops an agent
   proposing work the team has already ruled out.
-- **READY tasks** — DoR-passing, open tasks. What the agent *should* be reasoning about.
+- **READY tasks** — DoR-passing, open tasks. What the agent _should_ be reasoning about.
 
 **Excluded**, deliberately:
 
@@ -59,7 +59,7 @@ tokenizer-agnostic: the whole point is that it feeds GPT and Claude alike.
 
 1. READY tasks (recoverable — the agent can ask for the queue),
 2. open constraints,
-3. decision *statements* get trimmed to a short form.
+3. decision _statements_ get trimmed to a short form.
 
 **Decisions are never dropped.** If, after all trimming, the decisions alone still exceed the
 budget, `renderBrain` serves them **whole** and sets `overBudget: true`, recording the reason in
@@ -94,7 +94,7 @@ malformed input.**
    every agent that the project had settled nothing. Markdown decoration around a field label is
    the common case, not an edge case, so the matcher now tolerates list markers and emphasis.
    The consequence below — "an ADR without a `Status:` line is invisible" — stands, but the bar
-   for *having* one is now realistic.
+   for _having_ one is now realistic.
 
 2. **`Superseded by:` is now honoured.** An ADR can be `Accepted` and also retired by a later one.
    Reading the field costs nothing and directly serves the include/exclude rule already stated
@@ -106,8 +106,8 @@ malformed input.**
    newest specs (they sort by filename, `v1-…` before `v6-…`). Anything dropped is reported in
    `omitted[]`, so a squeezed digest still admits what it left out.
 
-4. **Trim before deleting.** The original pressure order dropped *all* constraints before
-   shortening *any* decision statement, and on the real repo that is exactly what happened: 27
+4. **Trim before deleting.** The original pressure order dropped _all_ constraints before
+   shortening _any_ decision statement, and on the real repo that is exactly what happened: 27
    verbose decisions, zero constraints. A clamped statement still states its decision; a dropped
    constraint says nothing at all. The order is now: ready tasks → trim decision statements →
    constraints. **Decisions themselves are still never dropped.**
@@ -121,7 +121,7 @@ Two extraction rules came out of the same pass:
   Collapsed naively that is a row of pipes and dashes; the columns are now read and emitted as
   `Question → Decision` pairs, capped at six rows with a `(+N more)` note.
 
-The generalisable lesson: this digest reads *other people's* Markdown, and any rule that assumes
+The generalisable lesson: this digest reads _other people's_ Markdown, and any rule that assumes
 one canonical formatting will silently produce a confident, empty digest. Silence is the dangerous
 failure here — nobody inspects a digest that looks fine.
 
@@ -129,7 +129,7 @@ failure here — nobody inspects a digest that looks fine.
 
 - The digest is only as good as the docs' discipline: an ADR with no `Status:` field in any
   recognised shape is invisible to the digest. That pressure toward well-formed ADRs is intended.
-- `Accepted` is matched tolerantly (bullet, bold, trailing decoration), but the *vocabulary* is
+- `Accepted` is matched tolerantly (bullet, bold, trailing decoration), but the _vocabulary_ is
   still fixed. A project using different status words would need this extended.
 - The constraint caps are heuristics keyed on filename ordering. A project that does not version
   its spec filenames gets an arbitrary 15 of them; that is a worse outcome than for one that does,

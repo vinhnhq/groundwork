@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { createInMemoryRepository } from "@/lib/in-memory-repository";
 
 type Widget = { id: number; name: string; color: string };

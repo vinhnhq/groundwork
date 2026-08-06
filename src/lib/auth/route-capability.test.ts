@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { can } from "@/lib/auth/roles";
 import { capabilityFor } from "@/lib/auth/route-capability";
 

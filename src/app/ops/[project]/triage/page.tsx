@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+
 import { requireCapability } from "@/app/ops/guard";
 import { TriageWorkbench } from "@/components/triage-workbench";
 import { getContentSource } from "@/lib/content";

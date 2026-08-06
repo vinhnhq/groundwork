@@ -11,7 +11,7 @@ updated: 2026-08-06
 
 - **Date:** 2026-08-05
 - **Deciders:** Vinh
-- **Reverses:** the §14 non-goal *"the dashboard never becomes a second source of truth"* (task half only) · the README line *"it never becomes a second database of tasks"*
+- **Reverses:** the §14 non-goal _"the dashboard never becomes a second source of truth"_ (task half only) · the README line _"it never becomes a second database of tasks"_
 - **Supersedes:** [ADR-0002](0002-write-back-mechanism.md) — write-back is removed, not deferred
 - **Amends:** [ADR-0001](0001-content-source.md) — the content source stays, its scope narrows to docs
 
@@ -32,7 +32,7 @@ Three things have since made that shape the expensive one:
    what is queued for verification are not facts about the code — they are facts about the people and
    agents working on it, they change many times an hour, and none of them belong in a commit.
 
-The opposite pressure is real and unchanged: an agent editing code needs rationale *in the repo*,
+The opposite pressure is real and unchanged: an agent editing code needs rationale _in the repo_,
 because it cannot retrieve a document whose existence it cannot infer. Docs that move to a database
 stop being discoverable by the grep that finds them today.
 
@@ -42,10 +42,10 @@ So the question was never "repo or database" — it was **which half goes where*
 
 **Split by kind of data, not by convenience.**
 
-| Data | Home | Rationale |
-| ------ | ------ | ----------- |
-| ADRs, specs, architecture, runbook, code comments — **rationale** | **the repo** | Consulted while editing; must be grep-able, diffable, versioned with the code, and readable with no network |
-| Tickets, claims, status, priority, cost, verification — **coordination** | **Groundwork's database** | Multi-actor, high-churn, needs atomicity and cross-project queries; inert to an agent mid-edit |
+| Data                                                                     | Home                      | Rationale                                                                                                   |
+| ------------------------------------------------------------------------ | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| ADRs, specs, architecture, runbook, code comments — **rationale**        | **the repo**              | Consulted while editing; must be grep-able, diffable, versioned with the code, and readable with no network |
+| Tickets, claims, status, priority, cost, verification — **coordination** | **Groundwork's database** | Multi-actor, high-churn, needs atomicity and cross-project queries; inert to an agent mid-edit              |
 
 Consequences that follow directly:
 
@@ -60,12 +60,12 @@ Consequences that follow directly:
 ## Consequences
 
 **Accepted — the repo stops being self-describing.** Six months on, a reader of `discovery-data.ts`
-cannot find *why* it is shaped that way unless something points out of the code. Two mitigations, both
+cannot find _why_ it is shaped that way unless something points out of the code. Two mitigations, both
 required, neither optional:
 
 - **Every commit message carries a ticket id** (`commit-msg` hook; `NOTICKET` allowed, and CI files a
   retroactive ticket). `git blame` then resolves any line to its ticket.
-- **The graduation rule:** a decision made during a ticket must reach an ADR or a spec *in the repo*
+- **The graduation rule:** a decision made during a ticket must reach an ADR or a spec _in the repo_
   before that ticket can close. Without it, rationale accumulates in ticket comments and the system
   reproduces the archaeology problem it was built to avoid — see [ADR-0012](0012-persistence-tiers.md)
   §Comments.
@@ -99,5 +99,5 @@ kind nobody thinks to attach to a ticket.
 **Layer on Jira/Linear instead of owning tickets.** Deferred rather than rejected — see
 [ADR-0011](0011-ticket-lifecycle.md) §Mirroring. Their change feeds have no ordering guarantee, no
 replayable cursor, and lossy history, so any analytic built on them is built on a best-effort mirror.
-Owning the lifecycle is what makes the numbers defensible; syncing *outward* to their UI stays
+Owning the lifecycle is what makes the numbers defensible; syncing _outward_ to their UI stays
 available as a display option.

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { loadBrain } from "@/lib/brain/load-brain";
 import type { ContentSource } from "@/lib/content/source";
 import type { DocRef, ProjectMeta } from "@/lib/content/types";

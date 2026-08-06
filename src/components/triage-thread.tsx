@@ -1,6 +1,7 @@
 "use client";
 
 import { FileText, ListTodo, Paperclip, Sparkles, X } from "lucide-react";
+
 import {
   Attachment,
   AttachmentAction,

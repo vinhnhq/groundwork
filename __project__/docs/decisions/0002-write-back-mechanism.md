@@ -29,8 +29,8 @@ reaches the repo**.
 The v2 spec sketched this as "`ContentSource` gains a write method". It is instead a separate
 `BacklogWriter` interface, because the two axes vary independently:
 
-- `ContentSource` answers *where the docs are read from* — filesystem now, GitHub when deployed.
-- `BacklogWriter` answers *how a change lands* — straight to disk, a git branch, a pull request.
+- `ContentSource` answers _where the docs are read from_ — filesystem now, GitHub when deployed.
+- `BacklogWriter` answers _how a change lands_ — straight to disk, a git branch, a pull request.
 
 Those compose in combinations neither can express alone (filesystem read + PR write is a perfectly
 sensible local setup). More importantly, keeping `ContentSource` read-only is what lets the MCP
@@ -57,13 +57,13 @@ For real repos the default is **open a pull request**, following "AI proposes, h
 
 - The PM/QA are not reviewing the Markdown they generated — the engineer is, and a PR is the
   review surface that already exists.
-- A task captured through an agent-assisted flow is a *proposal*. Committing it straight to `main`
+- A task captured through an agent-assisted flow is a _proposal_. Committing it straight to `main`
   gives an unreviewed suggestion the same authority as reviewed work.
 - It is reversible by construction. A bad direct commit to `main` needs a revert; a bad PR needs a
   close.
 
 Direct-to-disk (`filesystem`) stays available for a scratch repo or a solo working tree where the
-edit *is* the intent, and direct-to-branch (`git-branch`) for the engineer's own machine.
+edit _is_ the intent, and direct-to-branch (`git-branch`) for the engineer's own machine.
 
 ### Default when nothing is configured: a dry run
 

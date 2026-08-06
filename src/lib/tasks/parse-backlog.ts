@@ -87,7 +87,10 @@ export function parseBacklog(markdown: string, project: string): Task[] {
     if (!cur) return;
     const text = cur.body.join(" ");
     const perTaskTier = tierFrom(cur.rest);
-    const title = cur.rest.replace(TIER_RE, "").replace(/→\s*$/, "").trim();
+    const title = cur.rest
+      .replace(TIER_RE, "")
+      .replace(/→\s*$/, "")
+      .trim();
     tasks.push({
       id: cur.id,
       project,

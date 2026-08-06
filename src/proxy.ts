@@ -1,9 +1,10 @@
 import { getCookieCache, getSessionCookie } from "better-auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
+
+import { COOKIE_PREFIX, sessionSecretFrom } from "@/lib/auth-constants";
 import { can } from "@/lib/auth/roles";
 import { capabilityFor } from "@/lib/auth/route-capability";
 import { isRole } from "@/lib/auth/types";
-import { COOKIE_PREFIX, sessionSecretFrom } from "@/lib/auth-constants";
 
 /**
  * Gate `/ops/**` behind a session, and route-gate by role (R1).

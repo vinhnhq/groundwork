@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Brain, FileText, LayoutDashboard, ListTodo, Sparkles } from "lucide-react";
 import Link from "next/link";
+
 import { type NavGroup, SidebarShell } from "@/components/app-shell/sidebar-shell";
 import { DocTreeItems } from "@/components/doc-tree";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";

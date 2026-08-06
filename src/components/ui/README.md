@@ -4,9 +4,9 @@
 
 These files are shadcn primitives, kept byte-identical to what the generator
 produces so `bunx shadcn@latest add <name>` can overwrite them at any time
-without losing local work. They are excluded from Biome in `biome.json` for the
-same reason: reformatting them is itself a modification, and it turns the next
-upstream update into a diff full of noise.
+without losing local work. They are excluded from lint and format (`.oxlintrc.json`
+and `.oxfmtrc.json`) for the same reason: reformatting them is itself a
+modification, and it turns the next upstream update into a diff full of noise.
 
 ## Where tweaks go
 

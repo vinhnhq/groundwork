@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+
 import { type Door, GroundingDoors } from "@/components/grounding-doors";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";

@@ -24,14 +24,14 @@ updated: 2026-08-06
 
 `infinite-oneness` evolved, so its docs disagree in a few places. For Groundwork, pick once and state it:
 
-| Decision | infinite-oneness had… | **Recommended for Groundwork** |
-|---|---|---|
-| **Stack version** | `dev-workflow.md` says Next 15/React 19; as-built is Next 16/React 19 | **Next 16 + React 19 + React Compiler + TS 6 + Bun** (as-built) |
-| **Test runner** | `dev-workflow.md` mentions Bun's built-in `bun test`; as-built is Vitest projects | **Vitest** (`unit` + `integration` projects). `bun test` is a footgun — it runs Bun's own runner and finds zero files. |
-| **Test location** | `__tests__/` next to source (workflow) vs `src/tests/{unit,integration}` (as-built) | Pick one; **`src/tests/{unit,integration}` + co-located `*.test.ts`** matched the Vitest project config cleanly. |
+| Decision                 | infinite-oneness had…                                                                                    | **Recommended for Groundwork**                                                                                                                                                |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Stack version**        | `dev-workflow.md` says Next 15/React 19; as-built is Next 16/React 19                                    | **Next 16 + React 19 + React Compiler + TS 6 + Bun** (as-built)                                                                                                               |
+| **Test runner**          | `dev-workflow.md` mentions Bun's built-in `bun test`; as-built is Vitest projects                        | **Vitest** (`unit` + `integration` projects). `bun test` is a footgun — it runs Bun's own runner and finds zero files.                                                        |
+| **Test location**        | `__tests__/` next to source (workflow) vs `src/tests/{unit,integration}` (as-built)                      | Pick one; **`src/tests/{unit,integration}` + co-located `*.test.ts`** matched the Vitest project config cleanly.                                                              |
 | **shadcn customization** | ADR-0011 says "edit `ui/*` in place"; as-built src layout says "`ui/*` pristine, wrap in `components/*`" | **Wrapper-over-pristine** — keep `ui/*` byte-identical to `shadcn add`, put tweaks/variants in `components/<name>.tsx`. Upgrades diff cleanly. (State it once and never mix.) |
-| **shadcn style** | stale `design.md` stub says `radix-mira`/`mist`/`hugeicons` | **`radix-maia` · baseColor `neutral` · Inter · lucide · preset `bbVJxYW`** (authoritative, ADR-0011 §A11). |
-| **Result/Either** | homemade `Result<E,A>` → purify-ts graduation | Keep the ladder: homemade `Result` for sync, graduate to `purify-ts` `Either`/`EitherAsync` at ≥3 chained fallible steps. |
+| **shadcn style**         | stale `design.md` stub says `radix-mira`/`mist`/`hugeicons`                                              | **`radix-maia` · baseColor `neutral` · Inter · lucide · preset `bbVJxYW`** (authoritative, ADR-0011 §A11).                                                                    |
+| **Result/Either**        | homemade `Result<E,A>` → purify-ts graduation                                                            | Keep the ladder: homemade `Result` for sync, graduate to `purify-ts` `Either`/`EitherAsync` at ≥3 chained fallible steps.                                                     |
 
 ---
 
@@ -64,6 +64,7 @@ SPEC → PLAN → BUILD → TEST → REVIEW → RELEASE
 **Task tracking:** `spec.md` + `backlog.md` (TDD-ordered) + `done.md` (archive, newest at top: `- 2026-05-08 · abc1234 · 1.2 short desc`). Promote to a richer `docs/` + `decisions/` + `specs/vN.md` layout only when >1 version is in flight, a structural decision needs an ADR, or domain rules need a >30-line reference. Resist pre-building structure.
 
 **Docs layout (`__project__/`):**
+
 ```
 __project__/
 ├── docs/{architecture.md, design.md, retro.md, decisions/NNNN-<slug>.md}
@@ -86,22 +87,22 @@ __project__/
 
 **Decision-rule calibration:**
 
-| Situation | Use |
-|---|---|
-| 1–2 failure modes, no chaining | `?.` `??` / plain throw |
-| 3+ failure modes in one fn | `Result<E,A>` |
-| 3+ sequential dependent fallible steps | `Either`/`EitherAsync` (purify-ts) |
-| DI + structured concurrency + typed retries | Effect-TS |
-| Async data in UI | TanStack Query |
-| Form validation | react-hook-form + Zod v4 (`standardSchemaResolver`) |
-| State machine <8 states / complex | tagged union+reducer / XState |
-| Pattern matching | `ts-pattern` |
-| Branded (compile / runtime) | type-fest `Tagged` / `zod.brand()` |
-| Utilities | `es-toolkit` (never lodash) |
-| HTTP | native `fetch` (Next caching) |
-| Date/time | `date-fns` / `Temporal` |
-| Request-scoped deps | `AsyncLocalStorage` (never global import) |
-| Event-sourced audit | Decider (decide+evolve+getInit) |
+| Situation                                   | Use                                                 |
+| ------------------------------------------- | --------------------------------------------------- |
+| 1–2 failure modes, no chaining              | `?.` `??` / plain throw                             |
+| 3+ failure modes in one fn                  | `Result<E,A>`                                       |
+| 3+ sequential dependent fallible steps      | `Either`/`EitherAsync` (purify-ts)                  |
+| DI + structured concurrency + typed retries | Effect-TS                                           |
+| Async data in UI                            | TanStack Query                                      |
+| Form validation                             | react-hook-form + Zod v4 (`standardSchemaResolver`) |
+| State machine <8 states / complex           | tagged union+reducer / XState                       |
+| Pattern matching                            | `ts-pattern`                                        |
+| Branded (compile / runtime)                 | type-fest `Tagged` / `zod.brand()`                  |
+| Utilities                                   | `es-toolkit` (never lodash)                         |
+| HTTP                                        | native `fetch` (Next caching)                       |
+| Date/time                                   | `date-fns` / `Temporal`                             |
+| Request-scoped deps                         | `AsyncLocalStorage` (never global import)           |
+| Event-sourced audit                         | Decider (decide+evolve+getInit)                     |
 
 **Forbidden → replacement:** `lodash`→es-toolkit · `axios`→fetch (axios breaks Next caching) · `moment`→date-fns · `enum`→string-literal unions/`as const` · `fp-ts`→Effect-TS if truly needed · `class` for entities→types+functions · `any`→`unknown`+narrowing · `import {db}`→context · raw `number` money→branded integer.
 
@@ -110,6 +111,7 @@ __project__/
 ## 4. fDDD architecture (per domain operation)
 
 **Layer stack (request → data):**
+
 ```
 Route handler (app/api/.../route.ts | server action)
   parse request → domain types · runWithContext({db,user,requestId}, …)
@@ -151,6 +153,7 @@ Anything varying per request (db connection, user, requestId, trace, tenant) —
 - **`withTransaction(fn)` swaps db ambiently** — re-enters `runWithContext({...parent, db:trx}, fn)`; **no `ctx`/`txCtx` threaded**.
 
 **The footguns (proven by probe):**
+
 - **ALS does NOT propagate into Suspense/parallel RSC children** — the JSX tree is returned as data and rendered later from Next's own async context; the ALS frame has popped. Use `React.cache()` there, ALS only where you own the call site.
 - **Never read request context inside `unstable_cache` / `'use cache'` / `fetch(…{next})` / route-segment `revalidate` / `generateStaticParams`/`generateMetadata`** — output persists to the cross-request Data Cache; a context read leaks across requests/edge nodes. Cache fns must be **pure over their args**; request-scoped values enter via the **cache key**, never the body. Grep-check that `getStore()`/`getRequestContext()` never appear inside `unstable_cache(...)`.
 - **Pure code never reads context** — derivers/invariants/utilities take every dependency as explicit params. Only repositories, service adapters, controllers, route handlers may read context. `after()` background work needs a fresh `runWithContext` (render scope is torn down).
@@ -191,7 +194,7 @@ Anything varying per request (db connection, user, requestId, trace, tenant) —
 
 - **better-auth `^1.5` + `@better-auth/kysely-adapter` + `better-auth/next-js` (`nextCookies()`).** DB-backed sessions (opaque cookie → `getSession()` lookup, wrapped in `React.cache`).
 - **Schema:** `users` + `better_auth_sessions`/`better_auth_accounts`/`verification` (`id text` PK/UUID; `accounts` keeps an unused `password` column for the contract).
-- **Integer `users.id` override:** better-auth defaults user PK to UUID → `generateId: ({model}) => model==='user' ? false : crypto.randomUUID()` so Postgres SERIAL assigns it. **Footgun:** every callsite returns `session.user.id` as a *string* — `Number(...)` it everywhere. Brand at the boundary: `UserId = Tagged<number,'UserId'>` via `parseUserId → Result`.
+- **Integer `users.id` override:** better-auth defaults user PK to UUID → `generateId: ({model}) => model==='user' ? false : crypto.randomUUID()` so Postgres SERIAL assigns it. **Footgun:** every callsite returns `session.user.id` as a _string_ — `Number(...)` it everywhere. Brand at the boundary: `UserId = Tagged<number,'UserId'>` via `parseUserId → Result`.
 - **better-auth is the accepted exception to no-`import{db}`** (needs the connection at construction).
 - **Dev-bypass (the one accepted E2E seam):** a `setSession(userId)` route that **throws when `NODE_ENV==='production'`**, gated at both route + function (defense in depth), `noindex` on `/test/*`. `signOut` calls your own `clearSession()` (DELETE row + clear cookie).
 
@@ -204,10 +207,10 @@ Anything varying per request (db connection, user, requestId, trace, tenant) —
 - **Decider triple (all pure, tagged-union state, ts-pattern exhaustive):** `decide(command,state,clock) → Event[]` · `evolve(state,event) → state` · `getInit() → state`. `decide` returns `[]` for idempotent no-ops. **The event is the entity** — derive totals from history, never mutate a running column.
 - **Events + same-tx projection (CQRS-lite):** append to a shared `events` table AND upsert a denormalized per-aggregate cache row, **both in one `withTransaction`** (no projection lag). Drift check = `events.reduce(evolve, getInit())` vs cache.
 - **`events` schema:** `id uuid, aggregateType text, aggregateId text (stringify heterogeneous ids), sequenceNo int, eventType, eventData jsonb, createdAt, prevHash, hash` + `UNIQUE(aggregateType,aggregateId,sequenceNo)`.
-- **Proof Layer = hash chain** (a *property* of the events table, not a separate type): `hash = sha256(prevHash || canonical_json(eventData))`, per-aggregate 1→N. Tamper-**evident**, not tamper-proof against a DB operator.
+- **Proof Layer = hash chain** (a _property_ of the events table, not a separate type): `hash = sha256(prevHash || canonical_json(eventData))`, per-aggregate 1→N. Tamper-**evident**, not tamper-proof against a DB operator.
 - **Aggregate = consistency boundary.** One Decider per aggregate, atomic inside, eventual across. **Never a `withTransaction` spanning two Deciders.**
 - **Concurrency — one principle:** a uniqueness/ordering invariant can only be enforced at a **single serialization point** (a single Postgres primary qualifies), never in app memory or on a read replica. **OCC:** `load → decide → append-at-expected-version`; the `UNIQUE(aggregateId,sequenceNo)` index is the arbiter; loser re-loads → re-decides → bounded retry (~3). We deliberately do NOT do sharding/actors/Kafka/async projections until a single aggregate is a measured write hotspot.
-- **Redux Rosetta:** `evolve` *is* a reducer; a Decider ≈ a slice; events table ≈ a durable action log; the cron reactor ≈ redux-saga. Breaks where: command (rejectable) ≠ event (immutable fact); N instances/type each its own tx boundary.
+- **Redux Rosetta:** `evolve` _is_ a reducer; a Decider ≈ a slice; events table ≈ a durable action log; the cron reactor ≈ redux-saga. Breaks where: command (rejectable) ≠ event (immutable fact); N instances/type each its own tx boundary.
 - **`eventStore`** = generic append-only interface + `dbEventStore` + `createInMemoryEventStore()`. Provide a context-free `createDbEventStoreOn(db)` for scripts (`"server-only"` poisons the chain outside Next).
 - **Forbidden:** mutating a status column without an event; reading `events` to render UI (read the cache); `clock`/`Date.now()` inside `decide`/`evolve` (time is a param); calling the store outside a tx; storing derived data in events.
 
@@ -217,7 +220,7 @@ Anything varying per request (db connection, user, requestId, trace, tenant) —
 
 Skip a queue dependency; use a **status column as the queue**. Vercel Cron → `/api/internal/<worker>` on a schedule; worker claims rows with **`SELECT … FOR UPDATE SKIP LOCKED LIMIT N`** in one `withTransaction`, processes, commits. Row locks make concurrent firings claim disjoint rows; a crash releases the lock → next run re-claims. **Idempotency:** the decider returns `[]` for a no-op, so re-processing is safe. **Gating:** `X-Cron-Secret` header vs `env().CRON_SECRET` → 401. **Budget:** `LIMIT 5–10` to stay under ~30s. **Graduate to a real queue** (Inngest/QStash/BullMQ) only when: backlog never drains · scheduled-future jobs · fan-out · provider backpressure. **Forbidden:** external API calls in the user-facing route (return 202, let the worker do it); retry counts on the aggregate row (status alone drives it).
 
-**Cross-aggregate reaction discipline:** react to a committed event → issue a command to another aggregate, each hop its own idempotent `withTransaction`. Inline best-effort write = fast path; a `WHERE marker IS NULL` worker scan = correctness path; idempotency by a natural key. A controller calling another controller must propagate tx mode via an injectable `withinTransaction` (pass-through inside the worker's locked tx). **Outbox-lite:** a durable marker column (`executedAt IS NULL`) committed with the source event *is* the outbox row, drained by the idempotent worker.
+**Cross-aggregate reaction discipline:** react to a committed event → issue a command to another aggregate, each hop its own idempotent `withTransaction`. Inline best-effort write = fast path; a `WHERE marker IS NULL` worker scan = correctness path; idempotency by a natural key. A controller calling another controller must propagate tx mode via an injectable `withinTransaction` (pass-through inside the worker's locked tx). **Outbox-lite:** a durable marker column (`executedAt IS NULL`) committed with the source event _is_ the outbox row, drained by the idempotent worker.
 
 ---
 
@@ -233,7 +236,7 @@ Co-located `messages.ts` per feature folder exporting `{ en, vi } as const` (bot
 - **`object`/`Record<string,unknown>`, not `Object`/`{}`.** Literal types + `as const` replace `enum`. Branded types simulate nominal typing — lock construction, ban casts elsewhere. `keyof typeof` + `as const` for "valid key?".
 - **`as unknown as X` is a code smell** — every instance needs a review justification. Pick one of `null`/`undefined` (default `undefined`) and ban the other.
 - **type-fest worth knowing:** `Tagged`, `Simplify`, `SetRequired`, `SetOptional`, `JsonValue`, `LiteralUnion`.
-- **Biome `noRestrictedImports`** enforces the pure boundary — ban `react`, `next/*`, DOM globals, `fetch`, `Date.now()` from `src/lib/**`.
+- **The lint gate's restricted-imports rule** (oxlint `no-restricted-imports` since ADR-0013; biome before) enforces the pure boundary — ban `react`, `next/*`, DOM globals, `fetch`, `Date.now()` from `src/lib/**`.
 
 **Anti-patterns to root out:** CRUD endpoints for business operations · scattered `if(result.ok)` ladders (3+ → chain) · Effect-TS without named pain · optional-field proliferation (→ tagged union) · throwing for expected outcomes · business rules in route handlers · `Promise<void>` from domain fns (return outcomes) · mutating args · `let`/`var`/`for`/`while` in domain code (prefer `.map`/`.reduce`/`flatMap`) · `instanceof Error` branching · `class` entities · reading ALS in derivers · threading `db`/`user` through 4+ args · `as unknown as X` outside boundary constructors.
 
@@ -241,14 +244,14 @@ Co-located `messages.ts` per feature folder exporting `{ en, vi } as const` (bot
 
 ## 12. Testing
 
-| Layer | Tool | Where |
-|---|---|---|
-| Unit / property (pure core) | Vitest `unit` | co-located `*.test.ts` |
-| Integration (controllers on in-memory repos; DB against Neon `test` branch, run sequentially) | Vitest `integration` | co-located |
-| E2E smoke | Playwright | `e2e/` |
+| Layer                                                                                         | Tool                 | Where                  |
+| --------------------------------------------------------------------------------------------- | -------------------- | ---------------------- |
+| Unit / property (pure core)                                                                   | Vitest `unit`        | co-located `*.test.ts` |
+| Integration (controllers on in-memory repos; DB against Neon `test` branch, run sequentially) | Vitest `integration` | co-located             |
+| E2E smoke                                                                                     | Playwright           | `e2e/`                 |
 
 - Commands: `bun run test` (all) · `test:unit` · `test:integration` · `test:e2e` · **`test:coverage` = the real gate (both projects)** · `test:watch`. **Never `bun test`** (Bun's runner, finds nothing).
-- Unit tests need no mocks/fixtures/setup. Gates before done: test + lint (`biome check .`) + typecheck (`tsc --noEmit`) green. Targets: pure-logic coverage ≥90%; one Playwright smoke per flow; Lighthouse Perf ≥90 / A11y ≥95.
+- Unit tests need no mocks/fixtures/setup. Gates before done: test + lint (`bun run lint`) + typecheck (`tsc --noEmit`) green. Targets: pure-logic coverage ≥90%; one Playwright smoke per flow; Lighthouse Perf ≥90 / A11y ≥95.
 - **E2E drives the UI like a real user** — `page` only, no `request.*` cheats, assert on rendered DOM. The one bypass = the `NODE_ENV`-gated auth seam. Before adding any `/test/*` route: is the real flow impossible in headless CI? If no, don't add it.
 - **Coverage carve-outs** (Next boundary code, covered by Playwright instead): `auth.ts` (`next/headers`), `auth-client.ts` (`"use client"`), `require-user.ts` (`redirect()`), `utils.ts` (`cn`). Scope coverage `include` to `src/lib/**`.
 - **Hermetic integration tests** = rolled-back transaction (`dbPool.transaction().execute(… throw '__rollback__')`) — clean DB, no teardown.
@@ -261,6 +264,7 @@ Co-located `messages.ts` per feature folder exporting `{ en, vi } as const` (bot
 ## 13. React 19 / UI / design system
 
 **React 19 patterns:**
+
 - **Forms = `useActionState` + `useFormStatus`** (no manual `useState`+`useEffect`+`fetch`). Server actions in `<feature>/actions.ts` (`"use server"`), `(prev, formData) => next`, inside: getSession → `runWithContext` → controller → `match(outcome).exhaustive()` → `revalidatePath`. `"use server"` files export async fns only — **initial-state constants live in the client component**.
 - **Outcome rendering = `ts-pattern` `.match().with(...).exhaustive()`** — the exhaustiveness check is the contract.
 - **Pending UI: spinning `Loader2` + disabled + `aria-busy`, keep the visible label** (text-swap jumps width) — but **announce to a11y** via `aria-live`/`sr-only`. Live cross-client updates via a `sonner` toast (its `aria-live` doubles as the SR announcement).
@@ -272,32 +276,35 @@ Co-located `messages.ts` per feature folder exporting `{ en, vi } as const` (bot
 **Route-segment tabs + intercepting routes (modal-on-desktop, page-elsewhere):** nav tabs → route-segment folders under the parent layout, tab bar in `layout.tsx`, `usePathname()` active state via `<Tabs><TabsTrigger asChild><Link/>`. Child actions modal-on-desktop-but-page-on-refresh → pair a full `edit/page.tsx` with an intercepting `@modal/(.)edit/page.tsx`; Dialog `onOpenChange(false) → router.back()`; responsive `max-md:!inset-0 max-md:!h-svh` flattens to full-screen. **Form-reuse rule:** the form stays presentational with `onSuccess`/`onCancel` callbacks; full-page uses `router.push` defaults, the Dialog overrides with `router.back()`.
 
 **shadcn + design system:**
+
 - Config: **`radix-maia` · `neutral` · Inter · lucide · preset `bbVJxYW`**. Install via `bunx shadcn@latest add` (not npx). **maia requires** `@import "shadcn/tailwind.css"` in `globals.css` + an app-level `<TooltipProvider>` in the root layout (missing → SSR-500 on any tooltip; gates miss it, smoke the app). Migrate from a visible preset, not `init --preset` (orphans `--success`).
 - **Wrapper-over-pristine** (the chosen strategy): `ui/*` byte-identical to `shadcn add`; project touches/variants in `components/<name>.tsx`; consumers import wrappers. Bake a11y + 44px touch targets (`max-md:h-11`) into the wrapper default, not per caller.
 - **Tokens:** radius `0.625rem`; **type scale = Tailwind defaults** ("font 16" = `text-base`); `neutral` base + Tailwind palette for semantic color; reach for a fixed `bg-emerald-500` over inventing a `--success` token unless the value varies by mode/theme. Numeric chips `tabular-nums`. Theme via `next-themes` (style both themes).
 - **Motion:** Framer Motion for components; native `<ViewTransition>` for routes; `tw-animate-css` in `globals.css`; prefer transform/opacity-only. Co-locate feature CSS (`*.module.css`); `globals.css` for app-wide only.
 - **shadcn gotchas** (see §14 for the full list): `size-N` on the SVG not the parent; `gap-0!` to beat `:has()` variants; brand icons via `@icons-pack/react-simple-icons`; standalone page buttons `variant="secondary"`; static ItemGroup rows `gap-0`, interactive rows keep padding.
 - **Port the token set whole, or the components fail silently** (ADR-0009, 2026-07-29). Groundwork
-  copied the radix-maia primitives but only *part* of `globals.css`: the eight `--sidebar-*` tokens
+  copied the radix-maia primitives but only _part_ of `globals.css`: the eight `--sidebar-*` tokens
   `ui/sidebar.tsx` uses 92 times were never defined, and `tw-animate-css` — mandated one line above —
   was never installed, so every overlay mounted with no transition. **A class that resolves to
   nothing is invisible to lint, tsc, unit tests and E2E.** After porting primitives, diff
-  `globals.css` against the source repo and check a token's *computed* value on a painted element.
+  `globals.css` against the source repo and check a token's _computed_ value on a painted element.
 
 ---
 
 ## 14. Gotcha catalog (skim once, grep later)
 
 ### Build tooling / runtime / scripts
+
 - **`import.meta.dir` is Bun-only** — `tsc`/`next build` reject it; use `join(dirname(fileURLToPath(import.meta.url)), "..")` or `process.cwd()`. (reference-import-meta-dir-bun-only)
 - **es-toolkit exports `flow`, not `pipe`** — hand-roll typed `pipe`.
 - **ES2017 target forbids BigInt literals (`0n`)** — use `BigInt(0)`, don't bump target.
 - **`"server-only"` poisons every import chain** — split context-free "core" modules so scripts/seeds import them outside Next.
 - **Never batch-edit non-ASCII files with `perl -pi`/`sed`** — double-encodes; use editor tools, recover via `git checkout`.
-- **Biome 2 forbids assignment-in-expression** (`while ((m = re.exec()))`) — use `for (const m of src.matchAll(...))`.
+- **Assignment-in-expression is forbidden by the lint gate** (`while ((m = re.exec()))`) — use `for (const m of src.matchAll(...))`.
 - **Shell `$(grep …)` env override keeps surrounding quotes** — strip them (`sed -E "s/^['\"]|['\"]$//g"`); Bun's `.env` loader strips automatically, shell substitution doesn't.
 
 ### Postgres / Kysely / migrations
+
 - **Kysely migrator enforces strict alphabetical order** — applied migrations must be a contiguous prefix; inserting "in the middle" throws `corrupted migrations`. Always append highest; reset the tracking table only in dev/test. (reference-kysely-migration-ordering)
 - **`migrate status` lies** (matches by name, skips the corruption guard) — query the migration table / `\dt` directly.
 - **Kysely advisory locks don't work over the Neon HTTP driver** (session-scoped, fresh session per call) — parallel `migrateToLatest()` races → `pg_type_typname_nsp_index` dup. Fix: `fileParallelism:false` for integration, or migrate once in `globalSetup`.
@@ -306,26 +313,31 @@ Co-located `messages.ts` per feature folder exporting `{ en, vi } as const` (bot
 - **Prefer additive `ALTER` over editing a shipped migration** (editing diverges branches from the record). **Match the column-identifier convention** (quoted camelCase vs snake_case) on every new column. **A stricter parser shipped ahead of its migration = a hard 500** — migrate-before-deploy is load-bearing.
 
 ### Next.js rendering / context
+
 - **Reading `cookies()`/`headers()` makes a page dynamic automatically** (`force-dynamic` redundant). But **Kysely reads do NOT auto-trigger dynamic** — a cookie-less DB-backed page needing per-request freshness must call `connection()`.
 - **`router.refresh()` re-suspends an inline `<Suspense>`** whose async child re-runs → subtree unmounts/remounts, losing scroll + state (`startTransition` doesn't save it). For live updates, fetch via a server action and merge into a client store in place.
 - **`getByText().waitFor()` throws "context destroyed" during `router.refresh()`** — assert post-settle with `toHaveText`/screenshot.
 - **`@`-prefixed App-Router folders are parallel-route slots, not path segments** — `/@handle` needs a rewrite; prefer `/u/{name}`.
 
 ### Serverless / Vercel / CSP
+
 - **Bare `void asyncSideEffect()` after response is dropped on serverless** — the function freezes on return. Use `after()` from `next/server` for post-commit Pusher/notify/webhook writes. (reference-vercel-after-fire-and-forget)
 - **CSP `connect-src` must include `https://vercel.com` AND `https://*.public.blob.vercel-storage.com`** for `@vercel/blob/client` `upload()` (token-exchange + PUT use connect-src, not img-src). (reference-csp-vercel-blob)
 - **Dropping `'unsafe-inline'` from `script-src` in Next 16 is not perf-neutral** — a nonce forces ALL pages dynamic (kills static/ISR/PPR/CDN). Try `experimental.sri` first (keeps static, build-time chunks only); nonces only when inline scripts truly need them. (reference-csp-nonce-vs-sri-nextjs)
 
 ### Realtime / dev server
+
 - **pusher-js (any tab-singleton channel): bind without unbind = handler leak** — `subscribe(name).bind("changed", h)` on every mount without `unbind` in cleanup stacks handlers on fast re-nav → CPU climb. Capture the handler + `unbind` in effect cleanup. (v6 retro)
 - **Thin-event liveness pattern:** push `{v,type,sourceId}` (never content), clients refetch through idempotent latest-wins reads (the read path IS recovery). Publish post-commit best-effort (swallow all failures), no-op without `PUSHER_*` env (lazy import), private per-scope channels + session-gated auth, echo-skip own writes via `CLIENT_SOURCE_ID`, coalesce ~300ms. (ADR-0027)
 - **A pegged Next dev server is usually the Turbopack watcher, not your app** — `sample <pid>`; hot frames in `next-swc*.node` + `notify-rs` = Turbopack (spinning, not compiling). Dev-only. Fix: restart · `dev:webpack` isolate · tame timer `router.refresh()`. (reference-turbopack-dev-high-cpu)
 
 ### AI / LLM
+
 - **Anthropic structured-output rejects `maxItems`** (and similar unsupported JSON-Schema keywords) with a 400 — drop it, cap in code. (v6 retro)
 - **Small-corpus search shortcut** (ADR-0005): read the whole catalog, ask a cheap model (Haiku) to rank — cross-lingual + diacritics-insensitive by nature. Pure core (prompt/parse/map) + thin shell; structured `{ids:string[]}`; debounce ~400ms; cap `MAX_CATALOG_ITEMS` with an explicit `truncated` flag; graceful no-key fallback (client substring scan). Successor = embeddings+pgvector.
 
 ### shadcn / UI primitives
+
 - **App-level `<TooltipProvider>` required** by radix-maia/mira tooltips (missing → SSR-500). **`@import "shadcn/tailwind.css"` in globals.css** for maia variants/keyframes. Migrate from the visible preset, never `init --preset <token>` (classifier-blocked remote exec). (reference-shadcn-maia-migration-gotchas)
 - **shadcn size variants gate on `[&_svg:not([class*='size-'])]:size-N`** — override by putting `size-N` on the SVG, not the parent. (reference-shadcn-size-not-selector)
 - **Plain-utility override no-ops? suspect a `:has()`/`group-data-*` variant, reach for `!`** — e.g. ItemGroup `has-data-[size=xs]:gap-2` outranks `gap-0` → `gap-0!`. (reference-itemgroup-gap0-specificity)
@@ -338,9 +350,11 @@ Co-located `messages.ts` per feature folder exporting `{ en, vi } as const` (bot
 - **shadcn `FieldLabel` wrapping a `Field` already IS the "choice card"** (`has-data-[state=checked]:`) — don't hand-roll. **`grid-rows-[1fr]↔[0fr]` + `overflow-hidden`** animates to/from auto height without JS.
 
 ### View Transitions
+
 - **`flushSync` + async router don't mix inside `startViewTransition`** — recipe: selection in component state + `history.replaceState` for the URL + a params-adoption effect. **Duplicate `view-transition-name`s abort the transition; a transition freezes the live page** — gate mid-exit overlays with a fixed delay; Chrome 125+/Safari 18.4+, degrades gracefully. (ON.12 retro)
 
 ### Security
+
 - **User-submitted links:** http(s) scheme allow-list (drop `javascript:`/`data:`) + `target="_blank" rel="noopener noreferrer"` + show hostname. Keep the guard in a pure unit-tested module. (reference-external-link-security)
 
 ---

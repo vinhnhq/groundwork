@@ -1,5 +1,6 @@
 import { FileText } from "lucide-react";
 import { notFound } from "next/navigation";
+
 import { DocTree } from "@/components/doc-tree";
 import {
   Empty,

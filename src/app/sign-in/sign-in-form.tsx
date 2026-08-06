@@ -2,12 +2,14 @@
 
 import { Loader2, LogIn } from "lucide-react";
 import { useActionState, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item";
 import { ROLE_BLURB, ROLE_LABEL } from "@/lib/auth/roles";
 import type { Role } from "@/lib/auth/types";
+
 import { signInAction } from "./actions";
 
 export type DemoAccount = { username: string; role: Role; password?: string };
@@ -80,6 +82,7 @@ export function SignInForm({ from, accounts }: { from: string; accounts: DemoAcc
                 size="sm"
                 className="cursor-pointer hover:bg-muted"
               >
+                {/* oxlint-disable-next-line jsx-a11y/control-has-associated-label -- the label is the ItemTitle text below; the rule cannot see through composed Item children */}
                 <button
                   type="button"
                   data-testid={`demo-${account.role}`}

@@ -1,9 +1,10 @@
 import "server-only";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
+
 import { db } from "@/db";
-import { authOptions } from "@/lib/auth/options";
 import { sessionSecretFrom } from "@/lib/auth-constants";
+import { authOptions } from "@/lib/auth/options";
 import { serverEnv } from "@/lib/env-server";
 
 export function sessionSecret(): string | null {

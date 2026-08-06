@@ -1,5 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
+
 import { classifyDoc, isDocFile, titleOfMarkdown } from "@/lib/content/classify-doc";
 import { parseProjectMeta } from "@/lib/content/parse-project";
 import type { ContentSource, Project } from "@/lib/content/source";

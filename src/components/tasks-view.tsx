@@ -2,6 +2,7 @@
 
 import { LayoutGrid, Rows3 } from "lucide-react";
 import { useEffect, useState } from "react";
+
 import { TasksBoard } from "@/components/tasks-board";
 import { TasksTable } from "@/components/tasks-table";
 import { Button } from "@/components/ui/button";

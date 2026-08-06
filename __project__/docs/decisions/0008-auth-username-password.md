@@ -35,7 +35,7 @@ Two constraints shaped the rest:
 
 **better-auth over Kysely/Postgres with the `username` plugin. No social providers.**
 
-- Sign-in is by username. The role names *are* the usernames (`engineer`, `pm`, `qa`,
+- Sign-in is by username. The role names _are_ the usernames (`engineer`, `pm`, `qa`,
   `client`). `minUsernameLength: 2`, because two of them are two characters and the
   plugin's default of 3 rejected them.
 - `role` is an additional field with **`input: false`** — it cannot be set through any
@@ -50,10 +50,10 @@ Two constraints shaped the rest:
 
 **The role gate is two layers, and the split is the load-bearing part.**
 
-| Layer | Sees | Role of |
-|---|---|---|
-| `proxy.ts` (edge) | Session cookie present? Signed 5-minute cookie cache | Fast path. Fails closed on "no cookie"; **not** the authority |
-| `requireCapability` (page) / `capabilityResponse` (route) | The `session` table | The authority |
+| Layer                                                     | Sees                                                 | Role of                                                       |
+| --------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- |
+| `proxy.ts` (edge)                                         | Session cookie present? Signed 5-minute cookie cache | Fast path. Fails closed on "no cookie"; **not** the authority |
+| `requireCapability` (page) / `capabilityResponse` (route) | The `session` table                                  | The authority                                                 |
 
 A cookie-cache miss is **not** a denial — the proxy waves it through, because denying
 would bounce a legitimately signed-in user to `/sign-in` every five minutes. That is only
@@ -61,12 +61,12 @@ safe because the page re-checks.
 
 ## Consequences
 
-- **A live gap was closed.** `/ops/integrations` and `/ops/<project>/triage` had *no*
+- **A live gap was closed.** `/ops/integrations` and `/ops/<project>/triage` had _no_
   server-side capability check at all; they relied entirely on the proxy. Under the old
   always-authoritative proxy that was survivable. Under a cookie cache it is not, and the
   first end-to-end test of it showed a `client` reaching both. An e2e test now drops the
   cache cookie and asserts neither page's content is served.
-- **A wrong conclusion, recorded because it nearly shipped.** That same test *appeared* to
+- **A wrong conclusion, recorded because it nearly shipped.** That same test _appeared_ to
   fail again after the fix, because `/ops/integrations` answered `200`. Reading the body
   showed the `/ops` page with `denied=integrations.view` and none of the protected content
   — the guard had worked and the status code was the wrong thing to assert on. Verify by
@@ -74,7 +74,7 @@ safe because the page re-checks.
 - **`DATABASE_URL` is now load-bearing.** There is no fallback store; without it nobody can
   sign in. The deployed instance does not have one yet.
 - **Migrations are derived, not written.** `bun run migrate` calls better-auth's
-  `getMigrations` with the *same options object the app runs on*, so the schema cannot
+  `getMigrations` with the _same options object the app runs on_, so the schema cannot
   drift from the config. CI runs it, which makes the drift check automatic.
 - The driver is chosen by URL host — `pg` for a local container, Neon's WebSocket pool for
   `*.neon.tech`. Both are a `PostgresDialect`; `kysely-neon`'s `NeonDialect` wraps the HTTP

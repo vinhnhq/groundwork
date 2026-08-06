@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { buildDocTree, type DocFolder } from "./doc-tree";
 import type { DocRef } from "./types";
 

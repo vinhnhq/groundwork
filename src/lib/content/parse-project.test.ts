@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { parseProjectMeta } from "@/lib/content/parse-project";
 import { isErr, isOk } from "@/lib/result";
 

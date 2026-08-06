@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+
 import { checkBearer, DEV_TOKEN } from "@/mcp/auth";
 import { handleJsonRpc, PROTOCOL_VERSION } from "@/mcp/http";
 import type { ToolDef } from "@/mcp/tools";

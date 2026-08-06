@@ -2,6 +2,7 @@
 
 import { Loader2, Paperclip, Send } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
+
 import { acceptDraft, analyzeIdea } from "@/app/ops/[project]/triage/actions";
 import { type CaretPoint, caretCoordinates } from "@/components/caret-coordinates";
 import {

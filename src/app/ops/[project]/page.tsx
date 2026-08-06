@@ -1,6 +1,7 @@
 import { Brain, FileText, ListTodo } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { OverviewCockpit } from "@/components/overview-cockpit";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

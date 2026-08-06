@@ -1,7 +1,7 @@
 slug: groundwork
 name: Groundwork
 tagline: A git-backed grounding layer for a mixed-agent team
-status: active            # active | paused | shipped | archived
+status: active # active | paused | shipped | archived
 visibility: public
 stack: [next, ts, react, kysely, neon, better-auth, tailwind, shadcn, mcp]
 

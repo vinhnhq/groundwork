@@ -1,4 +1,5 @@
 import { ShieldAlert } from "lucide-react";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CAPABILITIES, type Capability, ROLE_LABEL } from "@/lib/auth/roles";
 import type { Role } from "@/lib/auth/types";

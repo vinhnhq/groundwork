@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { assertNever } from "@/lib/exhaustive";
 
 describe("assertNever", () => {

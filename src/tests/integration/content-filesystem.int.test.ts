@@ -1,5 +1,7 @@
 import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
+
 import { createFilesystemSource } from "@/lib/content/filesystem-source";
 
 const FIX = join(process.cwd(), "src", "tests", "fixtures");

@@ -2,6 +2,7 @@
 
 import { Check, ChevronLeft, ChevronRight, FileText, Folder } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+
 import type { DocFolder, DocNode } from "@/lib/content/doc-tree";
 import { cn } from "@/lib/utils";
 
@@ -123,7 +124,8 @@ export function DocMention({
   // caret can sit anywhere in the line, and a fixed-position menu pinned to it
   // hangs off-screen on a phone. Layout effect, not effect — position is
   // corrected before paint, so the menu never flashes at the caret first.
-  // biome-ignore lint/correctness/useExhaustiveDependencies(rows.length): deliberate trigger — a different row count means a different menu height and width, so both clamps re-measure.
+  // `rows.length` is a deliberate trigger dep — a different row count means a
+  // different menu height and width, so both clamps re-measure.
   useLayoutEffect(() => {
     const height = shellRef.current?.offsetHeight ?? 0;
     const width = shellRef.current?.offsetWidth ?? 0;
@@ -137,7 +139,8 @@ export function DocMention({
    * `scrollIntoView` scrolls every scrollable ancestor, which dragged the whole
    * composer around as the arrows walked the list.
    */
-  // biome-ignore lint/correctness/useExhaustiveDependencies(rows): deliberate trigger — new rows re-render the list, and the row at `activeIndex` may sit somewhere else; re-run the scroll after that render.
+  // `rows` is a deliberate trigger dep — new rows re-render the list, and the
+  // row at `activeIndex` may sit somewhere else; re-run the scroll after that render.
   useEffect(() => {
     const list = listRef.current;
     const row = list?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`);
@@ -277,9 +280,8 @@ export function useMentionRows({
   const [activeIndex, setActiveIndex] = useState(0);
 
   // A new query or a new folder means a new list; keeping the old index would
-  // highlight a row unrelated to what was just typed.
-  // biome-ignore lint/correctness/useExhaustiveDependencies(query): deliberate trigger — the deps ARE the effect: any change to what the list shows resets the highlight to the top.
-  // biome-ignore lint/correctness/useExhaustiveDependencies(path): see above.
+  // highlight a row unrelated to what was just typed. `query` and `path` are
+  // deliberate trigger deps — the deps ARE the effect.
   useEffect(() => {
     setActiveIndex(0);
   }, [query, path]);

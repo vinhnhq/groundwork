@@ -15,7 +15,7 @@ Decided: 2026-07-28
 
 The paste door (G2) grounds any agent with zero setup, but it is manual: someone must remember to
 copy, and the moment they forget, the agent is stale again. For the engineer's own Claude Code
-session — the one editing the repo — grounding should be *live*.
+session — the one editing the repo — grounding should be _live_.
 
 Both GPT and Claude speak MCP, so one server can ground the whole team. The open questions are
 what the tools are, what transport carries them, and — most importantly — whether an agent that
@@ -25,12 +25,12 @@ reads the ground may also change it.
 
 **Four read tools**, deliberately shaped around what an ungrounded agent gets wrong:
 
-| Tool | Purpose |
-| --- | --- |
-| `list_projects` | Discovery. Slugs, status, ready-counts; unconfigured roots reported, not hidden. |
-| `ready_tasks(project?)` | The startable queue — DoR-passing, open tasks. Cross-project when the slug is omitted. |
-| `get_project_context(project, budget?)` | The Brain digest of ADR-0004. The one an agent should call first. |
-| `get_doc(project, kind, id?)` | Full document, when the digest is not enough. Omitting `id` lists what exists. |
+| Tool                                    | Purpose                                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------------- |
+| `list_projects`                         | Discovery. Slugs, status, ready-counts; unconfigured roots reported, not hidden.       |
+| `ready_tasks(project?)`                 | The startable queue — DoR-passing, open tasks. Cross-project when the slug is omitted. |
+| `get_project_context(project, budget?)` | The Brain digest of ADR-0004. The one an agent should call first.                      |
+| `get_doc(project, kind, id?)`           | Full document, when the digest is not enough. Omitting `id` lists what exists.         |
 
 **Read-only in v2, enforced by the type system.** The tools are typed against `ReadOnlySource`, a
 `Pick` of `ContentSource` naming only the five read methods. When S1 adds `appendTask` /
@@ -57,7 +57,7 @@ as safe without inferring it from the names.
 - **One engine, three doors.** The tools call `loadBrain` and `parseBacklog` — the same functions
   behind the UI and the `context.md` route. A second implementation of "what is ready" would drift
   within a sprint.
-- **Tool descriptions are prompts.** They say *why* to call the tool ("read this before proposing
+- **Tool descriptions are prompts.** They say _why_ to call the tool ("read this before proposing
   work, so you do not contradict a decision the team already made"), because the description is
   the only instruction the model reliably reads.
 - **Failure modes route somewhere.** A bad slug answers with "call `list_projects`"; a bad doc id

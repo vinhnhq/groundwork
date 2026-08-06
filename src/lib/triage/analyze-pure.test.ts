@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { analyzeIdeaPure, type DocLite, type TaskLite } from "@/lib/triage/analyze-pure";
 
 const docs: DocLite[] = [

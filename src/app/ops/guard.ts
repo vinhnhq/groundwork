@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+
 import { checkCapability } from "@/lib/auth/require";
 import type { Capability } from "@/lib/auth/roles";
 import type { Session } from "@/lib/auth/types";
@@ -12,7 +13,7 @@ import type { Session } from "@/lib/auth/types";
  * proxy, so once its five-minute cookie cache expired a client could reach both.
  *
  * Lives in `src/app` rather than `src/lib` because it redirects, and the pure
- * core takes no dependency on Next's navigation (biome enforces this). The
+ * core takes no dependency on Next's navigation (the lint gate enforces this). The
  * decision itself is `checkCapability`; this only chooses how to refuse — with
  * the same `/ops?denied=<capability>` the proxy uses, so the bounce is
  * explained rather than silent regardless of which layer caught it.

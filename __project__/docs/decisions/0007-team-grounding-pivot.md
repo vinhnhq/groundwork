@@ -57,17 +57,17 @@ This **reverses** the solo non-goal in `architecture.md §14`.
 ## Consequences
 
 - **What v1 keeps:** the invariant that the dashboard never becomes a second task DB — it
-  reads and writes *back to* the repo. Write-back is additive, not a new store.
+  reads and writes _back to_ the repo. Write-back is additive, not a new store.
 - **New scope:** the GitHub ContentSource (read) moves from deferred to in-scope (ADR-0001
   amendment, v3/S3); write-back needs a PR path (ADR-0002); the MCP surface needs a contract
   (ADR-0006); the digest needs a size/selection policy (ADR-0004).
 - **Auth graduates** from mock to real (v4/F5) because a shared team instance needs identity
-  + roles (engineer full+agent · PM/QA task-UI+grounding · client read-only).
+  - roles (engineer full+agent · PM/QA task-UI+grounding · client read-only).
 - Multi-tenant SaaS / billing stays out of scope until v5+ (a separate product decision).
 
 ## Enforcement
 
 - The reversal is recorded in `architecture.md §14` (struck, pointing here) and the
-  *Current state* block; the build is DoR-tagged in `tasks/backlog.md` (v2 = G1–G4).
+  _Current state_ block; the build is DoR-tagged in `tasks/backlog.md` (v2 = G1–G4).
 - Downstream ADRs (0002/0004/0005/0006 + the 0001 amendment) open **as each phase begins**,
   not upfront — per the "defer machinery" principle.

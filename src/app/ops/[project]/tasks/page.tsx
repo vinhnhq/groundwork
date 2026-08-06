@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+
 import { ProposedChanges } from "@/components/proposed-changes";
 import { TaskCapture } from "@/components/task-capture";
 import { TasksView } from "@/components/tasks-view";

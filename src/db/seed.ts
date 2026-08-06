@@ -13,11 +13,12 @@
  *   ADMIN_PASSWORD=... bun run seed
  */
 import { betterAuth } from "better-auth";
+
 import { dbFor } from "@/db";
+import { DEV_ACCOUNT_PASSWORD, DEV_SESSION_SECRET } from "@/lib/auth-constants";
 import { authOptions } from "@/lib/auth/options";
 import type { Role } from "@/lib/auth/types";
 import { ROLES } from "@/lib/auth/types";
-import { DEV_ACCOUNT_PASSWORD, DEV_SESSION_SECRET } from "@/lib/auth-constants";
 import { databaseUrl, testDatabaseUrl } from "@/lib/db-url";
 
 const NAME: Record<Role, string> = {

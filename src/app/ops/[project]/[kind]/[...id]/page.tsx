@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+
 import { Markdown } from "@/components/markdown";
 import { getContentSource } from "@/lib/content";
 import { isDocKind } from "@/lib/content/types";

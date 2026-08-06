@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
+
 import { loadBrain } from "@/lib/brain";
+import { createGitHubSource } from "@/lib/content/github-source";
 import { parseRepo } from "@/lib/content/github/client";
 import { createMockGitHubClient, DEMO_GITHUB_FILES } from "@/lib/content/github/mock-client";
-import { createGitHubSource } from "@/lib/content/github-source";
 
 const repo = parseRepo("acme/checkout");
 if (!repo) throw new Error("fixture repo spec is wrong");

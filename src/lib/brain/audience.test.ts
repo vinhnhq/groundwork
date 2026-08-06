@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { renderBrain } from "./render-brain";
 import type { BrainInput } from "./types";
 

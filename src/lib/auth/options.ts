@@ -1,6 +1,7 @@
 import type { BetterAuthOptions } from "better-auth";
 import { username } from "better-auth/plugins";
 import type { Kysely } from "kysely";
+
 import { ROLES } from "@/lib/auth/types";
 
 /**
@@ -35,7 +36,7 @@ export function authOptions({
 }: {
   secret: string;
   baseURL?: string | undefined;
-  // biome-ignore lint/suspicious/noExplicitAny: better-auth owns these tables, not our DB type.
+  // `any`, deliberately: better-auth owns these tables, not our DB type.
   db: Kysely<any>;
 }) {
   return {

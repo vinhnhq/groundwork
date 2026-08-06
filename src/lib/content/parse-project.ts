@@ -1,4 +1,5 @@
 import YAML from "yaml";
+
 import { type ContentError, type ProjectMeta, projectMetaSchema } from "@/lib/content/types";
 import { err, ok, type Result } from "@/lib/result";
 

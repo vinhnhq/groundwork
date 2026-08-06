@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { renderBrain } from "@/lib/brain/render-brain";
 import type { BrainDoc, BrainInput } from "@/lib/brain/types";
 import type { ProjectMeta } from "@/lib/content/types";

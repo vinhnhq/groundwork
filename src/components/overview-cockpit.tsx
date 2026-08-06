@@ -1,5 +1,6 @@
 import { ArrowUpRight, CircleAlert, FileText, ListChecks } from "lucide-react";
 import Link from "next/link";
+
 import { DorGaps, TierBadge } from "@/components/badges";
 import { Reveal } from "@/components/reveal";
 import { staggerDelay } from "@/components/stagger";

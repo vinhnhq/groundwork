@@ -13,9 +13,10 @@
  *   bun run migrate --test     # apply to DATABASE_TEST_URL
  */
 import { getMigrations } from "better-auth/db/migration";
+
 import { dbFor } from "@/db";
-import { authOptions } from "@/lib/auth/options";
 import { DEV_SESSION_SECRET } from "@/lib/auth-constants";
+import { authOptions } from "@/lib/auth/options";
 import { databaseUrl, testDatabaseUrl } from "@/lib/db-url";
 
 async function main() {

@@ -57,6 +57,6 @@ looks exactly like a class that resolves to a no-op.
   without the destination would be cargo-culting.
 - Filtering on the tasks table is client-side. A backlog is tens of rows, so a round-trip
   per filter change buys nothing.
-- Verified by rendering both colour schemes and reading the *computed* value off the
+- Verified by rendering both colour schemes and reading the _computed_ value off the
   painted sidebar element — the failure mode here is a token that silently resolves to
   nothing, which no assertion about class names would have caught.

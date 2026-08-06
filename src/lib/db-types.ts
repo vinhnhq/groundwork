@@ -1,4 +1,5 @@
 import type { ColumnType } from "kysely";
+
 import type { Role } from "@/lib/auth/types";
 
 /**

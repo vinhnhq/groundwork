@@ -14,7 +14,7 @@ Decided: 2026-07-25
 ## Context
 
 Groundwork is a read-only projection over the canonical Markdown in each project
-repo (`__project__/**`). It needs to *read* those repos. Options: (a) filesystem —
+repo (`__project__/**`). It needs to _read_ those repos. Options: (a) filesystem —
 read sibling repos on disk; (b) GitHub contents API; (c) a build-time clone.
 
 ## Decision

@@ -1,9 +1,10 @@
 import { betterAuth } from "better-auth";
 import { beforeAll, describe, expect, it } from "vitest";
+
 import { dbFor } from "@/db";
 import { seedAccounts } from "@/db/seed";
-import { authOptions } from "@/lib/auth/options";
 import { DEV_SESSION_SECRET } from "@/lib/auth-constants";
+import { authOptions } from "@/lib/auth/options";
 import { testDatabaseUrl } from "@/lib/db-url";
 
 /**

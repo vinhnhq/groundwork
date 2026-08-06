@@ -25,15 +25,15 @@ Stand up Groundwork far enough to **view, across all my project repos, every pro
 
 ## User stories + acceptance criteria
 
-1. **Aggregate projects.** Given N project repos on disk each with `__project__/project.yml` frontmatter, the ops home lists them with name, status, tagline, stack. *AC:* a repo missing frontmatter is listed as "unconfigured," never crashes the page.
-2. **Read a project's docs.** From a project I can open its ADRs, specs, and retro rendered as pages (mermaid rendered). *AC:* relative image links in a doc resolve and display.
-3. **Cross-project READY queue.** A single view lists every task across all projects that passes the Definition of Ready, newest first, grouped by project. *AC:* a task missing any DoR field appears in a separate "DRAFT / not ready" list with the missing fields named.
-4. **Auth gate.** `/ops/**` requires a signed-in session (email+password); `/` is public. *AC:* signed-out visit to `/ops` redirects to sign-in.
+1. **Aggregate projects.** Given N project repos on disk each with `__project__/project.yml` frontmatter, the ops home lists them with name, status, tagline, stack. _AC:_ a repo missing frontmatter is listed as "unconfigured," never crashes the page.
+2. **Read a project's docs.** From a project I can open its ADRs, specs, and retro rendered as pages (mermaid rendered). _AC:_ relative image links in a doc resolve and display.
+3. **Cross-project READY queue.** A single view lists every task across all projects that passes the Definition of Ready, newest first, grouped by project. _AC:_ a task missing any DoR field appears in a separate "DRAFT / not ready" list with the missing fields named.
+4. **Auth gate.** `/ops/**` requires a signed-in session (email+password); `/` is public. _AC:_ signed-out visit to `/ops` redirects to sign-in.
 
 ## Non-functional
 
 - Pure core (frontmatter parse, backlog→Task parse, DoR deriver) is unit-tested with no I/O, ≥90% coverage.
-- `bun run test:coverage` + `biome check` + `tsc --noEmit` green.
+- `bun run test:coverage` + `bun run lint` + `tsc --noEmit` green.
 - Mobile-first; both themes; Lighthouse A11y ≥95 on the ops home.
 
 ## Open questions

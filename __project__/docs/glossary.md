@@ -7,7 +7,6 @@ status: active
 updated: YYYY-MM-DD
 ---
 
-
 # Glossary
 
 <!--

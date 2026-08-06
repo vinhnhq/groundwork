@@ -26,7 +26,7 @@ here has no invariant to protect and no history anybody will ever query. infinit
 already settled this calibration for a different domain: Decider for audit/replay/state-machine
 aggregates, a plain deriver + controller for one-column updates.
 
-There is also a subtler problem than "how much ES". Some data *looks* disposable but carries durable
+There is also a subtler problem than "how much ES". Some data _looks_ disposable but carries durable
 knowledge — a comment recording a decision is the exact mechanism by which every Jira installation
 becomes an archaeology dig.
 
@@ -34,11 +34,11 @@ becomes an archaeology dig.
 
 **Three tiers, not two.**
 
-| Tier | Rule | Examples |
-| ------ | ------ | ---------- |
-| **1 · Strict ES** | Has an invariant that must hold at write time, or the history is the product | claims (expected-version guard), lifecycle transitions, release verification, cost ledger |
-| **2 · Event the change, store the value** | No invariant, but *who changed this and when* matters | description / test cases, estimate, priority position, tier, assignee |
-| **3 · Plain CRUD** | Latest wins; history is noise | comment text, labels, watchers, reactions, saved filters, UI preferences |
+| Tier                                      | Rule                                                                         | Examples                                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **1 · Strict ES**                         | Has an invariant that must hold at write time, or the history is the product | claims (expected-version guard), lifecycle transitions, release verification, cost ledger |
+| **2 · Event the change, store the value** | No invariant, but _who changed this and when_ matters                        | description / test cases, estimate, priority position, tier, assignee                     |
+| **3 · Plain CRUD**                        | Latest wins; history is noise                                                | comment text, labels, watchers, reactions, saved filters, UI preferences                  |
 
 ### Tier 2 is the interesting one
 
@@ -93,7 +93,7 @@ extend. Rejected on the same grounds ADR-0007 §4 rejected it: ceremony where th
 
 **No ES at all — append-only audit table plus current-state tables.** Genuinely viable, and roughly
 30% of the complexity: it delivers cycle time, rework and cost analytics perfectly well. Rejected for
-one specific reason — **the claim lock**. An expected-version guard *is* the mutex that lets a human
+one specific reason — **the claim lock**. An expected-version guard _is_ the mutex that lets a human
 and an unattended worker share a queue safely, and an audit table cannot enforce it at write time.
 Had claims not needed atomicity, this would have been the right answer, and it is worth remembering
 that the whole ES case rests on that one feature.

@@ -55,9 +55,10 @@ export function createRestGitHubClient(token: string): GitHubClient {
       const body = await response.json();
       if (!Array.isArray(body)) return [];
 
-      return (body as ContentsEntry[]).map(
-        (entry): DirEntry => ({ name: entry.name, type: entry.type === "dir" ? "dir" : "file" }),
-      );
+      return (body as ContentsEntry[]).map((entry): DirEntry => ({
+        name: entry.name,
+        type: entry.type === "dir" ? "dir" : "file",
+      }));
     },
 
     async headSha(repo) {

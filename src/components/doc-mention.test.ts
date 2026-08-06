@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+
 import { buildDocTree } from "@/lib/content/doc-tree";
 import type { DocRef } from "@/lib/content/types";
+
 import { filterDocs, levelAt, type MentionDoc, mentionAt, wrapIndex } from "./doc-mention";
 
 /** A `DocRef` for the tree builder. */

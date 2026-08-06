@@ -1,6 +1,8 @@
 import { Kysely } from "kysely";
+
 import type { DB } from "@/lib/db-types";
 import { databaseUrl } from "@/lib/db-url";
+
 import { dialectFor } from "./dialect";
 
 /**

@@ -33,7 +33,7 @@ lib first, Cloud tier later). AI cost = BYOK / local Claude subscription (no per
 
 **Process:** `dev-workflow.md` seeded from `@vinhnnn/dev-workflow` v2.4.1 (2026-07-28); the ship
 ritual (`.claude/skills/ship-review`), session-log hook, and CI (`.github/workflows/ci.yml`) are
-materialized. Groundwork's deliberate divergences (biome, wrapper-shadcn) are noted in that file.
+materialized. Groundwork's deliberate divergences (wrapper-shadcn; the biome one was retired by ADR-0013) are noted in that file.
 
 **Repo:** <https://github.com/vinhnhq/groundwork>. CI runs the four gates plus the Playwright
 suite on every PR, in two jobs so a browser failure is distinguishable from a type error.
@@ -88,18 +88,18 @@ call `requireCapability` against the database, and an e2e test drops the cache c
 
 - **Product name:** **Groundwork** — the ops tool (the reusable thing that could be commercialized).
 - **Domain:** **getgroundwork.com** (fallbacks: `groundwork.dev`, `usegroundwork.com`). The "get…"
-  prefix deliberately echoes *Getting Things Done* — same "grounded, get-it-done" headspace clients trust.
-- **One-line pitch:** *Groundwork turns client ideas into ready-to-build tickets, grounded in your real docs —
-  one view across every project.*
+  prefix deliberately echoes _Getting Things Done_ — same "grounded, get-it-done" headspace clients trust.
+- **One-line pitch:** _Groundwork turns client ideas into ready-to-build tickets, grounded in your real docs —
+  one view across every project._
 - **Why the name works:** it names the core differentiator — **presume, don't assume**. Every ticket is
-  *grounded* in ≥2 pointable evidences before it's built (the Definition-of-Ready gate, §6). "Ground" =
+  _grounded_ in ≥2 pointable evidences before it's built (the Definition-of-Ready gate, §6). "Ground" =
   evidence/foundation; "work" = the tickets. GTD echo is a bonus, not the basis.
-- **Tool vs. portfolio (keep separate):** *Groundwork* = the sellable product/tool. *Vinh Nguyen* = the
+- **Tool vs. portfolio (keep separate):** _Groundwork_ = the sellable product/tool. _Vinh Nguyen_ = the
   public portfolio instance built on it. This is the same two-projections split as the architecture (one data
   source → public portfolio + private ops) — it lets the tool be commercialized without rebranding the
   personal site.
 - **Before committing (do at kickoff):** confirm `getgroundwork.com` is buyable · npm name + GitHub org free ·
-  a quick USPTO/EUIPO search for a conflicting *software-class* mark (it's a common word — check the SaaS class
+  a quick USPTO/EUIPO search for a conflicting _software-class_ mark (it's a common word — check the SaaS class
   specifically).
 
 ---
@@ -109,7 +109,7 @@ call `requireCapability` against the database, and an e2e test drops the cache c
 A single Next.js app that (a) publicly **introduces me + my projects** (portfolio) and (b) privately gives
 **me + a Claude agent one operational view across all my project repos** — every ADR, spec, plan, task, and
 retro — plus a **client-idea triage** surface where an idea is discussed live with an agent against the
-current docs and *then* promoted (or not) into a real task. **The Markdown in each project repo stays the
+current docs and _then_ promoted (or not) into a real task. **The Markdown in each project repo stays the
 single source of truth; this dashboard is a read-only projection of it, plus a thin write-back path for new
 tickets.** Same data, two projections: a curated public portfolio and a complete private ops console.
 
@@ -118,17 +118,17 @@ tickets.** Same data, two projections: a curated public portfolio and a complete
 ## 1. Load-bearing principles (do not violate)
 
 1. **Canonical stays in the repo.** `backlog.md`, `docs/decisions/*`, `retro.md`, `specs/*` in each project
-   repo are the source of truth. The dashboard **reads** them. It never becomes the place you *edit* a task —
+   repo are the source of truth. The dashboard **reads** them. It never becomes the place you _edit_ a task —
    that would recreate the two-sources-of-truth split. (This is the CQRS pattern from `infinite-oneness`:
    MD = events, dashboard = read-model.)
 2. **Two projections, one data source.** Public portfolio = curated, marketing gloss allowed. Private ops =
    raw, complete, honest (watch-outs, evidence, half-done tasks). Never leak ops into public.
 3. **Ideas are dashboard-born; tasks are repo-born.** A client idea starts life here (exploratory, cheap).
-   The moment it's *decided*, it's written back to the canonical `backlog.md` in the target repo. AI proposes
+   The moment it's _decided_, it's written back to the canonical `backlog.md` in the target repo. AI proposes
    the draft ticket; the human disposes; the decision lands in the canonical source.
 4. **Definition of Ready is a first-class field.** Every task the dashboard shows carries a DoR status
    (READY / DRAFT) derived from its fields (intent · autonomy tier · Touches/Must-NOT · oracle · ≥2 pointable
-   evidences · escalate-if). The killer MCP query is *"what's READY across all projects?"*
+   evidences · escalate-if). The killer MCP query is _"what's READY across all projects?"_
 5. **Defer machinery.** Ship the cheapest rung that removes the pain. Order below is designed so you can stop
    early.
 
@@ -136,12 +136,12 @@ tickets.** Same data, two projections: a curated public portfolio and a complete
 
 ## 2. Audiences & surfaces
 
-| Surface | Audience | Auth | Content |
-|---|---|---|---|
-| `/` `/projects/[slug]` (portfolio) | public / clients | none | curated project cards, tech, links, selected screenshots |
-| `/ops` (dashboard) | just me + agent | better-auth (username+password) | every ADR/spec/task/retro, DoR board, cross-project READY queue |
-| `/ops/[project]/triage` | me (+ client in the room) | better-auth | live agent chat over the project's docs → draft ticket |
-| MCP server | any Claude session | local/token | tools to query + triage across all projects |
+| Surface                            | Audience                  | Auth                            | Content                                                         |
+| ---------------------------------- | ------------------------- | ------------------------------- | --------------------------------------------------------------- |
+| `/` `/projects/[slug]` (portfolio) | public / clients          | none                            | curated project cards, tech, links, selected screenshots        |
+| `/ops` (dashboard)                 | just me + agent           | better-auth (username+password) | every ADR/spec/task/retro, DoR board, cross-project READY queue |
+| `/ops/[project]/triage`            | me (+ client in the room) | better-auth                     | live agent chat over the project's docs → draft ticket          |
+| MCP server                         | any Claude session        | local/token                     | tools to query + triage across all projects                     |
 
 ---
 
@@ -196,12 +196,12 @@ Add a small header to each repo (`__project__/project.yml` or the top of `backlo
 slug: infinite-oneness
 name: Infinite Oneness
 tagline: Event-sourced DAO funding + debate platform
-status: active            # active | paused | shipped | archived
-visibility: public        # portfolio inclusion
+status: active # active | paused | shipped | archived
+visibility: public # portfolio inclusion
 stack: [next, ts, kysely, neon, better-auth]
 links: { repo: "...", live: "..." }
 cover: __project__/assets/cover.png
-public_highlights:        # curated for the portfolio
+public_highlights: # curated for the portfolio
   - "Event-sourced across 6 aggregates"
   - "Multi-persona AI advisor room"
 ```
@@ -216,17 +216,20 @@ Parse each `backlog.md` leaf into:
 
 ```ts
 type Task = {
-  id: string; project: string; title: string;
-  status: 'draft' | 'ready' | 'in-progress' | 'done' | 'blocked' | 'stretch';
-  autonomy: 'supervised' | 'plan-gated' | 'dark' | 'trivial';
+  id: string;
+  project: string;
+  title: string;
+  status: "draft" | "ready" | "in-progress" | "done" | "blocked" | "stretch";
+  autonomy: "supervised" | "plan-gated" | "dark" | "trivial";
   intent?: string;
-  touches?: string[]; mustNot?: string[];
+  touches?: string[];
+  mustNot?: string[];
   oracle?: string;
-  evidence: Evidence[];            // file:line | adr | test | screenshot | audit
+  evidence: Evidence[]; // file:line | adr | test | screenshot | audit
   escalateIf?: string;
   done?: { sha: string; date: string };
 };
-type Evidence = { kind: 'file'|'adr'|'test'|'image'|'doc'|'audit'; ref: string };
+type Evidence = { kind: "file" | "adr" | "test" | "image" | "doc" | "audit"; ref: string };
 ```
 
 **DoR is derived, not stored:** a task is `ready` only when intent + autonomy + touches + oracle +
@@ -237,7 +240,7 @@ the single most useful view, and the MCP tool that powers "point me at the next 
 
 ## 7. Asset / image strategy (answers "store & display in repo AND dashboard")
 
-**Split by weight × churn, NOT by origin.** Committing *everything* to git bloats history (git stores a full
+**Split by weight × churn, NOT by origin.** Committing _everything_ to git bloats history (git stores a full
 copy of every binary version forever — clones balloon even after "deletion"). But small stable images are a
 non-problem: ~200 KB each × 500 = ~100 MB, which git handles fine. So:
 
@@ -245,26 +248,26 @@ non-problem: ~200 KB each × 500 = ~100 MB, which git handles fine. So:
 An in-repo image the agent `Read`s instantly; a remote one it must download first — so decision-critical
 evidence stays local, bulk goes remote.
 
-| Class | Where | Rule of thumb |
-|---|---|---|
-| **Decision-critical evidence** — the 1 screenshot / DOM-measure / small PDF that *justifies a task or ADR* | **in the repo** `__project__/tasks/assets/<task-id>/` | small (<~1 MB), stable, low-count. Downscale screenshots (no retina full-res); compress. |
-| **Bulk / heavy / churny** — video, design exports (PSD/Figma), client asset dumps, regenerated-every-session shots | **object storage** (Vercel Blob / R2 / S3) | anything >~5 MB, or that changes often, or that's browse-only |
-| **Dashboard-born uploads** (client pastes an image mid-triage) | object storage → `assets` table | promote to repo only if it becomes evidence (see bridge) |
+| Class                                                                                                              | Where                                                 | Rule of thumb                                                                            |
+| ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Decision-critical evidence** — the 1 screenshot / DOM-measure / small PDF that _justifies a task or ADR_         | **in the repo** `__project__/tasks/assets/<task-id>/` | small (<~1 MB), stable, low-count. Downscale screenshots (no retina full-res); compress. |
+| **Bulk / heavy / churny** — video, design exports (PSD/Figma), client asset dumps, regenerated-every-session shots | **object storage** (Vercel Blob / R2 / S3)            | anything >~5 MB, or that changes often, or that's browse-only                            |
+| **Dashboard-born uploads** (client pastes an image mid-triage)                                                     | object storage → `assets` table                       | promote to repo only if it becomes evidence (see bridge)                                 |
 
 **The manifest keeps remote assets agent-visible.** For offloaded files, commit a tiny
-`__project__/assets/manifest.yml` line — `id · blobUrl · sha256 · caption` — so the agent still *sees the
-reference and caption* in-repo (and can fetch the URL if it needs the bytes), without the bytes bloating git.
+`__project__/assets/manifest.yml` line — `id · blobUrl · sha256 · caption` — so the agent still _sees the
+reference and caption_ in-repo (and can fetch the URL if it needs the bytes), without the bytes bloating git.
 
 **Promotion bridge:** when a dashboard-born idea becomes a task, copy its upload into the repo `assets/` folder
 **only if small/decision-critical**; otherwise leave it in Blob and write a manifest line. Nothing important is
-*unreferenced* — but not everything is *inlined*.
+_unreferenced_ — but not everything is _inlined_.
 
 **Git LFS?** Optional middle path (pointer in git, bytes on LFS). Skip by default — LFS adds quota/bandwidth
 cost and clone friction; plain object-storage + manifest is simpler for a solo evidence workflow. Reach for LFS
 only if you specifically want heavy assets to travel with `git clone`.
 
 **Hygiene (if staying in git):** downscale/compress screenshots · `.gitignore` a scratch `assets/tmp/` for
-throwaway shots · commit only the screenshot pinned as *evidence*, not every regenerated frame · soft-cap the
+throwaway shots · commit only the screenshot pinned as _evidence_, not every regenerated frame · soft-cap the
 in-repo asset budget (~50–100 MB/project) — cross it → offload.
 
 **Caching layers:** `next/image` + CDN for rendering · `revalidateTag(project)` on GitHub webhook for doc
@@ -276,7 +279,7 @@ context inside) · immutable `Cache-Control` on hashed asset URLs (repo-served o
 ## 8. Auth (better-auth, username + password) — shipped, ADR-0008
 
 - **Username + password only** (no OAuth/social) — see ADR-0008 for why. Four accounts, one per
-  role; the role name *is* the username (`engineer`, `pm`, `qa`, `client`).
+  role; the role name _is_ the username (`engineer`, `pm`, `qa`, `client`).
 - better-auth over the same Neon/Kysely instance. `/` and `/projects/**` stay public.
 - **Two layers gate `/ops/**`, and the split is deliberate.** `proxy.ts` runs on the edge with no
   database handle, so it can only check that a session cookie exists and read the role out of
@@ -321,8 +324,8 @@ You DECIDE (human disposes):
    • Dismiss → logged with a one-line reason
 ```
 
-Why it fits: it turns a hallway idea into either a *grounded, DoR-ready ticket in the canonical backlog* or a
-*recorded decision not to build* — in the room, with the docs as the agent's context. It's "presume, don't
+Why it fits: it turns a hallway idea into either a _grounded, DoR-ready ticket in the canonical backlog_ or a
+_recorded decision not to build_ — in the room, with the docs as the agent's context. It's "presume, don't
 assume" enforced at intake: the agent must cite ≥2 evidences from the real docs before it proposes a ticket.
 
 Real-time = SSE agent turns (already proven in v6). Solo → no Pusher needed; add it only if a client shares
@@ -335,7 +338,7 @@ the screen live from another device.
 Expose the dashboard's read-model + triage as MCP tools so any Claude session (Code, desktop, claude.ai) can:
 
 - `list_projects()` · `project_status(slug)`
-- `ready_tasks(slug?)` → tasks passing DoR across one/all projects  ← the headline tool
+- `ready_tasks(slug?)` → tasks passing DoR across one/all projects ← the headline tool
 - `get_doc(slug, kind, id)` → ADR / spec / retro / task
 - `create_idea(slug, text, evidence?)` · `promote_idea_to_task(ideaId)` (proposes the write-back; human confirms)
 
@@ -373,7 +376,7 @@ portfolio-dashboard/
 
 ## 12. Build order (stop at any rung)
 
-1. **Frontmatter schema** (§5) adopted in one project repo. *Keystone.*
+1. **Frontmatter schema** (§5) adopted in one project repo. _Keystone._
 2. **ContentSource (fs) + backlog parser + DoR deriver** — pure, unit-tested. No UI yet.
 3. **Read-only ops UI**: project list, doc pages (ADR/spec/retro), cross-project READY queue.
 4. **better-auth** gate on `/ops`.
@@ -407,7 +410,7 @@ with your agent sessions.
 > **removed**. Sections 4, 9 and the §3 diagram still describe the write-back design and are stale
 > until v3 rewrites them; ADR-0010 is the truth in the meantime.
 
-- ~~No multi-user / team boards (solo).~~ **Reversed** — see the pivot in *Current state* + `specs/v2-grounding.md`.
+- ~~No multi-user / team boards (solo).~~ **Reversed** — see the pivot in _Current state_ + `specs/v2-grounding.md`.
 - ~~**Task editing model:** every UI change **writes back to the repo `backlog.md`**; tasks are never
   edited in a private DB.~~ **Reversed 2026-08-05 ([ADR-0010](decisions/0010-ticket-storage-ownership.md)).**
   Write-back is deleted, along with the write scope on the GitHub token. The "second source of truth"
@@ -425,7 +428,7 @@ with your agent sessions.
   and with none of those a category is just a guess wearing better vocabulary. It also collides with
   [ADR-0011](decisions/0011-ticket-lifecycle.md) §3 — priority is **position in an ordered queue**,
   chosen precisely to end classification debates. If Kano ever appears it belongs on the **idea /
-  triage surface** (deciding what becomes a ticket), never on tickets. It stays useful *off* the
+  triage surface** (deciding what becomes a ticket), never on tickets. It stays useful _off_ the
   product as a roadmap lens, where the one insight that matters is that **categories migrate**: an
   attractive feature becomes must-be once competitors ship it, which is already happening to
   "assign a ticket to an agent".
@@ -433,4 +436,7 @@ with your agent sessions.
   whether any of it works — when each file reaches an agent's context, is owned by the package:
   `@vinhnnn/dev-workflow` → `docs/project-doc-standard.md`. Groundwork consumes that standard rather
   than defining its own.
+
+```
+
 ```

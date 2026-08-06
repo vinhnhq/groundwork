@@ -12,7 +12,7 @@ updated: 2026-08-06
 - **Date:** 2026-08-05
 - **Deciders:** Vinh
 - **Extends:** [ADR-0010](0010-ticket-storage-ownership.md) (Groundwork owns tickets)
-- **Descends from:** infinite-oneness ADR-0029 (*AI proposes, humans dispose*)
+- **Descends from:** infinite-oneness ADR-0029 (_AI proposes, humans dispose_)
 
 ## Context
 
@@ -22,7 +22,7 @@ week surfaced four things a naive `todo → doing → done` board gets wrong:
 
 1. **QA does not verify per ticket.** QA writes detailed test cases into the ticket, developers
    automate as many as they can, and QA performs **one manual pass per release**. So "verified" is a
-   property of a *release*, not of a ticket.
+   property of a _release_, not of a ticket.
 2. **Work is claimed by humans and machines competing for the same queue**, and a claim must be
    atomic or two workers duplicate effort.
 3. **A ticket's scope can change while someone is implementing it**, and nothing detects that today.
@@ -61,21 +61,21 @@ who wrote the check.
 
 Fields, and who owns each:
 
-| Field | Author | Purpose |
-| ------- | -------- | --------- |
-| `intent` | PM | Why this is worth doing |
-| `test_cases` | QA | How to verify, case by case, written to be automatable |
-| `oracle` | dev | The command running the automated subset |
-| `manual_checks` | dev | The residue QA must do by hand — **each with a reason** |
-| `touches` / `must_not` | dev | Declared blast radius, binding on unattended runs |
-| `automation_ratio` | derived | `automated / total` — the debt signal |
+| Field                  | Author  | Purpose                                                 |
+| ---------------------- | ------- | ------------------------------------------------------- |
+| `intent`               | PM      | Why this is worth doing                                 |
+| `test_cases`           | QA      | How to verify, case by case, written to be automatable  |
+| `oracle`               | dev     | The command running the automated subset                |
+| `manual_checks`        | dev     | The residue QA must do by hand — **each with a reason** |
+| `touches` / `must_not` | dev     | Declared blast radius, binding on unattended runs       |
+| `automation_ratio`     | derived | `automated / total` — the debt signal                   |
 
-`manual_checks` requiring a *reason* is what stops the manual list growing silently. The release
+`manual_checks` requiring a _reason_ is what stops the manual list growing silently. The release
 verification script is then **generated** from the tickets in the release, never maintained by hand.
 
 ### 3. Priority is position, not a field
 
-One ordered queue per project; the PM owns the order. Position *is* priority. P1–P5 schemes collapse
+One ordered queue per project; the PM owns the order. Position _is_ priority. P1–P5 schemes collapse
 into "everything is P1" within a quarter; two tickets cannot share a position.
 
 ### 4. Claims, contention and autonomy
@@ -85,7 +85,7 @@ into "everything is P1" within a quarter; two tickets cannot share a position.
 - **Preemption is asymmetric:** a human may preempt an agent's claim (the agent's work becomes a draft
   to take or discard); an agent may never preempt a human's. There is no such command.
 - **Autonomy tier is an authorization property, not a convention.** The API token encodes a tier
-  ceiling, so a misconfigured agent *cannot* claim supervised work. A tier written only in a document
+  ceiling, so a misconfigured agent _cannot_ claim supervised work. A tier written only in a document
   is advisory, and advisory controls fail exactly when they are needed.
 - **Overlapping `touches` warns, never blocks** at claim time, and the warning is recorded so its
   predictive value can be measured later.
@@ -94,10 +94,10 @@ into "everything is P1" within a quarter; two tickets cannot share a position.
 
 ### 5. Two trust levels of events
 
-| Source | Example | Status |
-| -------- | --------- | -------- |
-| Agent-asserted | "I finished", "this is blocked" | a **claim about the world** |
-| Observed (git/CI webhook) | PR opened, CI green, PR merged | a **fact** |
+| Source                    | Example                         | Status                      |
+| ------------------------- | ------------------------------- | --------------------------- |
+| Agent-asserted            | "I finished", "this is blocked" | a **claim about the world** |
+| Observed (git/CI webhook) | PR opened, CI green, PR merged  | a **fact**                  |
 
 Authoritative transitions come only from observed signals. `agent says done` + `PR exists` +
 `CI green` → `merged`. Agent assertions require an idempotency key so a retry never double-counts.
@@ -116,9 +116,9 @@ An agent should not adjudicate whether a scope change invalidates its work; a hu
 
 Not one global cap — a cap per stage, and the constraint is not QA:
 
-| Gate | Cap on | Applies to |
-| ------ | -------- | ------------ |
-| Claim | open PRs awaiting review | agents hard-blocked, humans warned |
+| Gate    | Cap on                     | Applies to                                   |
+| ------- | -------------------------- | -------------------------------------------- |
+| Claim   | open PRs awaiting review   | agents hard-blocked, humans warned           |
 | Release | manual checks in the batch | flags batch-size risk before the pass starts |
 
 ## Consequences
@@ -137,7 +137,7 @@ into the ticket and §1 needs rework.
 
 ## Mirroring an external tracker
 
-Should Groundwork ever read tickets *from* Jira or Linear rather than own them, the constraints found
+Should Groundwork ever read tickets _from_ Jira or Linear rather than own them, the constraints found
 in evaluation apply: neither guarantees webhook ordering, both drop deliveries after a fixed retry
 schedule, neither offers a replayable global cursor, and Jira's changelog pagination can skip or
 duplicate entries under concurrent edits. The workable shape is: **treat a webhook as an invalidation

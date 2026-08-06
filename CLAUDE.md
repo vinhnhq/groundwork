@@ -26,14 +26,14 @@ dashboard is a **read-only projection** of them + a thin write-back path for new
 > - [ADR-0011](__project__/docs/decisions/0011-ticket-lifecycle.md) — lifecycle: `merged ≠ released`, Release as an aggregate, oracle-gated admission, priority as queue position, asymmetric human/agent preemption, tier-as-auth.
 > - [ADR-0012](__project__/docs/decisions/0012-persistence-tiers.md) — what is event-sourced and what is not. **The whole ES case rests on the claim lock**; without it an audit table would have been right.
 >
-> Two consequences the reversal *requires*, not optional: every commit message carries a ticket id, and
+> Two consequences the reversal _requires_, not optional: every commit message carries a ticket id, and
 > a decision made during a ticket must reach an ADR or spec **in the repo** before the ticket closes.
 
 - **Project doc standard** — owned by `@vinhnnn/dev-workflow` → `docs/project-doc-standard.md`: the managed / seeded / grown tiers, the nine-file init set, and the routing rule (trigger in `CLAUDE.md` · body in the doc · enforcement in a check). Groundwork consumes it rather than defining its own.
 
 ## Locked kickoff decisions (from tech-standards §0)
 
-- Stack: **Next 16 · React 19 + Compiler · TS 6 · Bun · Biome 2 · Tailwind v4 · Kysely + Neon · better-auth (username + password, no social — ADR-0008) · Zod v4 · Vitest + Playwright · shadcn radix-maia**.
+- Stack: **Next 16 · React 19 + Compiler · TS 6 · Bun · oxlint + oxfmt (ADR-0013; was Biome 2) · Tailwind v4 · Kysely + Neon · better-auth (username + password, no social — ADR-0008) · Zod v4 · Vitest + Playwright · shadcn radix-maia**.
 - Test runner: **Vitest** projects (`unit` + `integration`). Never `bun test` — use `bun run test`.
 - **A database is required to sign in.** `docker compose up -d && bun run migrate && bun run seed`,
   then sign in as username `engineer`. The integration + e2e suites need it too.

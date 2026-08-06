@@ -1,0 +1,79 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "nextjs", "jsx-a11y", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "env": { "browser": true, "node": true, "es2024": true },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "no-underscore-dangle": ["warn", { "allow": ["_tag"] }],
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css", "server-only"] }],
+    "unicorn/no-array-sort": "off",
+    "react-hooks/exhaustive-deps": "warn",
+    "nextjs/no-img-element": "warn",
+    "jsx-a11y/no-autofocus": "off",
+    "jsx-a11y/prefer-tag-over-role": "off",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "jsx-a11y/no-noninteractive-element-interactions": "warn",
+    "jsx-a11y/media-has-caption": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["src/lib/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react",
+                "message": "src/lib is the pure core (dev-workflow rule 1) — keep React in components/hooks."
+              },
+              {
+                "name": "react-dom",
+                "message": "src/lib is the pure core — no DOM."
+              },
+              {
+                "name": "next",
+                "message": "src/lib is the pure core — no Next."
+              },
+              {
+                "name": "next/headers",
+                "message": "Request context belongs in the ADR-0012 seam (excluded edge files), not the pure core."
+              },
+              {
+                "name": "next/server",
+                "message": "src/lib is the pure core — no Next server APIs."
+              },
+              {
+                "name": "next/navigation",
+                "message": "src/lib is the pure core — no Next navigation."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/lib/context.ts", "src/lib/now.ts", "src/lib/auth/index.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "**/.next",
+    "**/node_modules",
+    "**/coverage",
+    "**/playwright-report",
+    "**/test-results",
+    "**/.vercel",
+    "**/.claude",
+    "public",
+    "src/components/ui",
+    "next-env.d.ts"
+  ]
+}

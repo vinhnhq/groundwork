@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { join, normalize } from "node:path";
+
 import { NextResponse } from "next/server";
+
 import { getContentSource } from "@/lib/content";
 
 /**

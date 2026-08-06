@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { classifyDoc, isDocFile, titleOfMarkdown } from "./classify-doc";
 
 describe("classifyDoc", () => {

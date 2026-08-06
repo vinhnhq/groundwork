@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import { SidebarResizer, useSidebarWidth } from "@/components/app-shell/sidebar-resizer";
 import { Separator } from "@/components/ui/separator";
 import {

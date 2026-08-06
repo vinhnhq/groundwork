@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+
 import { ProjectShell } from "@/components/app-shell/project-shell";
 import { HeaderActions, SidebarProfile } from "@/components/app-shell/user-chrome";
 import { getSession } from "@/lib/auth";

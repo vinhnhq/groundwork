@@ -24,6 +24,7 @@ because it is multi-actor, changes hourly, and needs atomicity. The two halves j
 > read-only.
 
 ## Docs
+
 - Architecture + build plan → [`__project__/docs/architecture.md`](__project__/docs/architecture.md)
 - Technical standards → [`__project__/docs/tech-standards.md`](__project__/docs/tech-standards.md)
 - Current spec → [`__project__/specs/v2-grounding.md`](__project__/specs/v2-grounding.md)
@@ -31,7 +32,7 @@ because it is multi-actor, changes hourly, and needs atomicity. The two halves j
 - Decisions → [`__project__/docs/decisions/`](__project__/docs/decisions/)
 
 **Live:** <https://groundwork-zeta-wheat.vercel.app> — deployed from `main` via Vercel.
-It serves **demo data**; see *Status* below.
+It serves **demo data**; see _Status_ below.
 
 ## Status
 
@@ -75,18 +76,18 @@ PROJECT_ROOTS="/abs/path/to/repo-a,/abs/path/to/groundwork" bun run dev
 The four accounts are `engineer`, `pm`, `qa`, `client` — the role name is the username. Re-running
 the seed is safe: it re-asserts roles and leaves existing passwords alone.
 
-Every project root needs a `__project__/project.yml`; without one it shows as *unconfigured*
+Every project root needs a `__project__/project.yml`; without one it shows as _unconfigured_
 rather than failing. Groundwork's own repo is a valid root — point it at itself to see the
 dogfood view.
 
 Sign in with any demo account (the sign-in page lists them, one per role):
 
-| Role | Email | Can |
-| --- | --- | --- |
+| Role     | Email                       | Can                                                 |
+| -------- | --------------------------- | --------------------------------------------------- |
 | Engineer | `engineer@groundwork.local` | Everything — write-back, triage agent, integrations |
-| PM | `pm@groundwork.local` | Board + grounding. No agent, no secrets |
-| QA | `qa@groundwork.local` | Board + grounding. No agent, no secrets |
-| Client | `client@groundwork.local` | Read-only |
+| PM       | `pm@groundwork.local`       | Board + grounding. No agent, no secrets             |
+| QA       | `qa@groundwork.local`       | Board + grounding. No agent, no secrets             |
+| Client   | `client@groundwork.local`   | Read-only                                           |
 
 Password for all of them: `groundwork` (override with `ADMIN_PASSWORD`).
 

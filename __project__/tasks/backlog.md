@@ -17,6 +17,131 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 
 ---
 
+## RV · Reversal cleanup — ADR-0010 fallout _(2026-08-06)_ → **[P]**
+
+> ADR-0010 removed write-back **after it shipped**, so ~690 lines of tested, working code now have
+> no caller. Dead code that still passes its tests is the worst kind: it looks maintained. Clear it
+> before building anything on top, or the next reader assumes write-back is a supported path.
+
+- · **RV1** Delete the write-back seam and its writers. → **[P]**
+  - **Intent:** ADR-0010 deletes write-back as a feature; the code is now unreachable and its tests
+    still pass, which reads as "supported" to anyone browsing.
+  - **Touches:** `src/lib/content/write.ts` · `src/lib/content/writers/**` · `src/lib/tasks/write-back.ts`
+    and their tests **Must NOT:** touch `parseBacklog`/`serialize` — the grammar survives as the
+    **import** path for R3.
+  - **Oracle:** `bun run test` green with the files gone; `grep -rn "BacklogWriter\|writers/" src` returns
+    nothing outside history.
+  - **Evidence:** [ADR-0010](../docs/decisions/0010-ticket-storage-ownership.md) §Decision · `src/lib/content/writers/` (690 lines)
+  - **Escalate if:** something still imports the writer factory — that is a caller ADR-0010 did not
+    anticipate, and the ADR needs an amendment before the delete.
+- · **RV2** Drop the GitHub write scope; document the token as read-only. → **[T]**
+  - **Intent:** the token can create branches and PRs today. After R1 nothing uses that, and a
+    credential with more power than its purpose is a standing risk.
+  - **Touches:** `.env.example` · README deploy section · `harness.json` (the `GITHUB_TOKEN` entry)
+    **Must NOT:** the content-source read path.
+  - **Oracle:** README and `.env.example` both say `contents: read`; a fine-grained read-only token
+    runs the app with no error.
+  - **Evidence:** [ADR-0010](../docs/decisions/0010-ticket-storage-ownership.md) §Decision · README §Deploy
+  - **Escalate if:** —
+- · **RV3** Record the removal in the done archive. → **[T]**
+  - **Intent:** S1/S2 are ticked as shipped in this file. A reader who sees them and then finds no
+    write-back has no way to learn it was removed on purpose.
+  - **Touches:** `tasks/done.md` **Must NOT:** edit the historical S1/S2 entries — append, do not rewrite.
+  - **Oracle:** done.md carries a dated entry naming ADR-0010 and the deleted paths.
+  - **Evidence:** [ADR-0010](../docs/decisions/0010-ticket-storage-ownership.md) · backlog §v3 Sync
+  - **Escalate if:** —
+- · **RV4** Close Q4 — the MCP read-only claim is now true by construction. → **[T]**
+  - **Intent:** Q4 exists because the MCP surface claimed read-only while a write seam existed. R1
+    removes the seam, so the claim needs verifying rather than narrowing.
+  - **Touches:** `src/lib/mcp/**` (assertion only) **Must NOT:** add a write tool.
+  - **Oracle:** every exported MCP tool is a read; a test asserts the tool list contains no mutation.
+  - **Evidence:** backlog Q4 · [ADR-0006](../docs/decisions/0006-mcp-surface.md)
+  - **Escalate if:** a write tool is found — then ADR-0006 and ADR-0010 disagree and that is a decision, not a fix.
+
+---
+
+## H · Harness completion _(2026-08-06)_ → **[T]**
+
+> `dev-workflow check` reports 16/16 docs valid and 3 unauthored stubs. The stubs are the last thing
+> between this repo and a `--strict` gate.
+
+- · **H1** Author `glossary.md` — the overloaded terms first. → **[S]**
+  - **Intent:** ADR-0010 made `ticket` (database) and `task` (the old backlog line) mean different
+    things in the same repo, and `project`/`evidence`/`digest` were already loaded. A wrong assumption
+    here is silent — nothing fails, the code just uses the wrong word.
+  - **Touches:** `docs/glossary.md` · `CLAUDE.md` (paste the overloaded table) **Must NOT:** exceed
+    ~6 overloaded entries — past that the naming is the problem, not the glossary.
+  - **Oracle:** `bunx dev-workflow check` stops reporting it as an unauthored stub; the overloaded
+    table appears in both files.
+  - **Evidence:** [ADR-0010](../docs/decisions/0010-ticket-storage-ownership.md) · `.claude/templates/README.md` §routing
+  - **Escalate if:** two terms cannot be told apart even after writing them down — that is a rename, not a doc.
+- · **H2** Author `security-and-data.md` + the logging lint it names. → **[P]**
+  - **Intent:** a doc alone cannot catch this: the moment it matters is while writing a log line, and
+    nothing prompts anyone to check a policy first.
+  - **Touches:** `docs/security-and-data.md` · the lint rule it names **Must NOT:** list a rule with
+    no enforcement mechanism — that is a rule that will be broken by someone who never read the file.
+  - **Oracle:** a test fixture logging a sensitive identifier fails the lint.
+  - **Evidence:** `.claude/templates/README.md` §routing · ADR-0008 (roles, sessions)
+  - **Escalate if:** the enforceable set turns out to be empty — then say so in the doc rather than implying coverage.
+- · **H3** Author `runbook.md` — deploy · migrate · roll back · who can do what. → **[S]**
+  - **Intent:** deployment knowledge lives in one head. That is intent debt with a pager attached.
+  - **Touches:** `docs/runbook.md` **Must NOT:** describe a rollback nobody has run — mark it untested instead.
+  - **Oracle:** someone who has never deployed this can follow it end to end.
+  - **Evidence:** README §Deploy · `.claude/harness.json`
+  - **Escalate if:** —
+- · **H4** Fix `biome.json` — lint is dead. → **[T]**
+  - **Intent:** `bun run lint` fails on a clean tree (`unknown key 'comment'`), so the gate has been
+    passing nothing for some time.
+  - **Touches:** `biome.json` **Must NOT:** silence rules to make it pass.
+  - **Oracle:** `bun run lint` exits 0 on a clean tree and non-zero on a seeded violation.
+  - **Evidence:** verified 2026-08-06 by stashing all changes and re-running
+  - **Escalate if:** fixing the key surfaces a backlog of real violations — land the config fix first, file the violations.
+- · **H5** Turn on `dev-workflow check --strict` in CI. → **[T]** _(blocked by H1–H3)_
+  - **Intent:** a gate that only reports is a convention, and conventions decay. Strict is what makes it physics.
+  - **Oracle:** CI fails on a doc with missing frontmatter; passes on `main`.
+- ↷ **H6** Decide Biome vs oxc for this repo.
+  - **Intent:** infinite-oneness and the dev-workflow package are both on oxc; groundwork is on Biome.
+    Not urgent, but it decides what a shipped `dev-style.md` looks like — and doing it during H4 is
+    cheaper than twice.
+
+---
+
+## T · Ticket system — implement ADR-0010/0011/0012 → **[S]**
+
+> The build the three ADRs describe. **Chicken-and-egg worth naming:** groundwork cannot host its own
+> tickets until it hosts tickets, so `backlog.md` stays the queue for this phase and becomes the
+> **first import** the moment T2 works. Sequenced so the piece with a real deadline comes first —
+> history you did not capture is gone permanently.
+
+- · **T1** Observed-event ingest — append-only, no aggregate, no UI. → **[P]**
+  - **Intent:** the only item here with a deadline. Every day without it is a day of lifecycle history
+    that cannot be recovered later. Deliberately dumb: a table and a webhook handler.
+  - **Touches:** a migration + a webhook route **Must NOT:** add a Decider, a projection, or a UI —
+    those are T3, and building them now guesses at a schema no data has tested.
+  - **Oracle:** a PR opened, reviewed and merged in a watched repo produces three rows with correct
+    ticket ids; a replayed delivery produces no duplicate (idempotency key).
+  - **Evidence:** [ADR-0011](../docs/decisions/0011-ticket-lifecycle.md) §5 · `.github/workflows/ticket-events.yml`
+  - **Escalate if:** commit messages carry no ticket id — then ADR-0010's commit-msg mitigation has to land first.
+- · **T2** Ticket schema + one-shot import from `backlog.md`. → **[P]**
+  - **Intent:** DoR fields become columns; the backlog grammar earns its keep one last time as a
+    migration tool and then retires.
+  - **Touches:** migration + `parseBacklog` (read only) **Must NOT:** write back to `backlog.md` — R1 deleted that on purpose.
+  - **Oracle:** importing this repo's own backlog yields 37 tickets with intent, oracle and evidence intact.
+  - **Evidence:** [ADR-0011](../docs/decisions/0011-ticket-lifecycle.md) §2 · `src/lib/tasks/parse-backlog.ts`
+- · **T3** Ticket aggregate + claims with an expected-version guard. → **[S]**
+  - **Intent:** the claim lock is the single feature the whole event-sourced core rests on
+    ([ADR-0012](../docs/decisions/0012-persistence-tiers.md) §Alternatives). Without contention it is
+    not worth building — so build it when a second worker exists, not before.
+- · **T4** Cost ledger, attributed by branch. → **[P]**
+  - **Intent:** the thing no tracker does. Sessions carry cost; `wip/<id>` maps a session to a ticket.
+    Expect a large unattributed bucket at first and show it rather than hide it.
+- ↷ **T5** MCP surface for agents — `next_task` · `claim` · `report`.
+  - **Intent:** the door an unattended worker uses. Needs T2 + T3 first; the token encodes a tier ceiling.
+- ↷ **T6** Export every project to plain files.
+  - **Intent:** ADR-0010 made this a system of record, so it can hold work hostage. Export is what makes that untrue.
+
+---
+
 ## v1 — Foundation (rungs 1–4)
 
 > **Status 2026-07-25:** F0–F4 + F6 SHIPPED (autonomous build, gated per rung — see done.md).

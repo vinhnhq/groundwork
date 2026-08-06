@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronLeft, ChevronRight, FileText, Folder } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DocFolder, DocNode } from "@/lib/content/doc-tree";
 import { cn } from "@/lib/utils";
 
@@ -115,15 +115,21 @@ export function DocMention({
 }) {
   const listRef = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
+  const [left, setLeft] = useState(anchor.left);
   const shellRef = useRef<HTMLDivElement>(null);
 
   // Open upward when there is not room below — the composer is pinned to the
-  // bottom, so downward is usually the wrong way.
-  // biome-ignore lint/correctness/useExhaustiveDependencies(rows.length): deliberate trigger — a different row count means a different menu height, so the flip must be re-measured.
-  useEffect(() => {
+  // bottom, so downward is usually the wrong way. Clamp horizontally too: the
+  // caret can sit anywhere in the line, and a fixed-position menu pinned to it
+  // hangs off-screen on a phone. Layout effect, not effect — position is
+  // corrected before paint, so the menu never flashes at the caret first.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(rows.length): deliberate trigger — a different row count means a different menu height and width, so both clamps re-measure.
+  useLayoutEffect(() => {
     const height = shellRef.current?.offsetHeight ?? 0;
+    const width = shellRef.current?.offsetWidth ?? 0;
     setFlip(anchor.top + anchor.lineHeight + height + 8 > window.innerHeight);
-  }, [anchor.top, anchor.lineHeight, rows.length]);
+    setLeft(Math.max(8, Math.min(anchor.left, window.innerWidth - width - 8)));
+  }, [anchor.top, anchor.left, anchor.lineHeight, rows.length]);
 
   /**
    * Keep the highlight in view by moving the list's own scrollTop.
@@ -146,8 +152,8 @@ export function DocMention({
   }, [activeIndex, rows]);
 
   const style = flip
-    ? { top: anchor.top - 6, left: anchor.left, transform: "translateY(-100%)" }
-    : { top: anchor.top + anchor.lineHeight + 4, left: anchor.left };
+    ? { top: anchor.top - 6, left, transform: "translateY(-100%)" }
+    : { top: anchor.top + anchor.lineHeight + 4, left };
 
   return (
     <div

@@ -208,3 +208,36 @@ test("the composer stays at the bottom and the menu is never clipped", async ({ 
   await page.keyboard.press("ArrowDown");
   expect(await composer.evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(before);
 });
+
+test("the @ menu stays on-screen at phone width", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ops/sample/triage");
+
+  const input = page.getByLabel("Client idea");
+  await expect(input).toBeVisible();
+  await input.click();
+
+  // Push the caret rightward first: the menu is caret-anchored, and on a
+  // 390px screen a 320px menu opened mid-line hangs off the edge unless the
+  // component clamps it. QA on PR #8 measured a right edge of 519.
+  await page.keyboard.type("Refine the checkout flow per @");
+
+  const menu = page.getByTestId("doc-mention");
+  await expect(menu).toBeVisible();
+
+  // Poll, because the clamp is a layout effect — assert the settled position.
+  await expect
+    .poll(() =>
+      menu.evaluate((el) => {
+        const r = (el.parentElement as HTMLElement).getBoundingClientRect();
+        return Math.round(r.right);
+      }),
+    )
+    .toBeLessThanOrEqual(390);
+
+  expect(
+    await menu.evaluate((el) =>
+      Math.round((el.parentElement as HTMLElement).getBoundingClientRect().left),
+    ),
+  ).toBeGreaterThanOrEqual(0);
+});

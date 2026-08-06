@@ -300,6 +300,27 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Evidence:** spec v2 §4 (R1) · ADR-0007 (the team pivot) · `src/lib/auth/session-token.ts` (signed role claim).
   - **Escalate if:** roles need to differ per project — they are global today.
 
+### Q8 · Quality follow-ups — from the PR #8 QA pass  *(2026-08-06)*
+
+> Low-severity findings from the fresh-context QA pass on PR #8, deferred there on purpose (the
+> medium — the @ menu clipping at phone width — was fixed forward on the PR itself).
+
+- · **Q8.1** Mobile sidebar sheet stays open after tapping a doc in the tree.  → **[T]**
+  - **Intent:** the navigated page renders behind the drawer, so on a phone every doc tap needs a
+    second tap to see the result.
+  - **Oracle:** e2e at phone width — tapping a tree leaf closes the sheet and shows the doc.
+  - **Evidence:** PR #8 QA finding 2 · `e2e/mobile.spec.ts` (the breakpoint suite to extend).
+- · **Q8.2** MCP bearer check should match the webhook's `timingSafeEqual` standard.  → **[T]**
+  - **Intent:** `src/mcp/auth.ts` compares the token with `!==` while the webhook route compares
+    signatures constant-time — the inconsistency is the finding more than the side-channel.
+  - **Oracle:** both secret comparisons go through the same helper; unit test still covers 401/503.
+  - **Evidence:** PR #8 QA finding 3 · `src/lib/content/github/webhook.ts` (the standard to match).
+- · **Q8.3** DoR gap pill: human labels, and stop bleeding past card padding at 390px.  → **[T]**
+  - **Intent:** the pill shows raw camelCase field names ("mustNot", "escalateIf") — internal names
+    on a surface PM/QA read.
+  - **Oracle:** the pill renders "Must NOT" / "Escalate if"; no horizontal overflow at 390px.
+  - **Evidence:** PR #8 QA finding 4.
+
 ### Q · Quality follow-ups — from the PR #1 review  *(2026-07-29)*
 
 > Found by the ship-review QA pass on PR #1 and left unfixed there on purpose: correctness and

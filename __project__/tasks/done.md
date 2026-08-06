@@ -1,3 +1,12 @@
+---
+id: gw-tasks-done
+kind: tasks
+title: Done archive
+description: Write-once owner of ship facts — one entry per shipped PR, newest first.
+status: active
+updated: 2026-08-06
+---
+
 # Done — archive (newest at top)
 
 Format: `- YYYY-MM-DD · <sha> · <task-id> short description`
@@ -35,3 +44,16 @@ Format: `- YYYY-MM-DD · <sha> · <task-id> short description`
 - 2026-07-25 · F2.1 · ContentSource — project.yml parser + filesystem adapter (int-tested)
 - 2026-07-24 · F1.1 · Core lib seam — result/pipe/clock/repository/context ALS + 19 tests
 - 2026-07-24 · F0.1 · Scaffold Next 16 + pinned tech-standards §0 stack + toolchain
+
+---
+
+## Session log (auto — SessionEnd hook)
+
+<!-- claude-session-log -->
+### 🤖 Session log
+
+| ended (UTC) | author | session | duration | models | tokens in/out/cache-read | est. cost |
+|---|---|---|---|---|---|---|
+| 2026-07-31 10:37 | Vinh Nguyen | `d29a7b94` | 25h 13m | opus-5 | 5.1M/965k/506.9M | $309.31 |
+
+**Cumulative est. cost: $309.31** _(API-rate estimate; subscription-billed)_

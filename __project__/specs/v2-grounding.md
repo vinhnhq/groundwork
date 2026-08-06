@@ -1,3 +1,12 @@
+---
+id: gw-spec-v2
+kind: spec
+title: Grounding & team sync
+description: The Brain digest through three byte-identical doors, plus the team surfaces for PM and QA.
+status: shipped
+updated: 2026-08-06
+---
+
 # v2 — Grounding & Team Sync
 
 > Status: **SPEC (drafted 2026-07-28).** Reframes Groundwork from a solo portfolio+ops

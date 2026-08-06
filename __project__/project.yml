@@ -4,11 +4,21 @@ tagline: A git-backed grounding layer for a mixed-agent team
 status: active            # active | paused | shipped | archived
 visibility: public
 stack: [next, ts, react, kysely, neon, better-auth, tailwind, shadcn, mcp]
+
+conventions:
+  # Read by `dev-workflow check`. Doc ids are `gw-<kind>-<slug>` —
+  # gw-adr-0010 · gw-spec-v2 · gw-doc-architecture. Permanent, like the slug.
+  idPrefix: gw
+  docRoot: __project__
+  backlog: tasks/backlog.md
+  # Nothing vendored or read-only here: every doc under __project__/ is ours.
+  exempt: []
+
 links:
   repo: https://github.com/vinhnhq/groundwork
   live: ""
 cover: ""
 public_highlights:
   - "One Brain digest per project, served through three byte-identical doors — clipboard, context.md, and MCP"
-  - "Git-free write-back: PM and QA capture and move tasks; the change lands in the repo's backlog.md"
+  - "Tickets live in Groundwork, docs live in each repo — joined by slug and ticket id (ADR-0010)"
   - "Definition-of-Ready gate — every ticket grounded in ≥2 evidences before it can start"

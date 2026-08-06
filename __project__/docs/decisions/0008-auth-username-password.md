@@ -1,6 +1,15 @@
+---
+id: gw-adr-0008
+kind: adr
+title: Auth — username + password
+description: better-auth with username and password, no social providers, and a two-layer role gate the edge cannot fake.
+status: accepted
+updated: 2026-08-06
+---
+
 # ADR-0008 — better-auth with username + password, and a two-layer role gate
 
-Status: Accepted (2026-07-29)
+Decided: 2026-07-29
 
 ## Context
 

@@ -1,6 +1,15 @@
+---
+id: gw-adr-0004
+kind: adr
+title: The grounding digest
+description: What renderBrain includes and the size budget it holds to, so one digest grounds any agent on a project.
+status: accepted
+updated: 2026-08-06
+---
+
 # ADR-0004 — The grounding digest: what `renderBrain` includes, and its size budget
 
-Status: Accepted (2026-07-28) · Amended (2026-07-28, see *Amendment* below)
+Decided: 2026-07-28 · Amended (2026-07-28, see *Amendment* below)
 
 ## Context
 

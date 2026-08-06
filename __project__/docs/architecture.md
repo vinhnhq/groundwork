@@ -1,3 +1,12 @@
+---
+id: gw-doc-architecture
+kind: doc
+title: Architecture & build plan
+description: Intent, the two projections, the component map, the MCP surface, and the build order.
+status: active
+updated: 2026-08-06
+---
+
 # Groundwork — Architecture (kickoff draft)
 
 > Status: **DRAFT for kickoff in a new repo.** Owner: Vinh. Drafted with Claude, 2026-07.

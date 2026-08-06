@@ -1,6 +1,14 @@
+---
+id: gw-adr-0011
+kind: adr
+title: Ticket lifecycle & contention
+description: merged ≠ released, Release as an aggregate, oracle-gated admission, atomic claims, and asymmetric human/agent preemption.
+status: accepted
+updated: 2026-08-06
+---
+
 # ADR-0011 — Ticket lifecycle, release verification, and contention
 
-- **Status:** **Accepted** (2026-08-05)
 - **Date:** 2026-08-05
 - **Deciders:** Vinh
 - **Extends:** [ADR-0010](0010-ticket-storage-ownership.md) (Groundwork owns tickets)

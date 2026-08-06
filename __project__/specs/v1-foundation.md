@@ -1,3 +1,12 @@
+---
+id: gw-spec-v1
+kind: spec
+title: Foundation
+description: The first runnable console: content source, doc rendering, project list, and the core lib seam.
+status: shipped
+updated: 2026-08-06
+---
+
 # v1 — Foundation spec
 
 > Rungs 1–4 of the architecture build order: the read-only ops core + auth gate. No triage/MCP yet.

@@ -1,3 +1,12 @@
+---
+id: gw-doc-tech-standards
+kind: doc
+title: Technical standards & playbook
+description: The engineering DNA lifted from infinite-oneness: FP playbook, context rules, DB/auth/ES patterns, testing, UI.
+status: active
+updated: 2026-08-06
+---
+
 # Groundwork — Technical Standards & Reusable Playbook
 
 > **What this is.** The business-stripped technical DNA of `infinite-oneness`, distilled for reuse in Groundwork

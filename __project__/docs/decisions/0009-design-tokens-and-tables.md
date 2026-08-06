@@ -1,6 +1,15 @@
+---
+id: gw-adr-0009
+kind: adr
+title: Design tokens & borderless tables
+description: Complete the radix-maia token set; status earns a variant rather than a bespoke hue, and tables drop their borders.
+status: accepted
+updated: 2026-08-06
+---
+
 # ADR-0009 — Complete the radix-maia token set; borderless tables
 
-Status: Accepted (2026-07-29)
+Decided: 2026-07-29
 
 ## Context
 

@@ -1,6 +1,16 @@
+---
+id: gw-adr-0002
+kind: adr
+title: Write-back mechanism (superseded)
+description: A separate writer seam defaulting to a PR. Superseded by ADR-0010 — write-back is removed, not deferred.
+status: superseded
+updated: 2026-08-06
+---
+
 # ADR-0002 — Write-back mechanism: a separate writer seam, defaulting to a PR
 
-Status: Accepted (2026-07-28)
+Decided: 2026-07-28 · **Superseded 2026-08-05 by [ADR-0010](0010-ticket-storage-ownership.md)** —
+write-back is removed, not deferred. Read this for the reasoning that led there; do not build from it.
 
 ## Context
 

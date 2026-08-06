@@ -19,7 +19,11 @@
     "test:watch": "vitest --project unit",
     "test:e2e": "playwright test",
     "summary": "bun run .claude/scripts/work-summary.ts",
-    "mcp": "bun run src/mcp/server.ts"
+    "mcp": "bun run src/mcp/server.ts",
+    "doctor": "dev-workflow doctor",
+    "docs:check": "dev-workflow check",
+    "docs:sync": "dev-workflow sync",
+    "guard": "dev-workflow guard"
   },
   "dependencies": {
     "@better-auth/kysely-adapter": "^1.6.25",
@@ -64,6 +68,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
+    "@vinhnnn/dev-workflow": "^3.0.0",
     "@vitest/coverage-v8": "^4.1.10",
     "babel-plugin-react-compiler": "^1.0.0",
     "tailwindcss": "^4",

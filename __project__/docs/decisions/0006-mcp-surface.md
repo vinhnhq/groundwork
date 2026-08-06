@@ -1,6 +1,15 @@
+---
+id: gw-adr-0006
+kind: adr
+title: MCP surface and transport
+description: Which tools the MCP door exposes and how it is transported — local stdio and remote HTTP serving identical bytes.
+status: accepted
+updated: 2026-08-06
+---
+
 # ADR-0006 — MCP surface and transport
 
-Status: Accepted (2026-07-28)
+Decided: 2026-07-28
 
 ## Context
 

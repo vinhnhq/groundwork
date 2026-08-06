@@ -1,3 +1,12 @@
+---
+id: gw-tasks-backlog
+kind: tasks
+title: Backlog
+description: Open work only, DoR-tagged and TDD-ordered; shipped items move to the done archive.
+status: active
+updated: 2026-08-06
+---
+
 # Backlog — TDD-ordered, DoR-tagged
 
 > Each leaf: **red → green → refactor → commit**, atomic. A task starts only when it passes the **Definition of Ready** (intent · autonomy tier · Touches/Must-NOT · Oracle · ≥2 evidences · Escalate-if). DRAFT = discuss first.

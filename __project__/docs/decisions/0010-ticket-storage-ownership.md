@@ -1,6 +1,14 @@
+---
+id: gw-adr-0010
+kind: adr
+title: Tickets here, docs in the repo
+description: Groundwork owns tickets in its database; rationale stays canonical as Markdown in each project repo. Write-back removed.
+status: accepted
+updated: 2026-08-06
+---
+
 # ADR-0010 — Tickets live in Groundwork; docs live in the repo
 
-- **Status:** **Accepted** (2026-08-05)
 - **Date:** 2026-08-05
 - **Deciders:** Vinh
 - **Reverses:** the §14 non-goal *"the dashboard never becomes a second source of truth"* (task half only) · the README line *"it never becomes a second database of tasks"*

@@ -1,6 +1,14 @@
+---
+id: gw-adr-0012
+kind: adr
+title: Persistence tiers
+description: What is event-sourced and what is not: strict ES for invariants, event-the-change for attribution, CRUD for the rest.
+status: accepted
+updated: 2026-08-06
+---
+
 # ADR-0012 — Persistence tiers: what is event-sourced and what is not
 
-- **Status:** **Accepted** (2026-08-05)
 - **Date:** 2026-08-05
 - **Deciders:** Vinh
 - **Extends:** [ADR-0010](0010-ticket-storage-ownership.md) · [ADR-0011](0011-ticket-lifecycle.md)

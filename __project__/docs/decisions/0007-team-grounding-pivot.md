@@ -1,6 +1,15 @@
+---
+id: gw-adr-0007
+kind: adr
+title: Team grounding pivot
+description: Reverses the solo non-goal: v2 is explicitly a small-team tool for engineer, PM and QA together.
+status: accepted
+updated: 2026-08-06
+---
+
 # ADR-0007 — Team grounding pivot & delivery model
 
-Status: Accepted (2026-07-28)
+Decided: 2026-07-28
 
 ## Context
 

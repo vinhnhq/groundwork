@@ -4,7 +4,6 @@ import { Loader2, Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 import { type ActionResult, captureTask } from "@/app/ops/[project]/actions";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Drawer,
   DrawerClose,
@@ -16,6 +15,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { WriteOutcomeNotice } from "@/components/write-outcome";
 import { readiness } from "@/lib/tasks/dor";
 import type { AutonomyTier, DorField, Task } from "@/lib/tasks/types";

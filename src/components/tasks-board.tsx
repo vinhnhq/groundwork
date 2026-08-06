@@ -83,9 +83,7 @@ export function TasksBoard({
                           {/* No status badge: the column already says the status,
                               and repeating it in every card is the noise the
                               neutral-variant change removed from the table. */}
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {task.id}
-                          </span>
+                          <span className="font-mono text-xs text-muted-foreground">{task.id}</span>
                           <p className="text-sm font-medium break-words">{task.title}</p>
                           <div className="flex flex-wrap items-center gap-1.5">
                             <TierBadge tier={task.autonomy} />

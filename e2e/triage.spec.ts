@@ -62,8 +62,7 @@ test("triage renders as a message thread and tagging a file steers the verdict",
   // And focus never left the textarea.
   expect(await page.evaluate(() => document.activeElement?.id)).toBe("triage-idea");
 
-  const tagged =
-    (await menu.locator('[aria-selected="true"]').first().textContent())?.trim() ?? "";
+  const tagged = (await menu.locator('[aria-selected="true"]').first().textContent())?.trim() ?? "";
 
   // Enter takes the highlighted option; the whole `@query` becomes its title.
   await page.keyboard.press("Enter");

@@ -49,8 +49,14 @@ test.describe("motion enabled", () => {
 
     // Whatever the entrance does, it must end at full opacity — an animation
     // that strands content at 0 is indistinguishable from a broken page.
+    // The reveal wrapper is the column's parent; a detached parent means the
+    // page is broken anyway, so failing the poll (NaN ≠ 1) is the right outcome.
     await expect
-      .poll(() => column.evaluate((el) => Number(getComputedStyle(el.parentElement!).opacity)))
+      .poll(() =>
+        column.evaluate((el) =>
+          el.parentElement ? Number(getComputedStyle(el.parentElement).opacity) : Number.NaN,
+        ),
+      )
       .toBe(1);
   });
 });

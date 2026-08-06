@@ -49,20 +49,20 @@ export function TasksTable({
         {filtered.map((task) => (
           <li key={task.id}>
             <Card size="sm">
-            <CardContent className="flex flex-col gap-2">
-            <div className="flex items-start gap-2">
-              <span className="font-mono text-xs text-muted-foreground">{task.id}</span>
-              <span className="flex-1 text-sm">{task.title}</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <StatusBadge status={task.status} />
-              <TierBadge tier={task.autonomy} />
-              <Readiness task={task} />
-            </div>
-            {mayWrite && (
-              <TaskStatusControl project={project} taskId={task.id} status={task.status} />
-            )}
-            </CardContent>
+              <CardContent className="flex flex-col gap-2">
+                <div className="flex items-start gap-2">
+                  <span className="font-mono text-xs text-muted-foreground">{task.id}</span>
+                  <span className="flex-1 text-sm">{task.title}</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <StatusBadge status={task.status} />
+                  <TierBadge tier={task.autonomy} />
+                  <Readiness task={task} />
+                </div>
+                {mayWrite && (
+                  <TaskStatusControl project={project} taskId={task.id} status={task.status} />
+                )}
+              </CardContent>
             </Card>
           </li>
         ))}

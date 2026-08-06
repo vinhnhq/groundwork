@@ -170,12 +170,10 @@ test.describe("chrome placement", () => {
     await signInAs(page, "engineer");
     await page.goto("/ops/sample/docs");
 
-    const pill = await page
-      .getByRole("separator", { name: "Resize sidebar" })
-      .evaluate((el) => {
-        const cs = getComputedStyle(el, "::after");
-        return { height: cs.height, width: cs.width, alpha: cs.backgroundColor };
-      });
+    const pill = await page.getByRole("separator", { name: "Resize sidebar" }).evaluate((el) => {
+      const cs = getComputedStyle(el, "::after");
+      return { height: cs.height, width: cs.width, alpha: cs.backgroundColor };
+    });
 
     // A short centred pill, painted before any pointer arrives.
     expect(Number.parseFloat(pill.height)).toBeGreaterThan(16);

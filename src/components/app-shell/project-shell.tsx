@@ -61,9 +61,7 @@ export function ProjectShell({
           badge: counts.docs,
           alsoActive: (p) => IN_DOC.test(p),
           subtree:
-            docTree.length > 0 ? (
-              <DocTreeItems nodes={docTree} variant="sidebar" />
-            ) : undefined,
+            docTree.length > 0 ? <DocTreeItems nodes={docTree} variant="sidebar" /> : undefined,
         },
         { label: "Tasks", href: `${base}/tasks`, icon: ListTodo, badge: counts.tasks },
       ],

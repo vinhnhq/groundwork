@@ -133,10 +133,12 @@ test("the sidebar tree persists across documents and marks the open one", async 
    * what makes the tree orient you rather than needing a re-walk on every visit.
    */
   await page.goto("/ops/sample/doc/tasks/backlog");
-  await expect(page.getByTestId("doc-tree-nav").getByRole("link", { name: /Backlog/i })).toBeVisible();
   await expect(
-    page.getByTestId("doc-tree-nav").locator('[aria-current="page"]'),
-  ).toContainText("Backlog");
+    page.getByTestId("doc-tree-nav").getByRole("link", { name: /Backlog/i }),
+  ).toBeVisible();
+  await expect(page.getByTestId("doc-tree-nav").locator('[aria-current="page"]')).toContainText(
+    "Backlog",
+  );
 });
 
 /** Every ADR/spec URL minted before the tree existed must still resolve. */

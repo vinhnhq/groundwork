@@ -108,11 +108,7 @@ export function VerdictMessage({
               {citations.map((c) => (
                 <Attachment key={`${c.kind}-${c.ref}`}>
                   <AttachmentMedia>
-                    {c.kind === "task" ? (
-                      <ListTodo aria-hidden />
-                    ) : (
-                      <FileText aria-hidden />
-                    )}
+                    {c.kind === "task" ? <ListTodo aria-hidden /> : <FileText aria-hidden />}
                   </AttachmentMedia>
                   <AttachmentContent>
                     <AttachmentTitle>{c.label}</AttachmentTitle>
@@ -135,13 +131,7 @@ export function VerdictMessage({
  * verdict are part of the record, and letting them be edited afterwards would
  * make the transcript disagree with the analysis it produced.
  */
-export function DocAttachment({
-  doc,
-  onRemove,
-}: {
-  doc: TaggableDoc;
-  onRemove?: () => void;
-}) {
+export function DocAttachment({ doc, onRemove }: { doc: TaggableDoc; onRemove?: () => void }) {
   return (
     <Attachment>
       <AttachmentMedia>

@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RecordedWrite } from "@/lib/content/writers/memory";
 
 /**
@@ -39,26 +33,29 @@ export function ProposedChanges({ writes }: { writes: RecordedWrite[] }) {
       </CardHeader>
 
       <CardContent>
-      <ul className="flex flex-col gap-2">
-        {writes.map((write) => (
-          <li key={`${write.at}-${write.message}`} className="rounded-md border border-border p-3">
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="text-sm font-medium">{write.message}</span>
-              <span className="text-xs text-muted-foreground">
-                by {write.actor} · {new Date(write.at).toLocaleTimeString()}
-              </span>
-            </div>
-            <details className="mt-1.5">
-              <summary className="cursor-pointer text-xs text-muted-foreground hover:underline">
-                Resulting backlog.md ({write.content.length.toLocaleString()} chars)
-              </summary>
-              <pre className="mt-2 max-h-72 overflow-auto rounded bg-muted/40 p-2 text-xs whitespace-pre-wrap">
-                {write.content}
-              </pre>
-            </details>
-          </li>
-        ))}
-      </ul>
+        <ul className="flex flex-col gap-2">
+          {writes.map((write) => (
+            <li
+              key={`${write.at}-${write.message}`}
+              className="rounded-md border border-border p-3"
+            >
+              <div className="flex flex-wrap items-baseline gap-2">
+                <span className="text-sm font-medium">{write.message}</span>
+                <span className="text-xs text-muted-foreground">
+                  by {write.actor} · {new Date(write.at).toLocaleTimeString()}
+                </span>
+              </div>
+              <details className="mt-1.5">
+                <summary className="cursor-pointer text-xs text-muted-foreground hover:underline">
+                  Resulting backlog.md ({write.content.length.toLocaleString()} chars)
+                </summary>
+                <pre className="mt-2 max-h-72 overflow-auto rounded bg-muted/40 p-2 text-xs whitespace-pre-wrap">
+                  {write.content}
+                </pre>
+              </details>
+            </li>
+          ))}
+        </ul>
       </CardContent>
     </Card>
   );

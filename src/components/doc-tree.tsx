@@ -5,11 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import {
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-} from "@/components/ui/sidebar";
+import { SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from "@/components/ui/sidebar";
 import type { DocFolder, DocNode } from "@/lib/content/doc-tree";
 import type { DocKind } from "@/lib/content/types";
 import { cn } from "@/lib/utils";
@@ -54,12 +50,7 @@ export function DocTree({
     // The root list drops the primitive's indent rail: at depth 0 there is no
     // parent to connect to, and the border would float against nothing.
     <SidebarMenuSub className="mx-0 border-l-0 px-0" data-testid="doc-tree">
-      <DocTreeItems
-        nodes={nodes}
-        variant={variant}
-        onSelectDoc={onSelectDoc}
-        selected={selected}
-      />
+      <DocTreeItems nodes={nodes} variant={variant} onSelectDoc={onSelectDoc} selected={selected} />
     </SidebarMenuSub>
   );
 }
@@ -159,9 +150,7 @@ function TreeNode({
             >
               <FileText aria-hidden />
               <span>{node.title}</span>
-              {isChosen && (
-                <Check className="ml-auto size-3.5 shrink-0" aria-label="tagged" />
-              )}
+              {isChosen && <Check className="ml-auto size-3.5 shrink-0" aria-label="tagged" />}
             </button>
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>

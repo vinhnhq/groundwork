@@ -4,7 +4,6 @@ import { Loader2, Paperclip, Send } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { acceptDraft, analyzeIdea } from "@/app/ops/[project]/triage/actions";
 import { type CaretPoint, caretCoordinates } from "@/components/caret-coordinates";
-import { DocTree } from "@/components/doc-tree";
 import {
   DocMention,
   type MentionQuery,
@@ -12,6 +11,7 @@ import {
   useMentionRows,
   wrapIndex,
 } from "@/components/doc-mention";
+import { DocTree } from "@/components/doc-tree";
 import {
   DocAttachment,
   IdeaMessage,
@@ -21,17 +21,9 @@ import {
 import { AttachmentGroup } from "@/components/ui/attachment";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import {
   MessageScroller,
@@ -41,10 +33,18 @@ import {
   MessageScrollerProvider,
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { DocNode } from "@/lib/content/doc-tree";
 import { readiness } from "@/lib/tasks/dor";
 import type { AutonomyTier, Task } from "@/lib/tasks/types";
-import type { DocNode } from "@/lib/content/doc-tree";
 import type { DraftTicket, TriageResult } from "@/lib/triage/types";
 
 const TIERS: AutonomyTier[] = ["supervised", "plan-gated", "dark", "trivial"];
@@ -101,7 +101,11 @@ export function TriageWorkbench({
     if (!text.trim()) return;
     const outgoing = { text, tagged };
     startTransition(async () => {
-      const r = await analyzeIdea(project, outgoing.text, outgoing.tagged.map((d) => d.id));
+      const r = await analyzeIdea(
+        project,
+        outgoing.text,
+        outgoing.tagged.map((d) => d.id),
+      );
       setSent(outgoing);
       setResult(r);
       setDraft(r.draft);
@@ -236,160 +240,169 @@ export function TriageWorkbench({
           always-present scroller put a void above the composer before you had
           sent anything. */}
       {sent && (
-      <div className="min-h-0 flex-1">
-      <MessageScrollerProvider>
-        <MessageScroller className="rounded-2xl bg-card ring-1 ring-foreground/10">
-          <MessageScrollerViewport>
-            <MessageScrollerContent className="gap-4 p-4">
-              <Marker variant="separator">
-                <MarkerContent>checked against this project's docs</MarkerContent>
-              </Marker>
+        <div className="min-h-0 flex-1">
+          <MessageScrollerProvider>
+            <MessageScroller className="rounded-2xl bg-card ring-1 ring-foreground/10">
+              <MessageScrollerViewport>
+                <MessageScrollerContent className="gap-4 p-4">
+                  <Marker variant="separator">
+                    <MarkerContent>checked against this project's docs</MarkerContent>
+                  </Marker>
 
-              <MessageScrollerItem>
-                <IdeaMessage text={sent.text} tagged={sent.tagged} />
-              </MessageScrollerItem>
+                  <MessageScrollerItem>
+                    <IdeaMessage text={sent.text} tagged={sent.tagged} />
+                  </MessageScrollerItem>
 
-              {result && (
-                <MessageScrollerItem>
-                  <VerdictMessage
-                    kind={result.kind}
-                    message={result.message}
-                    citations={result.citations}
-                  />
-                </MessageScrollerItem>
-              )}
-
-            {result && draft && (
-              <div className="flex flex-col gap-5 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
-                <div className="grid gap-3">
-                  <Field>
-                    <FieldLabel htmlFor="draft-title">Title</FieldLabel>
-                    <Input
-                      id="draft-title"
-                      value={draft.title}
-                      onChange={(e) => set("title", e.target.value)}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel>Autonomy</FieldLabel>
-                    <Select
-                      value={draft.autonomy ?? NO_TIER}
-                      onValueChange={(v) =>
-                        set("autonomy", v === NO_TIER ? undefined : (v as AutonomyTier))
-                      }
-                    >
-                      <SelectTrigger aria-label="Autonomy">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Radix forbids an empty-string item value, so "no tier"
-                            carries a sentinel that maps back to `undefined`. */}
-                        <SelectItem value={NO_TIER}>— none —</SelectItem>
-                        {TIERS.map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {t}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="draft-intent">Intent</FieldLabel>
-                    <Input
-                      id="draft-intent"
-                      value={draft.intent ?? ""}
-                      onChange={(e) => set("intent", e.target.value)}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="draft-touches">Touches (comma-separated)</FieldLabel>
-                    <Input
-                      id="draft-touches"
-                      value={csv(draft.touches)}
-                      onChange={(e) => set("touches", parseCsv(e.target.value))}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="draft-must-not">Must NOT (comma-separated)</FieldLabel>
-                    <Input
-                      id="draft-must-not"
-                      value={csv(draft.mustNot)}
-                      onChange={(e) => set("mustNot", parseCsv(e.target.value))}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="draft-oracle">
-                      Oracle (how &quot;done&quot; is verified)
-                    </FieldLabel>
-                    <Input
-                      id="draft-oracle"
-                      value={draft.oracle ?? ""}
-                      onChange={(e) => set("oracle", e.target.value)}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="draft-evidence">Evidence (comma-separated, ≥2)</FieldLabel>
-                    <Input
-                      id="draft-evidence"
-                      value={csv(draft.evidence.map((ev) => ev.ref))}
-                      onChange={(e) =>
-                        set(
-                          "evidence",
-                          parseCsv(e.target.value).map((ref) => ({ kind: "doc", ref })),
-                        )
-                      }
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="draft-escalate-if">Escalate if</FieldLabel>
-                    <Input
-                      id="draft-escalate-if"
-                      value={draft.escalateIf ?? ""}
-                      onChange={(e) => set("escalateIf", e.target.value)}
-                    />
-                  </Field>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3" data-testid="dor-status">
-                  {dor?.ready ? (
-                    <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      READY
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                      missing: {dor?.missing.join(", ")}
-                    </Badge>
+                  {result && (
+                    <MessageScrollerItem>
+                      <VerdictMessage
+                        kind={result.kind}
+                        message={result.message}
+                        citations={result.citations}
+                      />
+                    </MessageScrollerItem>
                   )}
-                  <Button type="button" size="sm" onClick={accept} disabled={!dor?.ready || pending}>
-                    Accept → backlog
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" onClick={dismiss}>
-                    Dismiss
-                  </Button>
-                </div>
-              </div>
-            )}
 
-            {accepted && (
-              <div className="flex flex-col gap-2 rounded-lg border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
-                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
-                  Would append to {project}/__project__/tasks/backlog.md
-                </p>
-                <pre className="overflow-x-auto rounded bg-white/70 p-3 text-xs dark:bg-black/30">
-                  {accepted.block}
-                </pre>
-                <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                  Mock write-back (in-memory). Real version commits/opens a PR against the repo.
-                </p>
-              </div>
-            )}
+                  {result && draft && (
+                    <div className="flex flex-col gap-5 rounded-2xl bg-card p-5 ring-1 ring-foreground/10">
+                      <div className="grid gap-3">
+                        <Field>
+                          <FieldLabel htmlFor="draft-title">Title</FieldLabel>
+                          <Input
+                            id="draft-title"
+                            value={draft.title}
+                            onChange={(e) => set("title", e.target.value)}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel>Autonomy</FieldLabel>
+                          <Select
+                            value={draft.autonomy ?? NO_TIER}
+                            onValueChange={(v) =>
+                              set("autonomy", v === NO_TIER ? undefined : (v as AutonomyTier))
+                            }
+                          >
+                            <SelectTrigger aria-label="Autonomy">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {/* Radix forbids an empty-string item value, so "no tier"
+                            carries a sentinel that maps back to `undefined`. */}
+                              <SelectItem value={NO_TIER}>— none —</SelectItem>
+                              {TIERS.map((t) => (
+                                <SelectItem key={t} value={t}>
+                                  {t}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="draft-intent">Intent</FieldLabel>
+                          <Input
+                            id="draft-intent"
+                            value={draft.intent ?? ""}
+                            onChange={(e) => set("intent", e.target.value)}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="draft-touches">Touches (comma-separated)</FieldLabel>
+                          <Input
+                            id="draft-touches"
+                            value={csv(draft.touches)}
+                            onChange={(e) => set("touches", parseCsv(e.target.value))}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="draft-must-not">
+                            Must NOT (comma-separated)
+                          </FieldLabel>
+                          <Input
+                            id="draft-must-not"
+                            value={csv(draft.mustNot)}
+                            onChange={(e) => set("mustNot", parseCsv(e.target.value))}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="draft-oracle">
+                            Oracle (how &quot;done&quot; is verified)
+                          </FieldLabel>
+                          <Input
+                            id="draft-oracle"
+                            value={draft.oracle ?? ""}
+                            onChange={(e) => set("oracle", e.target.value)}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="draft-evidence">
+                            Evidence (comma-separated, ≥2)
+                          </FieldLabel>
+                          <Input
+                            id="draft-evidence"
+                            value={csv(draft.evidence.map((ev) => ev.ref))}
+                            onChange={(e) =>
+                              set(
+                                "evidence",
+                                parseCsv(e.target.value).map((ref) => ({ kind: "doc", ref })),
+                              )
+                            }
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="draft-escalate-if">Escalate if</FieldLabel>
+                          <Input
+                            id="draft-escalate-if"
+                            value={draft.escalateIf ?? ""}
+                            onChange={(e) => set("escalateIf", e.target.value)}
+                          />
+                        </Field>
+                      </div>
 
-            </MessageScrollerContent>
-          </MessageScrollerViewport>
-          <MessageScrollerButton />
-        </MessageScroller>
-      </MessageScrollerProvider>
-      </div>
+                      <div className="flex flex-wrap items-center gap-3" data-testid="dor-status">
+                        {dor?.ready ? (
+                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                            READY
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                            missing: {dor?.missing.join(", ")}
+                          </Badge>
+                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={accept}
+                          disabled={!dor?.ready || pending}
+                        >
+                          Accept → backlog
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" onClick={dismiss}>
+                          Dismiss
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {accepted && (
+                    <div className="flex flex-col gap-2 rounded-lg border border-emerald-300 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
+                      <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                        Would append to {project}/__project__/tasks/backlog.md
+                      </p>
+                      <pre className="overflow-x-auto rounded bg-white/70 p-3 text-xs dark:bg-black/30">
+                        {accepted.block}
+                      </pre>
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                        Mock write-back (in-memory). Real version commits/opens a PR against the
+                        repo.
+                      </p>
+                    </div>
+                  )}
+                </MessageScrollerContent>
+              </MessageScrollerViewport>
+              <MessageScrollerButton />
+            </MessageScroller>
+          </MessageScrollerProvider>
+        </div>
       )}
 
       {/* The composer, last in the column so it lands at the bottom. Its
@@ -502,7 +515,6 @@ export function TriageWorkbench({
           </div>
         </CardContent>
       </Card>
-
     </div>
   );
 }

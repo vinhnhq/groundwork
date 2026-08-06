@@ -60,9 +60,7 @@ export function levelAt(nodes: readonly DocNode[], path: readonly string[]): Men
   let level: readonly DocNode[] = nodes;
 
   for (const segment of path) {
-    const next = level.find(
-      (n): n is DocFolder => n.type === "folder" && n.name === segment,
-    );
+    const next = level.find((n): n is DocFolder => n.type === "folder" && n.name === segment);
     if (!next) return [];
     level = next.children;
   }
@@ -121,6 +119,7 @@ export function DocMention({
 
   // Open upward when there is not room below — the composer is pinned to the
   // bottom, so downward is usually the wrong way.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(rows.length): deliberate trigger — a different row count means a different menu height, so the flip must be re-measured.
   useEffect(() => {
     const height = shellRef.current?.offsetHeight ?? 0;
     setFlip(anchor.top + anchor.lineHeight + height + 8 > window.innerHeight);
@@ -132,6 +131,7 @@ export function DocMention({
    * `scrollIntoView` scrolls every scrollable ancestor, which dragged the whole
    * composer around as the arrows walked the list.
    */
+  // biome-ignore lint/correctness/useExhaustiveDependencies(rows): deliberate trigger — new rows re-render the list, and the row at `activeIndex` may sit somewhere else; re-run the scroll after that render.
   useEffect(() => {
     const list = listRef.current;
     const row = list?.querySelector<HTMLElement>(`[data-index="${activeIndex}"]`);
@@ -272,6 +272,8 @@ export function useMentionRows({
 
   // A new query or a new folder means a new list; keeping the old index would
   // highlight a row unrelated to what was just typed.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(query): deliberate trigger — the deps ARE the effect: any change to what the list shows resets the highlight to the top.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(path): see above.
   useEffect(() => {
     setActiveIndex(0);
   }, [query, path]);

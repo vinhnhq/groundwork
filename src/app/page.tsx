@@ -37,29 +37,29 @@ export default async function Home() {
             {projects.map((p) => (
               <li key={p.slug}>
                 <Card className="h-full">
-                <CardContent className="flex flex-col gap-3">
-                <div>
-                  <h3 className="font-medium">{p.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground ">{p.tagline}</p>
-                </div>
-                {p.highlights.length > 0 && (
-                  <ul className="flex flex-col gap-1 text-sm text-muted-foreground ">
-                    {p.highlights.map((h) => (
-                      <li key={h} className="flex gap-2">
-                        <span className="text-muted-foreground">·</span>
-                        {h}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="mt-auto flex flex-wrap gap-1.5">
-                  {p.stack.map((s) => (
-                    <Badge key={s} variant="secondary">
-                      {s}
-                    </Badge>
-                  ))}
-                </div>
-                </CardContent>
+                  <CardContent className="flex flex-col gap-3">
+                    <div>
+                      <h3 className="font-medium">{p.name}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground ">{p.tagline}</p>
+                    </div>
+                    {p.highlights.length > 0 && (
+                      <ul className="flex flex-col gap-1 text-sm text-muted-foreground ">
+                        {p.highlights.map((h) => (
+                          <li key={h} className="flex gap-2">
+                            <span className="text-muted-foreground">·</span>
+                            {h}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="mt-auto flex flex-wrap gap-1.5">
+                      {p.stack.map((s) => (
+                        <Badge key={s} variant="secondary">
+                          {s}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
                 </Card>
               </li>
             ))}

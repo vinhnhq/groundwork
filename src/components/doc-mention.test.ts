@@ -45,8 +45,18 @@ describe("mentionAt", () => {
 
 describe("filterDocs", () => {
   const docs: MentionDoc[] = [
-    { id: "0008-auth", kind: "adr", title: "ADR-0008 — better-auth", relPath: "docs/decisions/0008-auth.md" },
-    { id: "docs/architecture", kind: "doc", title: "Architecture", relPath: "docs/architecture.md" },
+    {
+      id: "0008-auth",
+      kind: "adr",
+      title: "ADR-0008 — better-auth",
+      relPath: "docs/decisions/0008-auth.md",
+    },
+    {
+      id: "docs/architecture",
+      kind: "doc",
+      title: "Architecture",
+      relPath: "docs/architecture.md",
+    },
     { id: "v1", kind: "spec", title: "v1 — Foundation", relPath: "specs/v1.md" },
   ];
 

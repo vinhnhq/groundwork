@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { requireCapability } from "@/app/ops/guard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { requireCapability } from "@/app/ops/guard";
 import type { IntegrationState } from "@/lib/ops/integrations";
 import { listIntegrations } from "@/lib/ops/integrations";
 
@@ -50,31 +50,34 @@ export default async function IntegrationsPage() {
         {integrations.map((integration) => (
           <li key={integration.name}>
             <Card size="sm">
-            <CardContent>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-medium">{integration.name}</h2>
-              <Badge variant={STATE_VARIANT[integration.state]} className={STATE_TINT[integration.state]}>
-                {STATE_LABEL[integration.state]}
-              </Badge>
-            </div>
+              <CardContent>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-medium">{integration.name}</h2>
+                  <Badge
+                    variant={STATE_VARIANT[integration.state]}
+                    className={STATE_TINT[integration.state]}
+                  >
+                    {STATE_LABEL[integration.state]}
+                  </Badge>
+                </div>
 
-            <p className="mt-1.5 text-sm">{integration.detail}</p>
+                <p className="mt-1.5 text-sm">{integration.detail}</p>
 
-            {integration.state !== "live" && (
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                <span className="font-medium">To activate: </span>
-                {integration.activate}
-              </p>
-            )}
+                {integration.state !== "live" && (
+                  <p className="mt-1.5 text-sm text-muted-foreground">
+                    <span className="font-medium">To activate: </span>
+                    {integration.activate}
+                  </p>
+                )}
 
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {integration.env.map((name) => (
-                <Badge key={name} variant="secondary" className="font-mono text-[11px]">
-                  {name}
-                </Badge>
-              ))}
-            </div>
-            </CardContent>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {integration.env.map((name) => (
+                    <Badge key={name} variant="secondary" className="font-mono text-[11px]">
+                      {name}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
             </Card>
           </li>
         ))}

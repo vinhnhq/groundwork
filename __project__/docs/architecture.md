@@ -392,13 +392,36 @@ with your agent sessions.
 
 > **Amended 2026-07-28 (ADR-0007):** the original "solo, no team boards" non-goal is **reversed** —
 > v2 is explicitly a small-team tool (engineer + PM + QA). The remaining non-goals below still hold.
+>
+> **Amended 2026-08-05 ([ADR-0010](decisions/0010-ticket-storage-ownership.md)):** the task-editing
+> non-goal below is **reversed** — Groundwork owns tickets in its own database, and write-back is
+> **removed**. Sections 4, 9 and the §3 diagram still describe the write-back design and are stale
+> until v3 rewrites them; ADR-0010 is the truth in the meantime.
 
 - ~~No multi-user / team boards (solo).~~ **Reversed** — see the pivot in *Current state* + `specs/v2-grounding.md`.
-- **Task editing model:** the dashboard still never becomes a *second source of truth*. Non-technical
-  members add/flip/annotate tasks in the UI, but every change **writes back to the repo `backlog.md`**
-  (git-free for them; git stays the transport). It does not edit tasks in a private DB. No comments DB
-  or attachment store in v2 (repo assets per §7).
+- ~~**Task editing model:** every UI change **writes back to the repo `backlog.md`**; tasks are never
+  edited in a private DB.~~ **Reversed 2026-08-05 ([ADR-0010](decisions/0010-ticket-storage-ownership.md)).**
+  Write-back is deleted, along with the write scope on the GitHub token. The "second source of truth"
+  rule survives, narrowed to what it was always protecting: **rationale** (ADRs, specs, architecture,
+  runbook) stays canonical in the repo, because that is what an agent consults while editing code;
+  **coordination** (tickets, claims, status, priority, cost, verification) moves to the database,
+  because it is multi-actor, high-churn, needs atomicity, and is inert to an agent mid-edit.
+  `backlog.md` is imported once for an existing repo and never created for a new one. Lifecycle in
+  [ADR-0011](decisions/0011-ticket-lifecycle.md); storage tiers in [ADR-0012](decisions/0012-persistence-tiers.md).
 - No OAuth (username+password only — ADR-0008). No realtime multi-viewer (SSE only) until a real second
   concurrent editor exists. No portfolio CMS — frontmatter is the CMS. No multi-tenant SaaS / billing
   (self-hosted; Cloud tier is v5+ and a separate decision).
+- **No Kano field on tickets** _(decided 2026-08-05)_. Kano is a **product-discovery** tool, not a
+  work-tracking one: it needs functional/dysfunctional survey pairs across real users to mean anything,
+  and with none of those a category is just a guess wearing better vocabulary. It also collides with
+  [ADR-0011](decisions/0011-ticket-lifecycle.md) §3 — priority is **position in an ordered queue**,
+  chosen precisely to end classification debates. If Kano ever appears it belongs on the **idea /
+  triage surface** (deciding what becomes a ticket), never on tickets. It stays useful *off* the
+  product as a roadmap lens, where the one insight that matters is that **categories migrate**: an
+  attractive feature becomes must-be once competitors ship it, which is already happening to
+  "assign a ticket to an agent".
+- **Doc-set standard:** what a seeded project gets, who authors each file, and — the part that decides
+  whether any of it works — when each file reaches an agent's context, is owned by the package:
+  `@vinhnnn/dev-workflow` → `docs/project-doc-standard.md`. Groundwork consumes that standard rather
+  than defining its own.
 ```

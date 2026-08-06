@@ -10,11 +10,18 @@ same canonical docs, and the ones who cannot use git still keep the backlog in s
   cross-project READY queue, and a client-idea triage surface.
 - **Grounding**: one distilled **Brain digest** per project, served through three doors — copy to
   clipboard, `context.md` export, and MCP (local stdio or remote HTTP). All byte-identical.
-- **Git-free sync**: PM/QA capture tasks and move statuses in the UI; Groundwork writes back to the
-  repo's `backlog.md` on a branch or as a PR.
+- **Tickets**: PM/QA/devs capture work, claim it, and move it through the lifecycle in Groundwork —
+  no git required, and a claim is atomic so humans and unattended agents can share one queue.
 
-Canonical project docs live in each project repo as Markdown. Groundwork is a projection of them
-plus a write-back path — it never becomes a second database of tasks.
+**Docs live in the repo; tickets live here.** Rationale — ADRs, specs, architecture, runbook — stays
+canonical as Markdown in each project repo, because that is what an agent reads while editing code.
+Coordination — tickets, claims, status, priority, cost, verification — lives in Groundwork's database,
+because it is multi-actor, changes hourly, and needs atomicity. The two halves join on `project.yml`'s
+`slug` and the ticket id.
+
+> Write-back to `backlog.md` was **removed** on 2026-08-05 — see
+> [ADR-0010](__project__/docs/decisions/0010-ticket-storage-ownership.md). The GitHub token is
+> read-only.
 
 ## Docs
 - Architecture + build plan → [`__project__/docs/architecture.md`](__project__/docs/architecture.md)

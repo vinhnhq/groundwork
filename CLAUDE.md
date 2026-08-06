@@ -17,6 +17,20 @@ dashboard is a **read-only projection** of them + a thin write-back path for new
 - **Current spec** — [`__project__/specs/v1-foundation.md`](__project__/specs/v1-foundation.md).
 - **What to work on next** — [`__project__/tasks/backlog.md`](__project__/tasks/backlog.md) (DoR-tagged, TDD-ordered).
 
+> **⚠ The 2026-08-05 reversal — read these three before touching data design.** Groundwork now owns
+> tickets in its own database; write-back to `backlog.md` is **removed** and the GitHub token is
+> read-only. Sections 4, 9 and the §3 diagram of architecture.md still describe the old write-back
+> design and are stale until v3 rewrites them — the ADRs are the truth in the meantime.
+>
+> - [ADR-0010](__project__/docs/decisions/0010-ticket-storage-ownership.md) — **docs in the repo, tickets here.** Rationale stays canonical as Markdown in each project repo (that is what an agent reads while editing); coordination moves to the DB.
+> - [ADR-0011](__project__/docs/decisions/0011-ticket-lifecycle.md) — lifecycle: `merged ≠ released`, Release as an aggregate, oracle-gated admission, priority as queue position, asymmetric human/agent preemption, tier-as-auth.
+> - [ADR-0012](__project__/docs/decisions/0012-persistence-tiers.md) — what is event-sourced and what is not. **The whole ES case rests on the claim lock**; without it an audit table would have been right.
+>
+> Two consequences the reversal *requires*, not optional: every commit message carries a ticket id, and
+> a decision made during a ticket must reach an ADR or spec **in the repo** before the ticket closes.
+
+- **Project doc standard** — owned by `@vinhnnn/dev-workflow` → `docs/project-doc-standard.md`: the managed / seeded / grown tiers, the nine-file init set, and the routing rule (trigger in `CLAUDE.md` · body in the doc · enforcement in a check). Groundwork consumes it rather than defining its own.
+
 ## Locked kickoff decisions (from tech-standards §0)
 
 - Stack: **Next 16 · React 19 + Compiler · TS 6 · Bun · Biome 2 · Tailwind v4 · Kysely + Neon · better-auth (username + password, no social — ADR-0008) · Zod v4 · Vitest + Playwright · shadcn radix-maia**.

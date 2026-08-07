@@ -8,6 +8,10 @@ import { timingSafeEqual } from "node:crypto";
  * check comes first because `timingSafeEqual` throws on a length mismatch
  * rather than returning false; leaking the *length* of a secret is accepted,
  * matching the webhook's original standard.
+ *
+ * Equality is over bytes after UTF-8 re-encoding: distinct lone surrogates
+ * collide at U+FFFD, so this is NOT general string equality. Fine for
+ * secrets — env values and HTTP headers cannot carry lone surrogates.
  */
 export function secretEquals(presented: string, expected: string): boolean {
   const a = Buffer.from(presented);

@@ -137,6 +137,19 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Evidence:** doctor output 2026-08-06 · `package.json` already carries the `guard` script.
   - **Escalate if:** the hook's per-call latency is noticeable — then the guard needs a fast path
     before it rides every tool call.
+- · **H8** Close the guard's compound-command bypass. → **[T]**
+  - **Intent:** the `bun test` rule anchors at `^\s*`, so `cd src && bun test`, `time bun test` and
+    `echo hi; bun test` all sail through — and a compound command is exactly the shape an agent
+    produces. Found by the PR #10 QA pass; H7's Must-NOT ("change the rules themselves") kept the
+    fix out of that PR on purpose.
+  - **Touches:** `.claude/harness.json` (the one pattern) **Must NOT:** the hook wiring; the seed
+    rule.
+  - **Oracle:** `echo '{"tool_name":"Bash","tool_input":{"command":"cd src && bun test"}}' | bun run --silent guard`
+    exits 2; a command merely *mentioning* "bun test" in a grep string still passes.
+  - **Evidence:** PR #10 QA finding 2 (suggested pattern `(^|[;&|]\s*|&&\s*)bun test(\s|$)`) ·
+    `.claude/harness.json` `blockedCommands[0]`.
+  - **Escalate if:** the tightened pattern false-positives on an innocent command — then the rule
+    needs a parser, not a regex, and that belongs upstream in dev-workflow.
 - ✓ **H6** Decide Biome vs oxc for this repo. _(2026-08-06 — decided: **oxc**, shipped as
   [ADR-0013](../docs/decisions/0013-lint-format-oxc.md). oxlint + oxfmt, pure-core import ban
   ported and probe-verified, `prefer-tag-over-role` off globally matching infinite-oneness.)_

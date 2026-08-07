@@ -1,5 +1,16 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run --silent guard"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "matcher": "",

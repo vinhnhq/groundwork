@@ -471,3 +471,95 @@ describe("extraction correctness", () => {
     expect(decision.statement).not.toContain("Status: Accepted");
   });
 });
+
+/** Fix-forward from the PR #12 QA pass. */
+describe("QA follow-ups", () => {
+  it("marks a sentence-boundary cut with an ellipsis too (Q1)", () => {
+    const sentences = `First sentence stays whole. ${"Padding words fill the window here. ".repeat(12)}`;
+    const doc: BrainDoc = {
+      kind: "spec",
+      id: "v3-sent",
+      title: "v3 — Sentences",
+      body: `# v3\n\n## Out of scope\n\n- ${sentences}\n`,
+    };
+
+    const [constraint] = renderBrain({ meta, docs: [doc], tasks: [] }).constraints;
+    expect(constraint.text.length).toBeLessThanOrEqual(302);
+    expect(constraint.text.endsWith("…")).toBe(true);
+  });
+
+  it("collapses a prose Decision holding unrelated tables as prose, not table pairs (Q2)", () => {
+    const doc: BrainDoc = {
+      kind: "adr",
+      id: "0011-mixed",
+      title: "ADR-0011 — Mixed",
+      body: [
+        "# ADR-0011",
+        "",
+        "Status: Accepted",
+        "",
+        "## Decision",
+        "",
+        "The lifecycle is event-sourced and merged is not released.",
+        "",
+        "### Fields",
+        "",
+        "| Field | Author | Purpose |",
+        "| --- | --- | --- |",
+        "| intent | human | Why this is worth doing |",
+        "",
+        "More prose between the tables keeps rows a minority.",
+        "It really is mostly prose, sentence after sentence of it.",
+        "",
+        "### States",
+        "",
+        "| From | To |",
+        "| --- | --- |",
+        "| open | claimed |",
+        "",
+        "And a closing paragraph of prose to seal the ratio.",
+      ].join("\n"),
+    };
+
+    const [decision] = renderBrain({ meta, docs: [doc], tasks: [] }).decisions;
+    expect(decision.statement).toContain("merged is not released");
+    expect(decision.statement).not.toContain("→");
+    expect(decision.statement).not.toContain("Why this is worth doing ·");
+  });
+
+  it("still summarizes a Decision that IS a table (Q2)", () => {
+    const doc: BrainDoc = {
+      kind: "adr",
+      id: "0005-table",
+      title: "ADR-0005 — Table",
+      body: [
+        "# ADR-0005",
+        "",
+        "Status: Accepted",
+        "",
+        "## Decision",
+        "",
+        "| Question | Decision |",
+        "| --- | --- |",
+        "| Runner | Vitest |",
+        "| Formatter | oxfmt |",
+      ].join("\n"),
+    };
+
+    const [decision] = renderBrain({ meta, docs: [doc], tasks: [] }).decisions;
+    expect(decision.statement).toContain("Runner → Vitest");
+    expect(decision.statement).toContain("Formatter → oxfmt");
+  });
+
+  it("a heading right after a bullet, with no blank line, is not glued on (Q1)", () => {
+    const doc: BrainDoc = {
+      kind: "spec",
+      id: "v3-head",
+      title: "v3 — Head",
+      body: `# v3\n\n## Out of scope\n\n- final rule\n### Sub-heading with no blank line\n`,
+    };
+
+    const [constraint] = renderBrain({ meta, docs: [doc], tasks: [] }).constraints;
+    expect(constraint.text).toBe("final rule");
+  });
+});

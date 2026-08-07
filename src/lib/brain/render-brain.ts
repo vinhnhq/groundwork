@@ -131,7 +131,9 @@ function bulletsOf(section: string): string[] {
     if (line.startsWith("- ")) {
       bullets.push(line.slice(2).trim());
       open = true;
-    } else if (line === "") {
+    } else if (line === "" || line.startsWith("#")) {
+      // A heading ends the bullet even with no blank line before it —
+      // otherwise its hashes get glued into the constraint text.
       open = false;
     } else if (open) {
       bullets[bullets.length - 1] += ` ${line}`;
@@ -167,12 +169,17 @@ const collapse = (s: string): string =>
     .replace(/\s{2,}/g, " ")
     .trim();
 
-/** Trim at a sentence boundary where possible, else hard-cut on a word. */
+/**
+ * Trim at a sentence boundary where possible, else hard-cut on a word — and
+ * ALWAYS mark the cut. The sentence path used to end cleanly on the period,
+ * which is exactly the "no sign it was cut" failure Q1 exists to kill (found
+ * again by the PR #12 QA pass).
+ */
 function clamp(s: string, cap: number): string {
   if (s.length <= cap) return s;
   const window = s.slice(0, cap);
   const sentence = window.lastIndexOf(". ");
-  if (sentence > cap * 0.5) return window.slice(0, sentence + 1);
+  if (sentence > cap * 0.5) return `${window.slice(0, sentence + 1)} …`;
   const word = window.lastIndexOf(" ");
   return `${window.slice(0, word > 0 ? word : cap).trimEnd()}…`;
 }
@@ -195,8 +202,15 @@ const cellsOf = (row: string): string[] =>
  * columns instead and emit the pairs.
  */
 function summarizeTable(section: string): string | undefined {
-  const rows = section.split("\n").filter((l) => TABLE_ROW.test(l));
+  const lines = section.split("\n").filter((l) => l.trim());
+  const rows = lines.filter((l) => TABLE_ROW.test(l));
   if (rows.length < 2) return undefined;
+
+  // Only summarize a section the table actually IS — it opens with the table
+  // or table rows dominate. A prose section holding several unrelated tables
+  // read through the first table's header turns into confident nonsense
+  // (ADR-0011's Decision, PR #12 QA finding); prose collapse is honest there.
+  if (!TABLE_ROW.test(lines[0]) && rows.length * 2 <= lines.length) return undefined;
 
   const header = cellsOf(rows[0]).map((h) => h.toLowerCase());
   const decisionAt = header.findIndex((h) => h.includes("decision") || h.includes("choice"));

@@ -330,13 +330,17 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 > honesty issues, not security (the two security holes were fixed before merge). Grounded here so
 > they are tickets rather than a buried review comment.
 
-- · **Q1** Digest: keep wrapped constraint bullets whole. → **[D]**
+- ✓ **Q1** Digest: keep wrapped constraint bullets whole. → **[D]** _(2026-08-07 — bullets rejoin
+  continuation lines and clamp at 300 chars with an ellipsis; blank line ends the bullet so prose
+  is never glued on.)_
   - **Intent:** every constraint in the v2 spec ships as a dangling half-sentence, so the digest tells an agent half a rule and gives no sign it was cut.
   - **Touches:** `src/lib/brain/render-brain.ts` (`openConstraints`), `render-brain.test.ts`. **Must NOT:** the decision extraction, the size-budget policy.
   - **Oracle:** unit — a spec whose out-of-scope bullet wraps across source lines yields one constraint containing the whole sentence; a bullet truncated by the size budget ends in an ellipsis.
   - **Evidence:** ADR-0004 (selection policy) · `src/lib/brain/render-brain.ts` `openConstraints` is line-based · PR #1 QA finding 4.
   - **Escalate if:** joining continuation lines would swallow the next bullet — the parser has that failure mode already (field bleed).
-- · **Q2** Digest: stop quoting an ADR's `Status:` line as its decision. → **[D]**
+- ✓ **Q2** Digest: stop quoting an ADR's `Status:` line as its decision. → **[D]** _(2026-08-07 —
+  `sectionOf` honours `###` subheadings; a lone Status paragraph is metadata via a named-field
+  allow-list, so prose with a colon is never filtered on shape.)_
   - **Intent:** ADR-0002 renders with "Status: Accepted (2026-07-28)" as its locked decision, which is exactly the failure ADR-0004's amendment claims to have fixed.
   - **Touches:** `src/lib/brain/render-brain.ts` (`sectionOf`, `isMetadataBlock`), `render-brain.test.ts`. **Must NOT:** the Accepted/superseded matching.
   - **Oracle:** unit — an ADR whose `## Decision` contains `###` subheadings keeps the whole section; a one-line `Status:` paragraph is never returned as the statement.
@@ -354,7 +358,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Oracle:** the cast is gone and `bunx tsc --noEmit` still passes; a deliberate write call inside a tool fails to compile.
   - **Evidence:** `src/mcp/tools.ts:127` `source as ContentSource` · ADR-0006 "enforced by this type, not by discipline" · PR #1 QA finding 7.
   - **Escalate if:** `loadBrain` genuinely needs the wider type — then the honest fix is to narrow `loadBrain`, not to cast at the call site.
-- · **Q5** `parseBacklog` should report the lines it skipped. → **[D]**
+- ✓ **Q5** `parseBacklog` should report the lines it skipped. → **[D]** _(2026-08-07 —
+  `parseBacklogReport` returns `{tasks, skipped}`; the ops tasks page shows the count with the
+  lines in the tooltip. Grammar unchanged.)_
   - **Intent:** the parser drops anything off-grammar in silence; three of my own backlog edits vanished that way (an unknown status marker, a duplicated section, an id containing `/`).
   - **Touches:** `src/lib/tasks/parse-backlog.ts`, its test, and whichever surface shows the count. **Must NOT:** loosen the grammar itself.
   - **Oracle:** unit — a backlog with a `[~]` marker and an id containing `/` returns those lines in a `skipped` list; the ops UI shows the count.

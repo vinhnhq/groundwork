@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 import { SidebarResizer, useSidebarWidth } from "@/components/app-shell/sidebar-resizer";
 import { Separator } from "@/components/ui/separator";
@@ -22,6 +23,7 @@ import {
   SidebarMenuSub,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -59,6 +61,21 @@ export type NavItem = {
 
 export type NavGroup = { label?: string; items: NavItem[] };
 
+/**
+ * On a phone the sidebar is a modal sheet, so navigating must also dismiss
+ * it — otherwise the destination renders behind the drawer and every doc tap
+ * needs a second tap to be seen (Q8.1). Keyed on the pathname rather than on
+ * link clicks: one seam catches every navigator (nav rows, the docs tree),
+ * and taps that do not navigate — a folder chevron — leave the sheet alone.
+ */
+function CloseMobileSheetOnNavigate({ pathname }: { pathname: string }) {
+  const { isMobile, setOpenMobile } = useSidebar();
+  useEffect(() => {
+    if (isMobile) setOpenMobile(false);
+  }, [pathname, isMobile, setOpenMobile]);
+  return null;
+}
+
 export function SidebarShell({
   header,
   nav,
@@ -85,6 +102,7 @@ export function SidebarShell({
     // belongs here in the wrapper rather than as an edit to the pristine file.
     <TooltipProvider delayDuration={0}>
       <SidebarProvider style={{ "--sidebar-width": `${width}px` } as React.CSSProperties}>
+        <CloseMobileSheetOnNavigate pathname={pathname} />
         <Sidebar collapsible="icon">
           <SidebarHeader>{header}</SidebarHeader>
 

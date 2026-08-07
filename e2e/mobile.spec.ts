@@ -73,6 +73,27 @@ test("the project nav is reachable behind the sidebar trigger", async ({ page })
   await expect(navDocsLink.first()).toBeVisible();
 });
 
+test("tapping a doc in the tree closes the sheet and shows the doc", async ({ page }) => {
+  await page.goto("/ops/sample/docs");
+  await page.locator('[data-slot="sidebar-container"]').waitFor({ state: "detached" });
+  await page.locator('[data-sidebar="trigger"]:visible').click();
+
+  const sheet = page.locator('[data-slot="sidebar"][data-mobile="true"]');
+  await expect(sheet).toBeVisible();
+
+  // Folder taps are view changes, not navigations — the sheet must stay.
+  const tree = sheet.getByTestId("doc-tree-nav");
+  await tree.getByRole("button", { name: /^docs/ }).click();
+  await tree.getByRole("button", { name: /decisions/ }).click();
+  await expect(sheet).toBeVisible();
+
+  // A leaf IS a navigation: the drawer gets out of the way so the destination
+  // is seen on the first tap, not the second (Q8.1).
+  await tree.getByRole("link", { name: /Sample decision/ }).click();
+  await expect(sheet).not.toBeVisible();
+  await expect(page.getByRole("heading", { name: /Sample decision/ })).toBeVisible();
+});
+
 test("capture opens a drawer with the form in it", async ({ page }) => {
   await page.goto("/ops/sample/tasks");
 

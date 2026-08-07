@@ -1,4 +1,4 @@
-export { loadBrain } from "@/lib/brain/load-brain";
+export { type BrainSource, loadBrain } from "@/lib/brain/load-brain";
 export { renderBrain } from "@/lib/brain/render-brain";
 export type {
   Brain,

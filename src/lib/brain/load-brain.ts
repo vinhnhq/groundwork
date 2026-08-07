@@ -4,6 +4,16 @@ import type { ContentSource } from "@/lib/content/source";
 import { parseBacklog } from "@/lib/tasks/parse-backlog";
 
 /**
+ * The subset of `ContentSource` the Brain actually reads (Q4). Taking the
+ * narrow type here — rather than casting at a call site — is what lets the
+ * MCP layer's read-only `Pick` be a real guarantee instead of a claim.
+ */
+export type BrainSource = Pick<
+  ContentSource,
+  "getProject" | "listDocs" | "readDoc" | "readBacklog"
+>;
+
+/**
  * Assemble a project's Brain from any ContentSource.
  *
  * Deliberately free of `server-only` and of Next imports: both doors run this —
@@ -12,7 +22,7 @@ import { parseBacklog } from "@/lib/tasks/parse-backlog";
  */
 export async function loadBrain(
   slug: string,
-  source: ContentSource,
+  source: BrainSource,
   budget?: number,
   audience?: BrainAudience,
 ): Promise<Brain | null> {

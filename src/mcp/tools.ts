@@ -11,9 +11,10 @@ import type { Task } from "@/lib/tasks/types";
  * The MCP layer sees a *narrowed* ContentSource — reads only.
  *
  * v2's read-only rule (ADR-0006) is enforced by this type, not by discipline.
- * S1 adds `appendTask`/`updateTaskStatus` to `ContentSource`; because the tools
- * are typed against this Pick, they still cannot reach a write method. An agent
- * grounding itself must not be able to rewrite the ground.
+ * `ContentSource` itself carries no write methods (S1 put writes on the
+ * separate `BacklogWriter` seam precisely so this stays true), and `loadBrain`
+ * takes the same narrow read type — nothing downstream widens it back. An
+ * agent grounding itself must not be able to rewrite the ground.
  */
 export type ReadOnlySource = Pick<
   ContentSource,
@@ -139,7 +140,7 @@ export function createGroundworkTools(source: ReadOnlySource): ToolDef[] {
         const audience = isBrainAudience(String(args.audience ?? "both"))
           ? (args.audience as BrainAudience | undefined)
           : undefined;
-        const brain = await loadBrain(project, source as ContentSource, budget, audience);
+        const brain = await loadBrain(project, source, budget, audience);
 
         if (!brain) return `No project "${project}". Call list_projects for the available slugs.`;
         if (brain.omitted.length === 0) return brain.text;

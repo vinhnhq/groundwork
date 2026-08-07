@@ -33,10 +33,17 @@ reads the ground may also change it.
 | `get_doc(project, kind, id?)`           | Full document, when the digest is not enough. Omitting `id` lists what exists.         |
 
 **Read-only in v2, enforced by the type system.** The tools are typed against `ReadOnlySource`, a
-`Pick` of `ContentSource` naming only the five read methods. When S1 adds `appendTask` /
-`updateTaskStatus` to `ContentSource`, the MCP layer still cannot reach them — the narrowing makes
-it a compile error rather than a code-review question. An integration test additionally passes a
-source whose write methods throw and asserts none is called.
+`Pick` of `ContentSource` naming only the five read methods. S1 ultimately kept `ContentSource`
+read-only — writes went to the separate `BacklogWriter` seam (ADR-0002) — so the interface itself
+carries nothing to reach. An integration test additionally passes a source whose write methods
+throw and asserts none is called, and pins the exact tool list.
+
+> **Amended 2026-08-07 (Q4/RV4).** As shipped, the `Pick` was narrower than the code: `loadBrain`
+> took the full `ContentSource`, and `tools.ts` cast the narrowed source back to it at the call
+> site — the compile-time guarantee held only until the first widening. Fixed by narrowing
+> `loadBrain` to `BrainSource` (the four reads it uses) and deleting the cast; nothing downstream
+> of the MCP layer widens the type any more, and ADR-0010's removal of write-back makes the
+> claim true by construction.
 
 This is a real constraint, not ceremony: an agent that can both read its grounding and rewrite it
 can launder its own hallucination into "current truth", and every later reader — human or agent —

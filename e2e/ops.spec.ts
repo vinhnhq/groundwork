@@ -9,8 +9,9 @@ test.beforeEach(async ({ page }) => {
 test("ops home is a project directory and nothing else", async ({ page }) => {
   await page.goto("/ops");
 
-  // The configured project shows; a bare root is "unconfigured", not a crash.
-  await expect(page.getByText("Sample Project")).toBeVisible();
+  // The configured project shows AS A LINK — the entry point being activatable
+  // is the point of the page, so the role is the assertion (Q6).
+  await expect(page.getByRole("link", { name: /Sample Project/ })).toBeVisible();
   await expect(page.getByText(/unconfigured/i)).toBeVisible();
 
   // The cross-project queues used to live here and now do not — per-project
@@ -21,7 +22,7 @@ test("ops home is a project directory and nothing else", async ({ page }) => {
 
 test("a project opens into the workspace, with its sections in the sidebar", async ({ page }) => {
   await page.goto("/ops");
-  await page.getByText("Sample Project").click();
+  await page.getByRole("link", { name: /Sample Project/ }).click();
   await expect(page).toHaveURL(/\/ops\/sample$/);
 
   const nav = page.getByRole("navigation").first();

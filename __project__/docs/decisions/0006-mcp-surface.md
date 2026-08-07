@@ -4,7 +4,7 @@ kind: adr
 title: MCP surface and transport
 description: Which tools the MCP door exposes and how it is transported — local stdio and remote HTTP serving identical bytes.
 status: accepted
-updated: 2026-08-06
+updated: 2026-08-07
 ---
 
 # ADR-0006 — MCP surface and transport

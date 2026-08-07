@@ -69,7 +69,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Oracle:** done.md carries a dated entry naming ADR-0010 and the deleted paths.
   - **Evidence:** [ADR-0010](../docs/decisions/0010-ticket-storage-ownership.md) · backlog §v3 Sync
   - **Escalate if:** —
-- · **RV4** Close Q4 — the MCP read-only claim is now true by construction. → **[T]**
+- ✓ **RV4** Close Q4 — the MCP read-only claim is now true by construction. → **[T]** _(2026-08-07 —
+  the write-throwing integration test already existed; tightened to pin the exact four-tool list,
+  and its stale "S1 will add write methods" comment corrected. Closed together with Q4.)_
   - **Intent:** Q4 exists because the MCP surface claimed read-only while a write seam existed. R1
     removes the seam, so the claim needs verifying rather than narrowing.
   - **Touches:** `src/lib/mcp/**` (assertion only) **Must NOT:** add a write tool.
@@ -122,7 +124,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 - · **H5** Turn on `dev-workflow check --strict` in CI. → **[T]** _(blocked by H1–H3)_
   - **Intent:** a gate that only reports is a convention, and conventions decay. Strict is what makes it physics.
   - **Oracle:** CI fails on a doc with missing frontmatter; passes on `main`.
-- · **H7** Wire the guard hook — rules exist, enforcement does not. → **[T]**
+- ✓ **H7** Wire the guard hook — rules exist, enforcement does not. → **[T]** _(2026-08-07 — the
+  block doctor prints, bun variant. Verified both ways: `bun test` blocked at exit 2, `bun run
+  test` passes; ~50ms per call, well under the escalate-if.)_
   - **Intent:** `dev-workflow doctor` reports 2 command rules + 1 protected branch configured in
     `harness.json` but no `PreToolUse` hook in `.claude/settings.json` — so the guard is
     documentation, exactly the convention-vs-physics gap H5 exists to close.
@@ -313,7 +317,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
     second tap to see the result.
   - **Oracle:** e2e at phone width — tapping a tree leaf closes the sheet and shows the doc.
   - **Evidence:** PR #8 QA finding 2 · `e2e/mobile.spec.ts` (the breakpoint suite to extend).
-- · **Q8.2** MCP bearer check should match the webhook's `timingSafeEqual` standard. → **[T]**
+- ✓ **Q8.2** MCP bearer check should match the webhook's `timingSafeEqual` standard. → **[T]**
+  _(2026-08-07 — both comparisons now route through `secretEquals` in `src/lib/secure-compare.ts`;
+  401/503 coverage unchanged.)_
   - **Intent:** `src/mcp/auth.ts` compares the token with `!==` while the webhook route compares
     signatures constant-time — the inconsistency is the finding more than the side-channel.
   - **Oracle:** both secret comparisons go through the same helper; unit test still covers 401/503.
@@ -348,7 +354,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Oracle:** unit — a task whose intent lives only in its title derives READY under the agreed rule; `ready_tasks` over the Groundwork repo returns a non-empty list.
   - **Evidence:** dogfood run — Groundwork 0 of 23 READY, infinite-oneness 0 of 24 · PR #1 QA finding 6 · ADR-0003 is still unwritten.
   - **Escalate if:** relaxing the rule would let a genuinely unspecced task through — that is a product decision and belongs in ADR-0003 first.
-- · **Q4** Make the MCP read-only claim true, or narrow the claim. → **[P]**
+- ✓ **Q4** Make the MCP read-only claim true, or narrow the claim. → **[P]** _(2026-08-07 — per the
+  escalate-if, `loadBrain` was narrowed to `BrainSource` rather than casting at the call site; the
+  cast is gone, ADR-0006 amended. See RV4.)_
   - **Intent:** ADR-0006 says the tools are read-only "by type", but `ContentSource` has no write methods yet, so the `Pick` guards nothing, and `tools.ts` casts back to the full interface.
   - **Touches:** `src/mcp/tools.ts` (drop the cast), `__project__/docs/decisions/0006-mcp-surface.md`. **Must NOT:** add any mutating tool.
   - **Oracle:** the cast is gone and `bunx tsc --noEmit` still passes; a deliberate write call inside a tool fails to compile.

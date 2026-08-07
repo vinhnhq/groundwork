@@ -81,9 +81,10 @@ describe("MCP tool surface (G3)", () => {
   });
 
   /**
-   * The read-only invariant (ADR-0006). S1 will add write methods to
-   * ContentSource; this proves the MCP tools never reach for one, so an agent
-   * grounding itself cannot rewrite the ground.
+   * The read-only invariant (ADR-0006, verified true-by-construction by RV4).
+   * ContentSource carries no write methods — this proves that even handed a
+   * source that HAS them, no tool reaches for one, so an agent grounding
+   * itself cannot rewrite the ground.
    */
   it("no tool touches a write method, even when one exists", async () => {
     const writeAttempts: string[] = [];
@@ -108,8 +109,13 @@ describe("MCP tool surface (G3)", () => {
     ]);
 
     expect(writeAttempts).toEqual([]);
-    expect(tools.map((t) => t.name).join(" ")).not.toMatch(
-      /create|update|write|append|delete|set_/,
-    );
+    // Pinned, not pattern-matched: adding any tool forces a conscious edit
+    // here, next to the invariant it must uphold.
+    expect(tools.map((t) => t.name)).toEqual([
+      "list_projects",
+      "ready_tasks",
+      "get_project_context",
+      "get_doc",
+    ]);
   });
 });

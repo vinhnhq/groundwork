@@ -22,13 +22,15 @@ const HEADER_RE = /^#{2,4}\s+(.*)$/;
 const TIER_RE = /\*\*\[([SPDT])\]\*\*/;
 
 /**
- * A line that *intends* to be a task — a bullet leading with a bold token,
- * optionally behind a short marker — but fails the strict grammar (Q5). Bold
- * tokens ending in `:` are field labels, not task ids, so they are exempt;
- * plain prose bullets never match, which keeps the report quiet on ordinary
- * backlogs (the escalate-if).
+ * A line that *intends* to be a task — a bullet whose bold token is id-shaped
+ * (no spaces) behind at most a short non-word marker — but fails the strict
+ * grammar (Q5). Kept deliberately narrow so the report stays quiet on prose
+ * (the escalate-if): a word before the bold (`- see **ADR-0004**`), a bold
+ * lead-in with spaces (`- **Multi-tenant SaaS.** rest`), and a field label
+ * (`**Touches:**` or `**Touches**:`) all stay unflagged — probes from the
+ * PR #12 QA pass.
  */
-const TASKISH_RE = /^\s*-\s*(?:\S{1,3}\s+)?\*\*([^*]+)\*\*/;
+const TASKISH_RE = /^\s*-\s*(?:(?:\[[^\]]{1,2}\]|[^\w\s*]{1,3})\s+)?\*\*([\w./-]+)\*\*(?!:)/;
 
 const TIER: Record<string, AutonomyTier> = {
   S: "supervised",
@@ -146,9 +148,7 @@ export function parseBacklogReport(markdown: string, project: string): BacklogPa
       continue;
     }
     const taskish = line.match(TASKISH_RE);
-    if (taskish && !taskish[1].trim().endsWith(":")) {
-      skipped.push({ line: index + 1, text: line.trim() });
-    }
+    if (taskish) skipped.push({ line: index + 1, text: line.trim() });
     // Strip the leading list marker so a field value can't absorb the next
     // bullet's "- " when fields sit on separate lines.
     if (cur) cur.body.push(line.replace(/^\s*-\s+/, ""));

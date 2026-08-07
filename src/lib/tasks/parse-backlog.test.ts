@@ -117,6 +117,9 @@ describe("parseBacklogReport", () => {
       "- · **T2** Fine. → **[D]**",
       "  - **Oracle:** covered",
       "- just a thought for later",
+      "- see **ADR-0004** for the policy",
+      "- **Multi-tenant SaaS / billing.** Deferred to v5.",
+      "- **Touches**: colon outside the bold",
     ].join("\n");
     expect(parseBacklogReport(clean, "demo").skipped).toEqual([]);
   });

@@ -308,7 +308,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 > Low-severity findings from the fresh-context QA pass on PR #8, deferred there on purpose (the
 > medium — the @ menu clipping at phone width — was fixed forward on the PR itself).
 
-- · **Q8.1** Mobile sidebar sheet stays open after tapping a doc in the tree. → **[T]**
+- ✓ **Q8.1** Mobile sidebar sheet stays open after tapping a doc in the tree. → **[T]** _(2026-08-07 —
+  pathname-keyed close inside the provider, one seam for every navigator; folder chevrons keep the
+  sheet, leaves dismiss it. E2e at phone width covers both.)_
   - **Intent:** the navigated page renders behind the drawer, so on a phone every doc tap needs a
     second tap to see the result.
   - **Oracle:** e2e at phone width — tapping a tree leaf closes the sheet and shows the doc.
@@ -318,7 +320,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
     signatures constant-time — the inconsistency is the finding more than the side-channel.
   - **Oracle:** both secret comparisons go through the same helper; unit test still covers 401/503.
   - **Evidence:** PR #8 QA finding 3 · `src/lib/content/github/webhook.ts` (the standard to match).
-- · **Q8.3** DoR gap pill: human labels, and stop bleeding past card padding at 390px. → **[T]**
+- ✓ **Q8.3** DoR gap pill: human labels, and stop bleeding past card padding at 390px. → **[T]**
+  _(2026-08-07 — one `DOR_FIELD_LABEL` map exported beside the deriver replaces three per-surface
+  maps and the triage pill's raw `join`; badge folds via h-auto + wrap. E2e pins vocabulary + fold.)_
   - **Intent:** the pill shows raw camelCase field names ("mustNot", "escalateIf") — internal names
     on a surface PM/QA read.
   - **Oracle:** the pill renders "Must NOT" / "Escalate if"; no horizontal overflow at 390px.
@@ -360,7 +364,8 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Oracle:** unit — a backlog with a `[~]` marker and an id containing `/` returns those lines in a `skipped` list; the ops UI shows the count.
   - **Evidence:** dogfood — `[~] **F5**` parsed as nothing · `**US-3/US-4**` parsed as nothing · F3 escalate-if says conform the file, not the parser.
   - **Escalate if:** reporting skips would flag ordinary prose in every backlog — then it needs a heuristic, and a noisy warning is worse than none.
-- · **Q6** Restore the link assertion on the ops project card. → **[T]**
+- ✓ **Q6** Restore the link assertion on the ops project card. → **[T]** _(2026-08-07 — both ops.spec
+  matches are `getByRole("link")` again.)_
   - **Intent:** `ops.spec.ts` matches the project by text rather than by link role, so the entry point no longer has to be a link at all.
   - **Evidence:** PR #1 QA loosened-assertion verdict · `e2e/ops.spec.ts`.
 

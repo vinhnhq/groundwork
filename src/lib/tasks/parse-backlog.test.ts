@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { readiness } from "@/lib/tasks/dor";
-import { parseBacklog } from "@/lib/tasks/parse-backlog";
+import { parseBacklog, parseBacklogReport } from "@/lib/tasks/parse-backlog";
 
 const md = `
 # Backlog
@@ -79,5 +79,49 @@ describe("parseBacklog", () => {
     expect(byId("F1.4")?.autonomy).toBe("trivial");
     // trivial ⇒ ready despite empty fields
     expect(readiness(byId("F1.4")!).ready).toBe(true);
+  });
+});
+
+/**
+ * The parser stays strict; the dropping stops being silent (Q5). Three real
+ * backlog edits vanished without a trace — an unknown marker, an id with `/`
+ * — and nothing anywhere said so.
+ */
+describe("parseBacklogReport", () => {
+  const offGrammar = [
+    "## Section → **[P]**",
+    "",
+    "- · **T1** Parses fine.",
+    "  - **Intent:** works",
+    "- [~] **F5** Unknown marker — off-grammar.",
+    "- · **US-3/US-4** Slash in the id — off-grammar.",
+    "- plain prose bullet, no bold token.",
+    "",
+    "> - **Note:** a field-labelled bullet is not a task.",
+  ].join("\n");
+
+  it("still returns the tasks the grammar accepts", () => {
+    const { tasks } = parseBacklogReport(offGrammar, "demo");
+    expect(tasks.map((t) => t.id)).toEqual(["T1"]);
+  });
+
+  it("names each task-shaped line it dropped, with its line number", () => {
+    const { skipped } = parseBacklogReport(offGrammar, "demo");
+    expect(skipped.map((s) => s.line)).toEqual([5, 6]);
+    expect(skipped[0].text).toContain("[~] **F5**");
+    expect(skipped[1].text).toContain("US-3/US-4");
+  });
+
+  it("stays quiet on prose bullets and field labels — no noise", () => {
+    const clean = [
+      "- · **T2** Fine. → **[D]**",
+      "  - **Oracle:** covered",
+      "- just a thought for later",
+    ].join("\n");
+    expect(parseBacklogReport(clean, "demo").skipped).toEqual([]);
+  });
+
+  it("parseBacklog keeps its original shape for existing callers", () => {
+    expect(parseBacklog(offGrammar, "demo").map((t) => t.id)).toEqual(["T1"]);
   });
 });

@@ -15,8 +15,12 @@ test("triage: analyze an idea, ground it to READY, accept → backlog block", as
   await page.getByRole("button", { name: /analyze against docs/i }).click();
 
   // The agent proposes a draft; it starts NOT ready (boundaries/oracle missing).
+  // The gap pill speaks the reader's language, not the schema's (Q8.3).
   const status = page.getByTestId("dor-status");
   await expect(status).toContainText(/missing/i);
+  await expect(status).toContainText("Must NOT");
+  await expect(status).not.toContainText("mustNot");
+  await expect(status).not.toContainText("escalateIf");
   await expect(page.getByRole("button", { name: /accept/i })).toBeDisabled();
 
   // Human grounds the ticket.
@@ -241,4 +245,23 @@ test("the @ menu stays on-screen at phone width", async ({ page }) => {
       Math.round((el.parentElement as HTMLElement).getBoundingClientRect().left),
     ),
   ).toBeGreaterThanOrEqual(0);
+});
+
+test("the DoR gap pill wraps inside the viewport at phone width", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ops/sample/triage");
+
+  await page
+    .getByLabel("Client idea")
+    .fill("Export monthly revenue reports as downloadable spreadsheets");
+  await page.getByRole("button", { name: /analyze against docs/i }).click();
+
+  // The full missing-field list is longer than a phone row; it must fold
+  // instead of bleeding past the card padding (Q8.3).
+  const pill = page.getByTestId("dor-status").getByText(/^missing:/);
+  await expect(pill).toBeVisible();
+  const box = await pill.boundingBox();
+  if (!box) throw new Error("gap pill has no bounding box");
+  expect(Math.round(box.x)).toBeGreaterThanOrEqual(0);
+  expect(Math.round(box.x + box.width)).toBeLessThanOrEqual(390);
 });

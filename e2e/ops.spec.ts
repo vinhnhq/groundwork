@@ -41,7 +41,7 @@ test("Tasks lists the backlog with its readiness", async ({ page }) => {
   const draftRow = page.getByRole("row").filter({ hasText: "S1.2" });
   const gaps = draftRow.getByText(/DoR fields missing/);
   await expect(gaps).toBeVisible();
-  await expect(gaps).toHaveAttribute("title", /oracle/);
+  await expect(gaps).toHaveAttribute("title", /Oracle/);
 });
 
 test("open a doc from the sidebar tree and render its image", async ({ page }) => {

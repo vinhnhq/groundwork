@@ -18,21 +18,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { WriteOutcomeNotice } from "@/components/write-outcome";
-import { readiness } from "@/lib/tasks/dor";
-import type { AutonomyTier, DorField, Task } from "@/lib/tasks/types";
+import { DOR_FIELD_LABEL, readiness } from "@/lib/tasks/dor";
+import type { AutonomyTier, Task } from "@/lib/tasks/types";
 import { cn } from "@/lib/utils";
 
 const TIERS: AutonomyTier[] = ["supervised", "plan-gated", "dark", "trivial"];
-
-const FIELD_LABEL: Record<DorField, string> = {
-  intent: "Intent",
-  autonomy: "Autonomy",
-  touches: "Touches",
-  mustNot: "Must NOT",
-  oracle: "Oracle",
-  evidence: "Evidence (≥2)",
-  escalateIf: "Escalate if",
-};
 
 const parseList = (s: string) =>
   s
@@ -223,7 +213,7 @@ export function TaskCapture({ project }: { project: string }) {
               >
                 {dor.ready
                   ? "READY — every Definition-of-Ready field is present."
-                  : `DRAFT — still missing: ${dor.missing.map((f) => FIELD_LABEL[f]).join(", ")}`}
+                  : `DRAFT — still missing: ${dor.missing.map((f) => DOR_FIELD_LABEL[f]).join(", ")}`}
               </p>
             </div>
 

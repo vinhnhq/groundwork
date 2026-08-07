@@ -1,4 +1,6 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
+
+import { secretEquals } from "@/lib/secure-compare";
 
 /**
  * Push-webhook plumbing (S3), kept pure so the security-relevant half is
@@ -10,8 +12,7 @@ export type SignatureCheck = { ok: true } | { ok: false; status: 401 | 503; mess
 /**
  * Verify GitHub's `x-hub-signature-256` over the raw body.
  *
- * Compared with `timingSafeEqual`, and the length is checked first because
- * `timingSafeEqual` throws on a length mismatch rather than returning false.
+ * Compared constant-time via `secretEquals` (the shared helper — Q8.2).
  * An unsigned webhook endpoint lets anyone force cache churn, so a missing
  * secret disables the endpoint rather than skipping the check.
  */
@@ -33,10 +34,7 @@ export function verifySignature(
   }
 
   const expected = `sha256=${createHmac("sha256", secret).update(rawBody).digest("hex")}`;
-  const a = Buffer.from(header);
-  const b = Buffer.from(expected);
-
-  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+  if (!secretEquals(header, expected)) {
     return { ok: false, status: 401, message: "Bad signature." };
   }
 

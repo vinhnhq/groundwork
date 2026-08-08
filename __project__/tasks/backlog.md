@@ -42,6 +42,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Evidence:** [ADR-0010](../docs/decisions/0010-ticket-storage-ownership.md) §Decision ·
     `src/app/ops/[project]/actions.ts:8` (live `getWriter` call) · S5 in this file (the shipped capability)
   - **Escalate if:** anyone is actually using capture today — then the gap needs a date, not a delete.
+  - **Proposed resolution (2026-08-08, DRAFT until Vinh confirms):** v3 spec §6.1 — capture stays
+    until the triage→ticket flow replaces it in the same PR (spec rung 2), so no capability gap;
+    RV1b's delete follows immediately after.
 - · **RV1b** Delete the write-back seam and its writers. → **[P]** _(after RV1a)_
   - **Intent:** ADR-0010 deletes write-back as a feature; once RV1a removes the callers the code is
     unreachable and its passing tests read as "supported" to anyone browsing.
@@ -165,6 +168,10 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 > tickets until it hosts tickets, so `backlog.md` stays the queue for this phase and becomes the
 > **first import** the moment T2 works. Sequenced so the piece with a real deadline comes first —
 > history you did not capture is gone permanently.
+>
+> **Spec: [`specs/v3-tickets.md`](../specs/v3-tickets.md) (DRAFT 2026-08-08, awaiting Vinh's
+> review).** Stories + rung order for the whole phase; §6 lists the open decisions — including a
+> proposed RV1a resolution and the id-scheme one-way door — that need answers before T2 starts.
 
 - · **T1** Observed-event ingest — append-only, no aggregate, no UI. → **[P]**
   - **Intent:** the only item here with a deadline. Every day without it is a day of lifecycle history
@@ -175,7 +182,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
     off `wip/<id>` branches and `[ID]` PR-title prefixes, so the naming discipline has to start with
     the flip; and the template types a **closed-unmerged** PR as `released`, which contradicts
     ADR-0011's `merged ≠ released` — an upstream bug in `@vinhnnn/dev-workflow` (the file is
-    managed; fix it there, not here).
+    managed; fix it there, not here). **Fix opened 2026-08-08:** dev-workflow PR #11 emits
+    `pr-closed` instead and disambiguates `released` in the event template (82/82 tests green);
+    flip the variable once it lands in a release and syncs here.
   - **Touches:** a migration + a webhook route **Must NOT:** add a Decider, a projection, or a UI —
     those are T3, and building them now guesses at a schema no data has tested.
   - **Oracle:** a PR opened, reviewed and merged in a watched repo produces three rows with correct

@@ -28,6 +28,16 @@ export default async function ProjectTasks({ params }: { params: Promise<{ proje
             Parsed from <code>__project__/tasks/backlog.md</code>. READY means every
             Definition-of-Ready field is present.
           </p>
+          {view.skipped.length > 0 && (
+            <p
+              data-testid="skipped-lines"
+              className="mt-1 text-xs text-amber-700 dark:text-amber-400"
+              title={view.skipped.map((s) => `line ${s.line}: ${s.text}`).join("\n")}
+            >
+              {view.skipped.length} task-like line(s) did not parse — off the backlog grammar (hover
+              for which).
+            </p>
+          )}
         </div>
         {mayWrite && (
           <span className="text-xs text-muted-foreground">

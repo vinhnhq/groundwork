@@ -2,7 +2,7 @@ import "server-only";
 import type { ContentSource, DocRef, ProjectEntry } from "@/lib/content";
 import { getContentSource } from "@/lib/content";
 import { readiness } from "@/lib/tasks/dor";
-import { parseBacklog } from "@/lib/tasks/parse-backlog";
+import { parseBacklog, parseBacklogReport, type SkippedLine } from "@/lib/tasks/parse-backlog";
 import type { DorField, Task } from "@/lib/tasks/types";
 
 export type DraftTask = { task: Task; missing: DorField[] };
@@ -42,6 +42,8 @@ export type ProjectView = {
   root: string;
   docs: DocRef[];
   tasks: Task[];
+  /** Task-shaped backlog lines the strict grammar rejected (Q5). */
+  skipped: SkippedLine[];
 };
 
 export async function loadProject(
@@ -52,8 +54,8 @@ export async function loadProject(
   if (!project) return null;
   const docs = await source.listDocs(slug);
   const md = await source.readBacklog(slug);
-  const tasks = md ? parseBacklog(md, slug) : [];
-  return { slug, name: project.meta.name, root: project.root, docs, tasks };
+  const { tasks, skipped } = md ? parseBacklogReport(md, slug) : { tasks: [], skipped: [] };
+  return { slug, name: project.meta.name, root: project.root, docs, tasks, skipped };
 }
 
 export type PortfolioProject = {

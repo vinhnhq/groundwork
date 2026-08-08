@@ -21,6 +21,17 @@ const TASK_RE = /^\s*-\s*(\[[ xX]\]|·|✎|⏸|↷|✓|→)\s*\*\*([\w.]+)\*\*\s
 const HEADER_RE = /^#{2,4}\s+(.*)$/;
 const TIER_RE = /\*\*\[([SPDT])\]\*\*/;
 
+/**
+ * A line that *intends* to be a task — a bullet whose bold token is id-shaped
+ * (no spaces) behind at most a short non-word marker — but fails the strict
+ * grammar (Q5). Kept deliberately narrow so the report stays quiet on prose
+ * (the escalate-if): a word before the bold (`- see **ADR-0004**`), a bold
+ * lead-in with spaces (`- **Multi-tenant SaaS.** rest`), and a field label
+ * (`**Touches:**` or `**Touches**:`) all stay unflagged — probes from the
+ * PR #12 QA pass.
+ */
+const TASKISH_RE = /^\s*-\s*(?:(?:\[[^\]]{1,2}\]|[^\w\s*]{1,3})\s+)?\*\*([\w./-]+)\*\*(?!:)/;
+
 const TIER: Record<string, AutonomyTier> = {
   S: "supervised",
   P: "plan-gated",
@@ -75,9 +86,25 @@ function parseEvidence(value: string | undefined): Evidence[] {
   return splitList(value).map((ref) => ({ kind: classifyEvidence(ref), ref }));
 }
 
+/** A task-shaped line the grammar rejected — reported, never guessed at. */
+export type SkippedLine = { line: number; text: string };
+
+export type BacklogParse = { tasks: Task[]; skipped: SkippedLine[] };
+
 export function parseBacklog(markdown: string, project: string): Task[] {
+  return parseBacklogReport(markdown, project).tasks;
+}
+
+/**
+ * Like `parseBacklog`, but also names the lines it dropped. The parser's
+ * silence cost three real edits before anyone noticed ([~] markers, ids with
+ * `/`) — the grammar stays strict (F3 escalate-if), the dropping just stops
+ * being invisible.
+ */
+export function parseBacklogReport(markdown: string, project: string): BacklogParse {
   const lines = markdown.split("\n");
   const tasks: Task[] = [];
+  const skipped: SkippedLine[] = [];
   let sectionTier: AutonomyTier | undefined;
 
   // Accumulator for the current task block.
@@ -107,7 +134,7 @@ export function parseBacklog(markdown: string, project: string): Task[] {
     cur = null;
   };
 
-  for (const line of lines) {
+  for (const [index, line] of lines.entries()) {
     const header = line.match(HEADER_RE);
     if (header) {
       flush();
@@ -120,11 +147,13 @@ export function parseBacklog(markdown: string, project: string): Task[] {
       cur = { marker: task[1], id: task[2], rest: task[3], body: [] };
       continue;
     }
+    const taskish = line.match(TASKISH_RE);
+    if (taskish) skipped.push({ line: index + 1, text: line.trim() });
     // Strip the leading list marker so a field value can't absorb the next
     // bullet's "- " when fields sit on separate lines.
     if (cur) cur.body.push(line.replace(/^\s*-\s+/, ""));
   }
   flush();
 
-  return tasks;
+  return { tasks, skipped };
 }

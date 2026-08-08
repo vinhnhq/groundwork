@@ -7,6 +7,9 @@ coverage/
 .env
 .env.local
 .env*.local
+# Vercel env fill-ins hold real secrets once pasted; only the .example is tracked.
+deploy/*.env
+!deploy/vercel.env.example
 *.log
 .DS_Store
 .turbo/

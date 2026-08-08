@@ -207,7 +207,7 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 > **Status 2026-07-25:** F0–F4 + F6 SHIPPED (autonomous build, gated per rung — see done.md).
 > **F5 (auth) SHIPPED 2026-07-29** — better-auth over Kysely/Postgres, username + password, no
 > social providers (ADR-0008). Local dev runs on `docker compose up -d`; the deployed instance
-> still needs a Neon `DATABASE_URL`.
+> got its Neon `DATABASE_URL` on 2026-08-08 — sign-in works on production and previews.
 >
 > Dogfood finding: pointed at its own root, Groundwork parses its 9 tasks but flags most as DRAFT
 > "missing intent" — because these tasks carry intent in the title, not an explicit `**Intent:**`
@@ -311,8 +311,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
   - **Oracle:** unit — a tampered role, a foreign secret, an expired token and garbage all verify to null; E2E — a forged cookie redirects to sign-in.
   - **Evidence:** ADR-0008 · `src/lib/auth/options.ts` · `src/tests/integration/auth.int.test.ts`.
   - **Escalate if:** no Neon creds — **resolved** by running Postgres locally in Docker, so the
-    migration and sign-in are executed rather than asserted. **Remaining:** set `DATABASE_URL` on
-    the Vercel project and seed it; until then nobody can sign in to the deployed instance.
+    migration and sign-in are executed rather than asserted. **Resolved 2026-08-08:** Neon
+    `production` + `preview` branches provisioned, both migrated and seeded, `DATABASE_URL` set per
+    environment; deployed sign-in verified end to end. F5 is fully closed.
 - [x] **R1** Roles: engineer · PM/QA · client. → **[P]** _(2026-07-28)_
   - **Intent:** PM/QA run the board without spending tokens or seeing secrets; a client reads only.
   - **Touches:** `src/lib/auth/roles.ts`, `src/proxy.ts`, ops layout + project page, the write actions. **Must NOT:** rely on hidden UI as the control.
@@ -399,6 +400,12 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
 ### D · Deployed instance _(2026-07-29)_
 
 - · **D1** Point the deployed instance at the real repos. → **[S]**
+  - **Progress (2026-08-08):** the database half is done — Neon `production`/`preview` branches
+    live, seeded, sign-in verified; key-only templates in `deploy/vercel.env.example`. Remaining:
+    mint the fine-grained `GITHUB_TOKEN` (contents:read on the two repos — only Vinh can) + set
+    `GITHUB_REPOS`, then redeploy. Env changes do NOT apply without a redeploy, and a missing
+    build-time `DATABASE_URL` fails the deploy silently (alias keeps the old build) — both learned
+    the hard way today.
   - **Intent:** the live site serves the built-in fixture repo, so it demonstrates the shape of the product rather than the team's actual work — the thing it exists to show.
   - **Touches:** Vercel env only (`GITHUB_TOKEN`, `GITHUB_REPOS`). **Must NOT:** any source change; the adapter already exists (S3).
   - **Oracle:** `/ops` on the production URL lists groundwork + infinite-oneness rather than Acme Checkout, and `/ops/integrations` reports the content source as `github` rather than `github-mock`.

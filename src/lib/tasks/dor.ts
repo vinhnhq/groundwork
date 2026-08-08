@@ -3,6 +3,21 @@ import type { DorField, Readiness, Task } from "@/lib/tasks/types";
 const MIN_EVIDENCE = 2;
 
 /**
+ * The one place a DoR field earns a human label. Internal camelCase names
+ * ("mustNot", "escalateIf") must never reach a surface PM/QA read (Q8.3) —
+ * every pill and form label renders from this map.
+ */
+export const DOR_FIELD_LABEL: Record<DorField, string> = {
+  intent: "Intent",
+  autonomy: "Autonomy",
+  touches: "Touches",
+  mustNot: "Must NOT",
+  oracle: "Oracle",
+  evidence: "Evidence (≥2)",
+  escalateIf: "Escalate if",
+};
+
+/**
  * Pure Definition-of-Ready deriver. A task is READY only when every field is
  * present and it carries ≥2 pointable evidences — "presume, don't assume".
  * Trivial-tier tasks are exempt (they need no ceremony) and are always ready.

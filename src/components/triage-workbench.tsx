@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { DocNode } from "@/lib/content/doc-tree";
-import { readiness } from "@/lib/tasks/dor";
+import { DOR_FIELD_LABEL, readiness } from "@/lib/tasks/dor";
 import type { AutonomyTier, Task } from "@/lib/tasks/types";
 import type { DraftTicket, TriageResult } from "@/lib/triage/types";
 
@@ -365,8 +365,10 @@ export function TriageWorkbench({
                             READY
                           </Badge>
                         ) : (
-                          <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                            missing: {dor?.missing.join(", ")}
+                          // h-auto + wrap: at phone width the full list is
+                          // longer than the card and must fold, not bleed.
+                          <Badge className="h-auto max-w-full whitespace-normal bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                            missing: {dor?.missing.map((f) => DOR_FIELD_LABEL[f]).join(", ")}
                           </Badge>
                         )}
                         <Button

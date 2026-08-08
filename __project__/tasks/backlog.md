@@ -182,7 +182,9 @@ Dogfooding note: Groundwork has its OWN `__project__/` docs + (soon) `project.ym
     off `wip/<id>` branches and `[ID]` PR-title prefixes, so the naming discipline has to start with
     the flip; and the template types a **closed-unmerged** PR as `released`, which contradicts
     ADR-0011's `merged ≠ released` — an upstream bug in `@vinhnnn/dev-workflow` (the file is
-    managed; fix it there, not here).
+    managed; fix it there, not here). **Fix opened 2026-08-08:** dev-workflow PR #11 emits
+    `pr-closed` instead and disambiguates `released` in the event template (82/82 tests green);
+    flip the variable once it lands in a release and syncs here.
   - **Touches:** a migration + a webhook route **Must NOT:** add a Decider, a projection, or a UI —
     those are T3, and building them now guesses at a schema no data has tested.
   - **Oracle:** a PR opened, reviewed and merged in a watched repo produces three rows with correct

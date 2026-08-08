@@ -7,6 +7,8 @@
  * /ops/integrations rather than hidden.
  */
 
+import { secretEquals } from "@/lib/secure-compare";
+
 export const DEV_TOKEN = "groundwork-dev-token";
 
 export type TokenCheck =
@@ -36,7 +38,7 @@ export function checkBearer(
   }
 
   const presented = authorization?.replace(/^Bearer\s+/i, "").trim();
-  if (!presented || presented !== expected) {
+  if (!presented || !secretEquals(presented, expected)) {
     return { ok: false, status: 401, message: "Missing or invalid bearer token." };
   }
 

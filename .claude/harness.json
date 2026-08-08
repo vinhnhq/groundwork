@@ -50,8 +50,8 @@
   "guards": {
     "blockedCommands": [
       {
-        "pattern": "^\\s*bun test(\\s|$)",
-        "message": "Use `bun run test`. Bare `bun test` invokes Bun's own runner, finds ZERO vitest files, and exits 0 — a green result that tested nothing."
+        "pattern": "(^|[;&|]\\s*|&&\\s*)bun test(\\s|$)",
+        "message": "Use `bun run test`. Bare `bun test` invokes Bun's own runner, finds ZERO vitest files, and exits 0 — a green result that tested nothing. (Anchored to command starts — begin-of-line, `;`, `&&`, `|` — so a command merely MENTIONING `bun test` in a string still passes; H8.)"
       },
       {
         "pattern": "\\bseed\\b[^|;&]*(prod|production)",

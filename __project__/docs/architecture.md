@@ -51,11 +51,13 @@ What the deployed instance actually is, stated plainly because the gap matters:
   seeded accounts — one per role. Passwords are scrypt hashes in a `user` table, sessions live in a
   `session` table. Public sign-up is disabled: accounts come from `bun run seed`, never from a form.
   `ADMIN_PASSWORD` sets the seeded password on the deployed instance.
-- **The deployed instance needs `DATABASE_URL`.** Without it nobody can sign in at all — there is no
-  fallback store any more. Provision the Neon database and set it before the next deploy;
-  `/ops/integrations` reports this state.
-- Env set on production + preview: `BETTER_AUTH_SECRET`, `ADMIN_PASSWORD`, `MCP_TOKEN`,
-  `CONTENT_SOURCE=github`. **Still to add: `DATABASE_URL`.**
+- **The database is live (2026-08-08).** One Neon project, two branches: `production` backs the
+  live site, `preview` backs every PR preview — both migrated and seeded with the four role
+  accounts. Sign-in works on both. Local dev and tests stay on Docker; nothing local touches Neon.
+- Env is set per environment (see `deploy/vercel.env.example` for the key map). One hard-won
+  gotcha: the auth route needs `DATABASE_URL` **at build time**, so a production deploy without it
+  fails and the alias silently keeps serving the last good build — if production behaves like old
+  code, check for errored deployments before debugging the code.
 
 Two production guards exist because a default credential reachable from the internet fails
 silently: with no `BETTER_AUTH_SECRET`, production issues and accepts **no session at all** rather
